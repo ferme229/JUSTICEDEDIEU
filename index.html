@@ -35,12 +35,12 @@
 <button id="btnRegister" class="w-full btn-vert text-white py-3 rounded-xl font-bold">Créer mon profil</button>
 <button id="btnLogin" class="w-full border-2 border-vert text-vert py-3 rounded-xl font-bold">Connexion</button>
 <p id="authMsg" class="text-sm text-center text-red-500 min-h-[20px]"></p>
-<div id="pendingBox" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-4 text-center"><p class="font-bold text-amber-800">Compte en attente de validation</p><p class="text-xs">Contactez le PDG / Superviseur</p><button id="btnPendingLogout" class="mt-3 bg-amber-600 text-white px-4 py-1 rounded-lg text-xs">Déconnexion</button></div>
+<div id="pendingBox" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-4 text-center"><p class="font-bold text-amber-800">Compte en attente</p><button id="btnPendingLogout" class="mt-3 bg-amber-600 text-white px-4 py-1 rounded-lg text-xs">Déconnexion</button></div>
 </div>
 </section>
 <section id="appSection" class="hidden max-w-7xl mx-auto p-4">
 <div id="adminUsers" class="hidden bg-white rounded-2xl p-5 card mb-6 border-2 border-red-100">
-<h3 class="font-black mb-3 text-red-700"><i class="fa-solid fa-users-gear mr-2"></i>GESTION DES INSCRITS</h3>
+<h3 class="font-black mb-3 text-red-700">GESTION DES INSCRITS</h3>
 <div class="grid grid-cols-4 gap-2 mb-3 text-xs">
 <button onclick="filterUsers('all')" class="border rounded-lg py-2 font-bold">Tous</button>
 <button onclick="filterUsers('pending')" class="bg-amber-100 border rounded-lg py-2">En attente</button>
@@ -74,7 +74,9 @@ const firebaseConfig = {
     messagingSenderId: "316910037857",
     appId: "1:316910037857:web:813043529ffeed23ebf320"
   };
-const app = initializeApp(firebaseConfig); const auth=getAuth(app); const db=getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
 let currentUserData=null, currentFilter='all', allUsersCache=[];
 
 const btnRegister = document.getElementById('btnRegister');
@@ -82,40 +84,79 @@ const btnLogin = document.getElementById('btnLogin');
 
 btnRegister.onclick=async()=>{
  const e=email.value.trim(), p=password.value, r=role.value, n=nom.value.trim(), t=tel.value.trim(), a=adresse.value.trim();
- if(!e||p.length<6||!n||!t){authMsg.textContent='Remplis nom, gmail, tel, mot de passe (6 min)';return;}
+ if(!e||p.length<6||!n){authMsg.textContent='Remplis nom, gmail, mdp 6 caractères';return;}
  try{
-  authMsg.textContent='Création en cours...';
+  authMsg.textContent='Création...';
   let statut = 'pending';
-  if(r==='pdg' || r==='superviseur'){ statut='active'; }
+  if(r==='pdg' || r==='superviseur') statut='active';
   const c=await createUserWithEmailAndPassword(auth,e,p);
   await setDoc(doc(db,'users',c.user.uid),{uid:c.user.uid,email:e,role:r,nom:n,telephone:t,adresse:a,status:statut,createdAt:serverTimestamp()});
-  authMsg.textContent = statut==='active'? '✅ Compte créé et actif! Connecte-toi maintenant' : '✅ Compte créé - en attente validation';
+  authMsg.textContent='Compte créé! Connecte-toi';
   await signOut(auth);
-  email.value=''; password.value='';
- }catch(err){ authMsg.textContent=err.code + ' : ' + err.message; }
+ }catch(err){ authMsg.textContent=err.message; console.error(err); }
 };
 
 btnLogin.onclick=async()=>{
  const e=email.value.trim(), p=password.value;
- if(!e||!p){authMsg.textContent='Mets ton gmail et mot de passe pour te connecter';return;}
+ if(!e||!p){authMsg.textContent='Mets gmail et mot de passe';return;}
  try{
   authMsg.textContent='Connexion...';
   await signInWithEmailAndPassword(auth,e,p);
-  authMsg.textContent='';
- }catch(err){ authMsg.textContent='Erreur connexion : ' + err.message; }
+ }catch(err){ authMsg.textContent=err.message; }
 };
 
-btnLogout.onclick=()=>signOut(auth);
-btnPendingLogout.onclick=()=>signOut(auth);
+document.getElementById('btnLogout').onclick=()=>signOut(auth);
+document.getElementById('btnPendingLogout').onclick=()=>signOut(auth);
 
-onAuthStateChanged(auth,async(user)=>{
- if(!user){authSection.classList.remove('hidden');appSection.classList.add('hidden');userBox.classList.add('hidden');pendingBox.classList.add('hidden');return;}
- const s=await getDoc(doc(db,'users',user.uid)); if(!s.exists()){await signOut(auth);return;}
- currentUserData=s.data();
- if(['banned','rejected','deactivated'].includes(currentUserData.status)){alert('Compte '+currentUserData.status);await signOut(auth);return;}
- if(currentUserData.status==='pending'){authSection.classList.remove('hidden');appSection.classList.add('hidden');userBox.classList.add('hidden');pendingBox.classList.remove('hidden');return;}
- authSection.classList.add('hidden');appSection.classList.remove('hidden');userBox.classList.add('flex');userNom.textContent=currentUserData.nom;userRole.textContent=currentUserData.role;showByRole(currentUserData.role);init();
+onAuthStateChanged(auth, async(user)=>{
+ console.log('AUTH STATE', user?.email);
+ if(!user){
+  document.getElementById('authSection').classList.remove('hidden');
+  document.getElementById('appSection').classList.add('hidden');
+  document.getElementById('userBox').classList.add('hidden');
+  document.getElementById('pendingBox').classList.add('hidden');
+  return;
+ }
+ try{
+  const ref = doc(db,'users',user.uid);
+  let snap = await getDoc(ref);
+  if(!snap.exists()){
+    console.log('Doc user manquant, création auto');
+    const r = document.getElementById('role').value || 'client';
+    const n = document.getElementById('nom').value || user.email.split('@')[0];
+    let statut = (r==='pdg' || r==='superviseur')? 'active' : 'pending';
+    await setDoc(ref,{uid:user.uid,email:user.email,role:r,nom:n,telephone:'',adresse:'',status:statut,createdAt:serverTimestamp()});
+    snap = await getDoc(ref);
+  }
+  currentUserData = snap.data();
+  console.log('USER DATA', currentUserData);
+  if(['banned','rejected','deactivated'].includes(currentUserData.status)){
+    alert('Compte '+currentUserData.status);
+    await signOut(auth);
+    return;
+  }
+  if(currentUserData.status==='pending'){
+    document.getElementById('authSection').classList.remove('hidden');
+    document.getElementById('appSection').classList.add('hidden');
+    document.getElementById('userBox').classList.add('hidden');
+    document.getElementById('pendingBox').classList.remove('hidden');
+    document.getElementById('authMsg').textContent='En attente validation';
+    return;
+  }
+  document.getElementById('authSection').classList.add('hidden');
+  document.getElementById('appSection').classList.remove('hidden');
+  document.getElementById('userBox').classList.remove('hidden');
+  document.getElementById('userBox').classList.add('flex');
+  document.getElementById('userNom').textContent=currentUserData.nom;
+  document.getElementById('userRole').textContent=currentUserData.role;
+  showByRole(currentUserData.role);
+  init();
+ }catch(e){
+  console.error('ERREUR onAuth', e);
+  document.getElementById('authMsg').textContent='Erreur: '+e.message+' Vérifie les règles Firestore';
+ }
 });
+
 function todayISO(){return new Date().toISOString().split('T')[0];}
 ['p1_date','p2_date','p3_date','vet_date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=todayISO();});
 function showByRole(role){
@@ -141,10 +182,10 @@ function renderUsers(){
  list.forEach(u=>{
   const isPDGSup = currentUserData.role==='superviseur' || currentUserData.role==='pdg';
   const badge=u.status==='pending'?'bg-amber-200':u.status==='active'?'bg-green-200':u.status==='banned'?'bg-red-300':'bg-gray-300';
-  listUsers.innerHTML+=`<div class="border rounded-xl p-3"><div class="flex justify-between"><div><b>${u.nom}</b> <span class="text-[10px] ${badge} px-2 py-1 rounded-full ml-2">${u.status}</span><br>Role:${u.role}<br>Gmail:${u.email}<br>Tel:${u.telephone}<br>Adresse:${u.adresse}</div><div class="text-[10px] text-gray-400">${u.uid.slice(0,6)}</div></div>${isPDGSup?`<div class="mt-2 flex flex-wrap gap-1"><button onclick="updateStatus('${u.uid}','active')" class="bg-green-600 text-white px-3 py-1 rounded-lg">Valider</button><button onclick="updateStatus('${u.uid}','rejected')" class="bg-gray-500 text-white px-3 py-1 rounded-lg">Rejeter</button><button onclick="updateStatus('${u.uid}','deactivated')" class="bg-orange-500 text-white px-3 py-1 rounded-lg">Desactiver</button><button onclick="updateStatus('${u.uid}','active')" class="bg-blue-600 text-white px-3 py-1 rounded-lg">Reactiver</button><button onclick="updateStatus('${u.uid}','banned')" class="bg-red-600 text-white px-3 py-1 rounded-lg">Bannir</button></div>`:`<p class="mt-2 text-[10px] text-gray-400">Lecture seule</p>`}</div>`;
+  listUsers.innerHTML+=`<div class="border rounded-xl p-3"><div class="flex justify-between"><div><b>${u.nom}</b> <span class="text-[10px] ${badge} px-2 py-1 rounded-full ml-2">${u.status}</span><br>Role:${u.role}<br>Gmail:${u.email}<br>Tel:${u.telephone}</div><div class="text-[10px] text-gray-400">${u.uid.slice(0,6)}</div></div>${isPDGSup?`<div class="mt-2 flex flex-wrap gap-1"><button onclick="updateStatus('${u.uid}','active')" class="bg-green-600 text-white px-3 py-1 rounded-lg">Valider</button><button onclick="updateStatus('${u.uid}','banned')" class="bg-red-600 text-white px-3 py-1 rounded-lg">Bannir</button></div>`:''}</div>`;
  });
 }
-window.updateStatus=async(uid,status)=>{if(currentUserData.role!=='superviseur' && currentUserData.role!=='pdg'){alert('Seul PDG/Superviseur');return;} await updateDoc(doc(db,'users',uid),{status:status, validatedBy:auth.currentUser.uid, validatedAt:serverTimestamp()}); alert(status);};
+window.updateStatus=async(uid,status)=>{if(currentUserData.role!=='superviseur' && currentUserData.role!=='pdg'){alert('Seul PDG/Superviseur');return;} await updateDoc(doc(db,'users',uid),{status:status}); alert(status);};
 function init(){
  onSnapshot(query(collection(db,'users'),orderBy('createdAt','desc'),limit(100)),snap=>{allUsersCache=[];snap.forEach(d=>allUsersCache.push(d.data()));renderUsers();});
  onSnapshot(query(collection(db,'production_journaliere'),orderBy('date','desc'),limit(20)),snap=>{listP1.innerHTML='';let last=0,sum=0;const today=todayISO();snap.forEach(x=>{const v=x.data();last=v.effectif||last;if(v.date===today)sum+=v.bonsDisponibles||0;listP1.innerHTML+=`<div class="border rounded-lg p-2 flex justify-between"><span>${v.date} - ${v.oeufsRamasses} (${v.bonsDisponibles})</span></div>`;});statPoules.textContent=last;statOeufs.textContent=sum;});
