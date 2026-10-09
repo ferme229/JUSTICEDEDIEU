@@ -1,203 +1,751 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LA JUSTICE DE DIEU - Dogbo</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
-<script type="importmap">{"imports":{"firebase/app":"https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js","firebase/auth":"https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js","firebase/firestore":"https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"}}</script>
-<style>:root{--vert:#0a7a42}.bg-vert{background:var(--vert)}.btn-vert{background:var(--vert)}.card{box-shadow:0 4px 20px rgba(0,0,0,.08)}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Justice de Dieu — Ferme d'élevage à Dogbo</title>
+<meta name="description" content="La Justice de Dieu, ferme d'élevage à Dogbo : œufs frais, élevage de volailles, suivi de la production et du stock en temps réel.">
+<meta name="theme-color" content="#0a7a42">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🥚%3C/text%3E%3C/svg%3E">
+<style>
+:root{--vert:#0a7a42;--vert-d:#064d2a;--vert-l:#dcefe3;--jaune:#f5b82e;--oeuf:#fff6dc;--encre:#14221a;--gris:#5a6a60;--fond:#f2f5ef;--ligne:#dde3d8;--rouge:#c0392b;--sh:0 2px 14px rgba(10,60,35,.09)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--encre);background:var(--fond);min-height:100vh;display:flex;flex-direction:column}
+body.noscroll{overflow:hidden}
+h1,h2,h3{line-height:1.15;letter-spacing:-.02em;font-weight:800}
+h2{font-size:clamp(1.5rem,3vw,2.1rem)}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--jaune);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.hidden{display:none!important}
+.muted,small{color:var(--gris)}
+/* En-tête */
+.top{background:var(--vert);color:#fff;position:sticky;top:0;z-index:40;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+.bar{display:flex;align-items:center;gap:16px;min-height:68px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.logo{width:42px;height:42px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:var(--oeuf);display:grid;place-items:center;font-size:20px}
+.brand b{display:block;font-size:16px;letter-spacing:.2px;line-height:1.1}
+.brand small{color:#fff;opacity:.85;font-size:12px}
+#menu{margin-left:auto;display:flex;align-items:center;gap:20px}
+#menu nav{display:flex;gap:4px}
+#menu nav a{padding:8px 14px;border-radius:999px;text-decoration:none;font-weight:600;font-size:15px}
+#menu nav a:hover{background:rgba(255,255,255,.14)}
+#menu nav a.on{background:#fff;color:var(--vert)}
+#authArea{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chip{background:rgba(255,255,255,.16);padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600}
+.burger{display:none;margin-left:auto;background:rgba(255,255,255,.16);color:#fff;border:0;border-radius:10px;width:44px;height:44px;font-size:20px;cursor:pointer}
+/* Boutons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:2px solid transparent;border-radius:12px;padding:10px 18px;font-weight:700;font-size:15px;font-family:inherit;cursor:pointer;text-decoration:none;line-height:1.2;transition:background .15s,transform .1s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn.primary{background:var(--vert);color:#fff}.btn.primary:hover{background:var(--vert-d)}
+.btn.jaune{background:var(--jaune);color:#2a1d00}.btn.jaune:hover{background:#ffc94d}
+.btn.ghost{background:transparent;border-color:rgba(255,255,255,.75);color:#fff}.btn.ghost:hover{background:rgba(255,255,255,.14)}
+.btn.line{background:#fff;border-color:var(--vert);color:var(--vert)}.btn.line:hover{background:var(--vert-l)}
+.btn.danger{background:var(--rouge);color:#fff}
+.btn.sm{padding:6px 12px;font-size:13px;border-radius:9px}
+.btn.block{width:100%;margin-top:6px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.row.end{justify-content:flex-end}
+.adm,.adm-block{display:none!important}
+body.is-admin .adm{display:inline-flex!important}
+body.is-admin .adm-block{display:block!important}
+/* Accueil */
+.view{display:none}.view.active{display:block}
+.hero{background:var(--vert);color:#fff;overflow:hidden}
+.hero-in{display:grid;grid-template-columns:1.15fr .85fr;gap:30px;align-items:center;padding:56px 20px 64px}
+.hero h1{font-size:clamp(2.3rem,5.4vw,4rem)}
+.lead{font-size:1.15rem;margin:16px 0 26px;max-width:34em;opacity:.95}
+.facts{margin-top:22px;font-size:14px;opacity:.9}
+.hero .adm{margin-top:18px}
+.egg-wrap{position:relative;display:grid;place-items:center;min-height:380px}
+.egg{width:min(260px,70vw);aspect-ratio:.8;background:var(--oeuf);border-radius:50% 50% 50% 50%/62% 62% 38% 38%;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset -18px -24px 0 rgba(140,100,0,.09);color:var(--vert-d);position:relative;z-index:1}
+.egg .n{font-size:clamp(3.2rem,9vw,4.8rem);font-weight:800;line-height:1;letter-spacing:-.04em}
+.egg .l{font-size:14px;font-weight:600;max-width:9em;text-align:center;margin-top:6px}
+.egg.e2,.egg.e3{position:absolute;box-shadow:none}
+.egg.e2{width:105px;background:var(--jaune);left:2%;bottom:4%;transform:rotate(-16deg)}
+.egg.e3{width:78px;background:#bfe3cd;right:4%;top:2%;transform:rotate(20deg)}
+.sec{padding:52px 20px}
+.sec.alt{background:#fff}
+.two{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:start}
+.two p{max-width:60ch;margin-top:12px;white-space:pre-line}
+.points{display:grid;gap:18px}
+.points div{border-left:4px solid var(--jaune);padding-left:16px}
+.points b{display:block;font-size:17px}
+.head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.head p{color:var(--gris);margin-top:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px}
+.card{background:#fff;border-radius:18px;padding:22px;box-shadow:var(--sh)}
+.card.center{text-align:center;max-width:520px;margin:30px auto}
+.card.center p{margin:10px 0 20px}
+.an .ico{font-size:40px;line-height:1;margin-bottom:12px}
+.an h3{font-size:1.2rem;margin-bottom:8px}
+.an p{margin-top:10px;color:var(--gris);font-size:15px}
+.page{padding:44px 20px 60px}
+.note{background:#fff8e1;border:1px solid #f1d98a;border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:14px}
+.empty{text-align:center;color:var(--gris);padding:26px 10px}
+/* Historique */
+.tl{position:relative;padding-left:36px;max-width:780px}
+.tl:before{content:"";position:absolute;left:11px;top:8px;bottom:8px;width:3px;background:var(--vert-l)}
+.tl .it{position:relative;background:#fff;border-radius:16px;padding:18px 22px;margin-bottom:20px;box-shadow:var(--sh)}
+.tl .it:before{content:"";position:absolute;left:-32px;top:22px;width:16px;height:16px;border-radius:50%;background:var(--vert);border:3px solid var(--fond)}
+.tl .yr{display:inline-block;background:var(--vert-l);color:var(--vert-d);font-weight:700;font-size:13px;padding:2px 12px;border-radius:999px;margin-bottom:8px}
+.tl h3{font-size:1.15rem;margin-bottom:6px}
+.tl p{color:var(--gris);white-space:pre-line}
+.tl .adm{margin-top:12px;gap:8px}
+/* Contact */
+.contact{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.contact .card b{display:block;margin:8px 0 4px}
+.contact .ico{font-size:30px}
+/* Pied de page */
+footer{margin-top:auto;background:var(--vert-d);color:#e8f4ec;padding:28px 20px;font-size:14px}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+footer a{color:#fff}
+/* Espace */
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 14px;margin-bottom:6px}
+.tab{white-space:nowrap;padding:9px 16px;border-radius:999px;border:1px solid var(--ligne);background:#fff;cursor:pointer;font-weight:600;font-size:14px;font-family:inherit}
+.tab.on{background:var(--vert);color:#fff;border-color:var(--vert)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin:10px 0 24px}
+.stat{background:#fff;border-radius:16px;padding:16px 18px;box-shadow:var(--sh);border-left:5px solid var(--vert)}
+.stat small{font-weight:600;display:block}
+.stat b{font-size:1.7rem;letter-spacing:-.02em}
+.stat.j{border-color:var(--jaune)}.stat.b{border-color:#3b82c4}.stat.r{border-color:var(--rouge)}
+.bloc{background:#fff;border-radius:18px;padding:20px;box-shadow:var(--sh);margin-bottom:22px}
+.bloc h3{font-size:1.1rem;margin-bottom:4px}
+.bloc .head{margin-bottom:14px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:var(--gris);font-weight:700;padding:8px 10px;border-bottom:2px solid var(--ligne);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#e8ece6;color:#35443b}
+.badge.green{background:var(--vert-l);color:var(--vert-d)}.badge.amber{background:#ffeeba;color:#6b4a00}.badge.red{background:#f8d3cd;color:#8a2217}.badge.blue{background:#d6e8f8;color:#1d4a76}
+.lot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--ligne);border-radius:12px;margin-bottom:10px;background:#fbfdfb}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.urow{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px;border:1px solid var(--ligne);border-radius:12px;margin-bottom:10px}
+.urow small{display:block}
+.bigstock{font-size:3rem;font-weight:800;color:var(--vert);letter-spacing:-.04em;line-height:1}
+/* Fenêtre modale */
+.modal{position:fixed;inset:0;background:rgba(8,28,17,.6);display:grid;place-items:center;padding:16px;z-index:100;overflow:auto}
+.mbox{background:#fff;border-radius:20px;padding:26px;width:100%;max-width:470px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:92vh;overflow:auto}
+.mbox h3{font-size:1.4rem;margin-bottom:6px;padding-right:30px}
+.mbox .x{position:absolute;right:14px;top:12px;border:0;background:none;font-size:28px;line-height:1;cursor:pointer;color:var(--gris)}
+.mbox .intro{margin-bottom:14px;color:var(--gris);font-size:14px}
+.field{margin-bottom:14px}
+.field label{display:block;font-weight:600;font-size:14px;margin-bottom:5px}
+.field i{color:var(--rouge);font-style:normal}
+.field input,.field select,.field textarea{width:100%;border:1.5px solid #c9d3c6;border-radius:11px;padding:11px 13px;font:inherit;background:#fff;color:var(--encre)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--vert);box-shadow:0 0 0 3px rgba(10,122,66,.18)}
+.field small{display:block;margin-top:4px;font-size:12px}
+.err{color:var(--rouge);font-size:14px;font-weight:600;min-height:22px}
+.links{text-align:center;margin-top:14px;font-size:14px}
+.links a{color:var(--vert);font-weight:600}
+/* Notifications */
+#toasts{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:200;display:grid;gap:8px;width:min(92vw,420px)}
+.toast{background:var(--vert-d);color:#fff;padding:12px 16px;border-radius:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:14px}
+.toast.err{background:var(--rouge)}
+.toast.out{opacity:0;transition:opacity .4s}
+@media(max-width:860px){
+ .burger{display:block}
+ #menu{display:none;position:absolute;left:0;right:0;top:68px;background:var(--vert-d);flex-direction:column;align-items:stretch;padding:14px 20px 22px;gap:14px}
+ #menu.open{display:flex}
+ #menu nav{flex-direction:column}
+ .hero-in,.two{grid-template-columns:1fr}
+ .egg-wrap{min-height:320px;order:-1}
+ .hero-in{padding-top:30px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-<header class="bg-vert text-white p-4 flex justify-between items-center sticky top-0 z-50">
-<div class="flex items-center gap-3"><i class="fa-solid fa-egg text-2xl"></i><div><h1 class="font-black text-[15px]">LA JUSTICE DE DIEU</h1><p class="text-[10px] opacity-90">Ferme d'élevage à Dogbo</p></div></div>
-<div id="userBox" class="hidden items-center gap-2"><span id="userNom" class="text-xs font-bold hidden md:block"></span><span id="userRole" class="bg-white text-vert px-3 py-1 rounded-full text-[10px] font-black uppercase"></span><button id="btnLogout" class="bg-white/20 px-3 py-1.5 rounded-lg"><i class="fa-solid fa-right-from-bracket"></i></button></div>
+<body>
+<header class="top">
+ <div class="wrap bar">
+  <a class="brand" href="#accueil"><span class="logo">🥚</span><span><b>LA JUSTICE DE DIEU</b><small>Ferme d'élevage à Dogbo</small></span></a>
+  <button class="burger" data-act="burger" aria-label="Ouvrir le menu">☰</button>
+  <div id="menu">
+   <nav aria-label="Navigation principale">
+    <a href="#accueil">Accueil</a>
+    <a href="#historique">Notre historique</a>
+    <a href="#animaux">Animaux élevés</a>
+    <a href="#contact">Contact</a>
+   </nav>
+   <div id="authArea"></div>
+  </div>
+ </div>
 </header>
-<section id="authSection" class="max-w-md mx-auto mt-6 p-6 bg-white rounded-2xl card">
-<div class="text-center mb-5"><div class="w-16 h-16 bg-vert rounded-2xl mx-auto flex items-center justify-center text-white text-2xl mb-3"><i class="fa-solid fa-egg"></i></div><h2 class="text-xl font-black">LA JUSTICE DE DIEU</h2><p class="text-xs text-gray-500">Ferme d'élevage à Dogbo</p></div>
-<div class="space-y-3">
-<input id="email" type="email" placeholder="Adresse Gmail" class="w-full border rounded-xl px-4 py-3">
-<input id="password" type="password" placeholder="Mot de passe" class="w-full border rounded-xl px-4 py-3">
-<input id="nom" type="text" placeholder="Nom complet" class="w-full border rounded-xl px-4 py-3">
-<input id="tel" type="tel" placeholder="Numéro téléphone" class="w-full border rounded-xl px-4 py-3">
-<input id="adresse" type="text" placeholder="Adresse" class="w-full border rounded-xl px-4 py-3">
-<select id="role" class="w-full border rounded-xl px-4 py-3 bg-white text-sm">
-<option value="pdg">PDG</option>
-<option value="superviseur">Superviseur Général</option>
-<option value="secretaire_general">Secrétaire Général</option>
-<option value="veterinaire">Vétérinaire</option>
-<option value="receptionniste">Réceptionniste</option>
-<option value="magasiniere">Magasinière</option>
-<option value="stagiaire">Stagiaire</option>
-<option value="client" selected>Client</option>
-</select>
-<button id="btnRegister" class="w-full btn-vert text-white py-3 rounded-xl font-bold">Créer mon profil</button>
-<button id="btnLogin" class="w-full border-2 border-vert text-vert py-3 rounded-xl font-bold">Connexion</button>
-<p id="authMsg" class="text-sm text-center text-red-500 min-h-[20px]"></p>
-<div id="pendingBox" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-4 text-center"><p class="font-bold text-amber-800">Compte en attente</p><button id="btnPendingLogout" class="mt-3 bg-amber-600 text-white px-4 py-1 rounded-lg text-xs">Déconnexion</button></div>
-</div>
-</section>
-<section id="appSection" class="hidden max-w-7xl mx-auto p-4">
-<div id="adminUsers" class="hidden bg-white rounded-2xl p-5 card mb-6 border-2 border-red-100">
-<h3 class="font-black mb-3 text-red-700">GESTION DES INSCRITS</h3>
-<div class="grid grid-cols-4 gap-2 mb-3 text-xs">
-<button onclick="filterUsers('all')" class="border rounded-lg py-2 font-bold">Tous</button>
-<button onclick="filterUsers('pending')" class="bg-amber-100 border rounded-lg py-2">En attente</button>
-<button onclick="filterUsers('active')" class="bg-green-100 border rounded-lg py-2">Actifs</button>
-<button onclick="filterUsers('banned')" class="bg-red-100 border rounded-lg py-2">Bannis</button>
-</div>
-<div id="listUsers" class="space-y-2 max-h-[500px] overflow-auto text-xs"></div>
-</div>
-<div id="statsBar" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-<div class="bg-white p-4 rounded-2xl card border-l-4 border-vert"><p class="text-[10px] font-bold text-gray-500">POULES</p><h3 id="statPoules" class="text-2xl font-black">0</h3></div>
-<div class="bg-white p-4 rounded-2xl card border-l-4 border-amber-400"><p class="text-[10px] font-bold text-gray-500">OEUFS JOUR</p><h3 id="statOeufs" class="text-2xl font-black">0</h3></div>
-<div class="bg-white p-4 rounded-2xl card border-l-4 border-blue-500"><p class="text-[10px] font-bold text-gray-500">VENTES JOUR</p><h3 id="statVentes" class="text-2xl font-black">0</h3></div>
-<div class="bg-white p-4 rounded-2xl card border-l-4 border-emerald-600"><p class="text-[10px] font-bold text-gray-500">BENEFICE</p><h3 id="statBenef" class="text-xl font-black">0 FCFA</h3></div>
-</div>
-<div id="dashClient" class="hidden"><div class="bg-white rounded-2xl p-6 card text-center"><h3 class="font-bold text-lg">Stock Disponible</h3><div id="clientStock" class="text-5xl font-black text-vert my-4">0</div><div id="listClient" class="mt-6 text-left text-xs"></div></div></div>
-<div id="dashVeto" class="hidden"><div class="bg-white rounded-2xl p-5 card mb-6"><h3 class="font-bold mb-3">SUIVI VETO</h3><div class="grid grid-cols-2 gap-3"><div><label class="text-xs font-bold">Date</label><input id="vet_date" type="date" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Mortalité</label><input id="vet_mort" type="number" value="0" class="w-full border rounded-lg px-3 py-2"></div><div class="col-span-2"><label class="text-xs font-bold">Obs</label><textarea id="vet_notes" class="w-full border rounded-lg px-3 py-2 h-20"></textarea></div></div><button id="btnVeto" class="mt-3 w-full bg-blue-600 text-white py-2.5 rounded-xl font-bold">Enregistrer</button><div id="listVeto" class="mt-4 space-y-2 text-xs max-h-[200px] overflow-auto"></div></div></div><div id="dashProduction" class="hidden"><div class="grid md:grid-cols-2 gap-6 mb-6"><div class="bg-white rounded-2xl p-5 card"><h3 class="font-bold mb-3">PRODUCTION</h3><div class="grid grid-cols-2 gap-3"><div><label class="text-xs font-bold">Date</label><input id="p1_date" type="date" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Effectif</label><input id="p1_effectif" type="number" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Ramassés</label><input id="p1_ramasses" type="number" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Cassés</label><input id="p1_casses" type="number" value="0" class="w-full border rounded-lg px-3 py-2"></div><div class="col-span-2 bg-green-50 p-3 rounded-lg text-sm">Bons: <b id="p1_bons">0</b></div></div><button id="btnP1" class="mt-3 w-full btn-vert text-white py-2.5 rounded-xl font-bold">Enregistrer</button></div><div class="bg-white rounded-2xl p-5 card"><h3 class="font-bold text-sm">Historique</h3><div id="listP1" class="mt-3 max-h-[300px] overflow-auto space-y-2 text-xs"></div></div></div></div>
-<div id="dashReception" class="hidden"><div class="grid md:grid-cols-2 gap-6 mb-6"><div class="bg-white rounded-2xl p-5 card"><h3 class="font-bold mb-2">RECEPTION</h3><div id="listAttenteP1" class="space-y-2 max-h-[300px] overflow-auto"></div></div><div class="bg-white rounded-2xl p-5 card"><h3 class="font-bold mb-3">Valider Réception</h3><input type="hidden" id="p2_prodId"><div class="grid grid-cols-2 gap-3"><div><label class="text-xs font-bold">Date</label><input id="p2_date" type="date" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Reçus</label><input id="p2_recus" type="number" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Cassés</label><input id="p2_cassesR" type="number" value="0" class="w-full border rounded-lg px-3 py-2"></div><div class="col-span-2 bg-amber-50 p-3 rounded-lg text-sm">Bons magasin: <b id="p2_bons">0</b></div></div><button id="btnP2" class="mt-3 w-full btn-vert text-white py-2.5 rounded-xl font-bold">Transférer</button></div></div></div>
-<div id="dashMagasin" class="hidden"><div class="grid md:grid-cols-2 gap-6 mb-6"><div class="bg-white rounded-2xl p-5 card"><h3 class="font-bold mb-2">STOCK A VENDRE</h3><div id="listAttenteP2" class="space-y-2 max-h-[300px] overflow-auto"></div></div><div class="bg-white rounded-2xl p-5 card"><h3 class="font-bold mb-3">Vente</h3><input type="hidden" id="p3_transfertId"><div class="grid grid-cols-2 gap-3"><div><label class="text-xs font-bold">Date</label><input id="p3_date" type="date" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Veille</label><input id="p3_veille" type="number" value="0" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Entrée</label><input id="p3_entree" type="number" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Prix</label><input id="p3_prix" type="number" value="120" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Vendus</label><input id="p3_vendus" type="number" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Cassés</label><input id="p3_cassesM" type="number" value="0" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Client</label><input id="p3_clientNom" type="text" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Tel</label><input id="p3_clientTel" type="tel" class="w-full border rounded-lg px-3 py-2"></div><div class="col-span-2 bg-green-50 p-2 rounded-lg text-xs">Total <b id="calc_total">0</b> | Reste <b id="calc_reste">0</b> | <b id="calc_montant">0</b></div></div><button id="btnP3" class="mt-3 w-full btn-vert text-white py-2.5 rounded-xl font-bold">Vendre</button></div></div><div class="bg-white rounded-2xl p-5 card mt-2"><h3 class="font-bold">Historique Ventes</h3><div id="listP3" class="mt-3 overflow-auto text-xs"></div></div></div>
-<div class="mt-6 text-center text-[10px] text-gray-400">© LA JUSTICE DE DIEU - Ferme d'élevage à Dogbo</div>
-</section>
+
+<main>
+ <!-- ACCUEIL -->
+ <section id="v-accueil" class="view active">
+  <div class="hero"><div class="wrap hero-in">
+   <div>
+    <h1 id="h-title"></h1>
+    <p class="lead" id="h-sub"></p>
+    <div class="row" id="h-cta"></div>
+    <p class="facts" id="h-facts"></p>
+    <button class="btn sm ghost adm" data-act="edit-home">✏️ Modifier l'accueil</button>
+   </div>
+   <div class="egg-wrap" aria-live="polite">
+    <div class="egg e2" aria-hidden="true"></div><div class="egg e3" aria-hidden="true"></div>
+    <div class="egg"><span class="n" id="s-stock">–</span><span class="l">œufs frais disponibles</span></div>
+   </div>
+  </div></div>
+  <div class="sec"><div class="wrap two">
+   <div><h2>La ferme</h2><p id="h-about"></p></div>
+   <div class="points">
+    <div><b>Production suivie chaque jour</b><span class="muted">Les œufs ramassés, cassés et réceptionnés sont enregistrés par l'équipe.</span></div>
+    <div><b>Stock mis à jour en temps réel</b><span class="muted">Le nombre d'œufs disponibles affiché ici change à chaque vente.</span></div>
+    <div><b>Santé des animaux contrôlée</b><span class="muted">Notre vétérinaire note la mortalité et les soins au quotidien.</span></div>
+   </div>
+  </div></div>
+  <div class="sec alt"><div class="wrap">
+   <div class="head"><div><h2>Nos animaux</h2></div><a class="btn line" href="#animaux">Voir tous les animaux</a></div>
+   <div class="grid" id="h-animaux"></div>
+  </div></div>
+  <div class="sec"><div class="wrap row" style="justify-content:space-between">
+   <div><h2>Une question, une commande ?</h2><p class="muted">Retrouvez nos coordonnées sur la page Contact.</p></div>
+   <a class="btn primary" href="#contact">Nous contacter</a>
+  </div></div>
+ </section>
+
+ <!-- HISTORIQUE -->
+ <section id="v-historique" class="view"><div class="wrap page">
+  <div class="head"><div><h2>Notre historique</h2><p>Les grandes étapes de la ferme La Justice de Dieu.</p></div>
+   <button class="btn primary adm" data-act="add-histo">＋ Ajouter une étape</button></div>
+  <div id="l-histo"></div>
+ </div></section>
+
+ <!-- ANIMAUX -->
+ <section id="v-animaux" class="view"><div class="wrap page">
+  <div class="head"><div><h2>Animaux élevés</h2><p>Les espèces que nous élevons à Dogbo.</p></div>
+   <button class="btn primary adm" data-act="add-animal">＋ Ajouter un animal</button></div>
+  <div id="l-animaux"></div>
+ </div></section>
+
+ <!-- CONTACT -->
+ <section id="v-contact" class="view"><div class="wrap page">
+  <div class="head"><div><h2>Contact</h2><p>Venez nous voir ou écrivez-nous.</p></div>
+   <button class="btn primary adm" data-act="edit-contact">✏️ Modifier les coordonnées</button></div>
+  <div class="contact" id="l-contact"></div>
+ </div></section>
+
+ <!-- ESPACE -->
+ <section id="v-espace" class="view"><div class="wrap page" id="espace"></div></section>
+</main>
+
+<footer><div class="wrap">
+ <span>© <span id="yr"></span> La Justice de Dieu — Ferme d'élevage à Dogbo</span>
+ <span><a href="#accueil">Accueil</a> · <a href="#animaux">Animaux</a> · <a href="#contact">Contact</a> · <a href="#espace">Espace équipe</a></span>
+</div></footer>
+
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true"><div class="mbox" id="mbox"></div></div>
+<div id="toasts" aria-live="polite"></div>
+<noscript><p style="padding:20px;text-align:center">Ce site nécessite JavaScript pour fonctionner.</p></noscript>
+
 <script type="module">
-import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, doc, setDoc, getDoc, updateDoc, onSnapshot, query, orderBy, where, serverTimestamp, limit } from 'firebase/firestore';
-const firebaseConfig = {
-    apiKey: "AIzaSyDyqDuZS8pBPePhA9RgsnFum5yTYZKCyeg",
-    authDomain: "la-justice-de-dieu.firebaseapp.com",
-    databaseURL: "https://la-justice-de-dieu-default-rtdb.firebaseio.com",
-    projectId: "la-justice-de-dieu",
-    storageBucket: "la-justice-de-dieu.firebasestorage.app",
-    messagingSenderId: "316910037857",
-    appId: "1:316910037857:web:813043529ffeed23ebf320"
-  };
-const app = initializeApp(firebaseConfig);
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,sendPasswordResetEmail,deleteUser} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {getFirestore,collection,doc,addDoc,setDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,limit,serverTimestamp,runTransaction,writeBatch} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+/* ============ Firebase ============ */
+const firebaseConfig={
+ apiKey:"AIzaSyDyqDuZS8pBPePhA9RgsnFum5yTYZKCyeg",
+ authDomain:"la-justice-de-dieu.firebaseapp.com",
+ databaseURL:"https://la-justice-de-dieu-default-rtdb.firebaseio.com",
+ projectId:"la-justice-de-dieu",
+ storageBucket:"la-justice-de-dieu.firebasestorage.app",
+ messagingSenderId:"316910037857",
+ appId:"1:316910037857:web:813043529ffeed23ebf320"
+};
+const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
 const db=getFirestore(app);
-let currentUserData=null, currentFilter='all', allUsersCache=[];
 
-const btnRegister = document.getElementById('btnRegister');
-const btnLogin = document.getElementById('btnLogin');
+/* ============ Constantes ============ */
+const ROLES={pdg:'PDG',superviseur:'Superviseur général',secretaire_general:'Secrétaire général',veterinaire:'Vétérinaire',receptionniste:'Réceptionniste',magasiniere:'Magasinière',stagiaire:'Stagiaire',client:'Client'};
+const STAFF=['pdg','superviseur','secretaire_general','veterinaire','receptionniste','magasiniere','stagiaire'];
+const ADMINS=['pdg','superviseur'];
+const FIN=['pdg','superviseur','secretaire_general'];
+const CAN={prod:ADMINS,recep:[...ADMINS,'receptionniste'],vente:[...ADMINS,'magasiniere'],veto:[...ADMINS,'veterinaire']};
+const STATUS={pending:['En attente','amber'],active:['Actif','green'],banned:['Suspendu','red']};
+const VIEWS=['accueil','historique','animaux','contact','espace'];
+const DEF_CFG={heroTitre:'LA JUSTICE DE DIEU',heroSoustitre:"Ferme d'élevage à Dogbo. Des œufs frais, un élevage suivi au quotidien.",apropos:"La Justice de Dieu est une ferme d'élevage située à Dogbo. Nous élevons des volailles avec soin et fournissons des œufs frais à nos clients.\nChaque jour, notre équipe enregistre la production, la réception, le stock et la santé des animaux.",telephone:'',email:'',adresse:'Dogbo, Bénin',horaires:'',prixOeuf:120};
+const DEF_ANIMAUX=[
+ {icone:'🐔',nom:'Poules pondeuses',quantite:null,description:"Notre élevage principal : des poules pondeuses suivies chaque jour pour fournir des œufs frais."},
+ {icone:'🍗',nom:'Poulets de chair',quantite:null,description:"Des poulets élevés pour la consommation de viande."},
+ {icone:'🐦',nom:'Pintades',quantite:null,description:"Des pintades élevées en plein air, appréciées pour leur viande."}];
+const DEF_HISTO=[
+ {ordre:1,annee:'Début',titre:'Naissance du projet',texte:"La Justice de Dieu démarre à Dogbo avec l'envie d'élever des animaux dans de bonnes conditions."},
+ {ordre:2,annee:'Croissance',titre:"Développement de l'élevage",texte:"L'effectif augmente et l'équipe s'organise : production, réception, magasin et suivi vétérinaire."},
+ {ordre:3,annee:"Aujourd'hui",titre:'Gestion en ligne',texte:"Toute l'activité est suivie en ligne, en temps réel : production, stock, ventes et santé des animaux."}];
+const AUTH_ERR={
+ 'auth/invalid-credential':'Adresse email ou mot de passe incorrect.','auth/wrong-password':'Mot de passe incorrect.','auth/user-not-found':'Aucun compte avec cette adresse.',
+ 'auth/invalid-email':'Adresse email invalide.','auth/email-already-in-use':'Cette adresse est déjà utilisée. Cliquez sur Connexion.',
+ 'auth/weak-password':'Mot de passe trop court (6 caractères minimum).','auth/network-request-failed':'Pas de connexion internet. Réessayez.',
+ 'auth/too-many-requests':'Trop de tentatives. Patientez quelques minutes.','auth/operation-not-allowed':"La connexion par email n'est pas activée dans Firebase (Authentication → Méthode de connexion).",
+ 'auth/unauthorized-domain':"Ce site n'est pas autorisé dans Firebase (Authentication → Paramètres → Domaines autorisés).",'auth/user-disabled':'Ce compte est désactivé.'};
 
-btnRegister.onclick=async()=>{
- const e=email.value.trim(), p=password.value, r=role.value, n=nom.value.trim(), t=tel.value.trim(), a=adresse.value.trim();
- if(!e||p.length<6||!n){authMsg.textContent='Remplis nom, gmail, mdp 6 caractères';return;}
- try{
-  authMsg.textContent='Création...';
-  let statut = 'pending';
-  if(r==='pdg' || r==='superviseur') statut='active';
-  const c=await createUserWithEmailAndPassword(auth,e,p);
-  await setDoc(doc(db,'users',c.user.uid),{uid:c.user.uid,email:e,role:r,nom:n,telephone:t,adresse:a,status:statut,createdAt:serverTimestamp()});
-  authMsg.textContent='Compte créé! Connecte-toi';
-  await signOut(auth);
- }catch(err){ authMsg.textContent=err.message; console.error(err); }
+/* ============ Outils ============ */
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Number(n||0).toLocaleString('fr-FR');
+const money=n=>fmt(n)+' FCFA';
+const today=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);};
+const dateFr=d=>{if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d))return esc(d||'');const[y,m,j]=d.split('-');return `${j}/${m}/${y}`;};
+const sum=(a,k)=>a.reduce((s,x)=>s+(Number(x[k])||0),0);
+const errMsg=e=>AUTH_ERR[e?.code]||(e?.code==='permission-denied'?"Action refusée par les règles de sécurité Firestore (vérifiez qu'elles sont publiées et que votre compte est actif).":(e?.code?`Erreur (${e.code})`:(e?.message||'Une erreur est survenue.')));
+function toast(msg,type='ok'){const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.classList.add('out'),3500);setTimeout(()=>t.remove(),4100);}
+$('#yr').textContent=new Date().getFullYear();
+
+/* ============ État ============ */
+let user=null,me=null,prof='loading',authReady=false,registering=false;
+let cfg={...DEF_CFG},animaux=[],histo=[],stats={};
+const D={prod:[],trans:[],ventes:[],sante:[],dep:[],users:[]};
+let curTab='resume',uFilter='all',unsubMe=null,privUnsubs=[],privKey='',warned=false;
+const isAdmin=()=>!!me&&me.status==='active'&&ADMINS.includes(me.role);
+const can=l=>!!me&&me.status==='active'&&l.includes(me.role);
+const animList=()=>animaux.length?animaux:DEF_ANIMAUX.map(a=>({...a}));
+const histoList=()=>histo.length?histo:DEF_HISTO.map(a=>({...a}));
+
+/* ============ Fenêtres (modale, formulaire, confirmation) ============ */
+let modalDone=null;
+function showModal(){$('#modal').classList.remove('hidden');document.body.classList.add('noscroll');}
+function closeModal(){$('#modal').classList.add('hidden');document.body.classList.remove('noscroll');if(modalDone){const f=modalDone;modalDone=null;f(false);}}
+const fieldHTML=f=>{
+ const id='f_'+f.name,req=f.required?' <i>*</i>':'';let inp;
+ if(f.type==='textarea')inp=`<textarea id="${id}" name="${f.name}" rows="4" placeholder="${esc(f.placeholder||'')}">${esc(f.value??'')}</textarea>`;
+ else if(f.type==='select')inp=`<select id="${id}" name="${f.name}">${f.options.map(([v,l])=>`<option value="${esc(v)}"${v===f.value?' selected':''}>${esc(l)}</option>`).join('')}</select>`;
+ else inp=`<input id="${id}" name="${f.name}" type="${f.type||'text'}" value="${esc(f.value??'')}" placeholder="${esc(f.placeholder||'')}" autocomplete="${f.auto||'off'}"${f.type==='number'?' inputmode="numeric" min="0" step="1"':''}>`;
+ return `<div class="field"><label for="${id}">${esc(f.label)}${req}</label>${inp}${f.help?`<small>${esc(f.help)}</small>`:''}</div>`;
 };
-
-btnLogin.onclick=async()=>{
- const e=email.value.trim(), p=password.value;
- if(!e||!p){authMsg.textContent='Mets gmail et mot de passe';return;}
- try{
-  authMsg.textContent='Connexion...';
-  await signInWithEmailAndPassword(auth,e,p);
- }catch(err){ authMsg.textContent=err.message; }
-};
-
-document.getElementById('btnLogout').onclick=()=>signOut(auth);
-document.getElementById('btnPendingLogout').onclick=()=>signOut(auth);
-
-onAuthStateChanged(auth, async(user)=>{
- console.log('AUTH STATE', user?.email);
- if(!user){
-  document.getElementById('authSection').classList.remove('hidden');
-  document.getElementById('appSection').classList.add('hidden');
-  document.getElementById('userBox').classList.add('hidden');
-  document.getElementById('pendingBox').classList.add('hidden');
-  return;
- }
- try{
-  const ref = doc(db,'users',user.uid);
-  let snap = await getDoc(ref);
-  if(!snap.exists()){
-    console.log('Doc user manquant, création auto');
-    const r = document.getElementById('role').value || 'client';
-    const n = document.getElementById('nom').value || user.email.split('@')[0];
-    let statut = (r==='pdg' || r==='superviseur')? 'active' : 'pending';
-    await setDoc(ref,{uid:user.uid,email:user.email,role:r,nom:n,telephone:'',adresse:'',status:statut,createdAt:serverTimestamp()});
-    snap = await getDoc(ref);
+function openForm({title,intro,fields,submit='Enregistrer',onSubmit,footer=''}){
+ if(modalDone){modalDone(false);modalDone=null;}
+ $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><h3>${esc(title)}</h3>${intro?`<p class="intro">${intro}</p>`:''}<form id="mf" novalidate>${fields.map(fieldHTML).join('')}<p class="err" id="mfErr" role="alert"></p><button class="btn primary block" id="mfBtn" type="submit">${esc(submit)}</button>${footer}</form>`;
+ showModal();
+ const f=$('#mf'),err=m=>{$('#mfErr').textContent=m;};
+ f.onsubmit=async e=>{
+  e.preventDefault();err('');const v={};
+  for(const fl of fields){
+   const el=f.elements[fl.name];
+   v[fl.name]=el.type==='number'?(el.value===''?null:Number(el.value)):(el.type==='password'?el.value:el.value.trim());
+   if(fl.required&&(v[fl.name]===''||v[fl.name]===null)){err(`${fl.label} : champ obligatoire.`);el.focus();return;}
+   if(el.type==='number'&&v[fl.name]!==null&&(v[fl.name]<0||!Number.isFinite(v[fl.name]))){err(`${fl.label} : nombre invalide.`);el.focus();return;}
   }
-  currentUserData = snap.data();
-  console.log('USER DATA', currentUserData);
-  if(['banned','rejected','deactivated'].includes(currentUserData.status)){
-    alert('Compte '+currentUserData.status);
-    await signOut(auth);
-    return;
-  }
-  if(currentUserData.status==='pending'){
-    document.getElementById('authSection').classList.remove('hidden');
-    document.getElementById('appSection').classList.add('hidden');
-    document.getElementById('userBox').classList.add('hidden');
-    document.getElementById('pendingBox').classList.remove('hidden');
-    document.getElementById('authMsg').textContent='En attente validation';
-    return;
-  }
-  document.getElementById('authSection').classList.add('hidden');
-  document.getElementById('appSection').classList.remove('hidden');
-  document.getElementById('userBox').classList.remove('hidden');
-  document.getElementById('userBox').classList.add('flex');
-  document.getElementById('userNom').textContent=currentUserData.nom;
-  document.getElementById('userRole').textContent=currentUserData.role;
-  showByRole(currentUserData.role);
-  init();
- }catch(e){
-  console.error('ERREUR onAuth', e);
-  document.getElementById('authMsg').textContent='Erreur: '+e.message+' Vérifie les règles Firestore';
- }
-});
-
-function todayISO(){return new Date().toISOString().split('T')[0];}
-['p1_date','p2_date','p3_date','vet_date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=todayISO();});
-function showByRole(role){
- ['dashProduction','dashReception','dashMagasin','dashVeto','dashClient','statsBar','adminUsers'].forEach(id=>document.getElementById(id).classList.add('hidden'));
- if(['pdg','superviseur','receptionniste'].includes(role))document.getElementById('adminUsers').classList.remove('hidden');
- if(role==='client'){dashClient.classList.remove('hidden');return;}
- if(role==='veterinaire'){['dashVeto','dashProduction','statsBar'].forEach(id=>document.getElementById(id).classList.remove('hidden'));return;}
- if(role==='stagiaire'){['statsBar'].forEach(id=>document.getElementById(id).classList.remove('hidden'));return;}
- if(role==='receptionniste'){['dashReception','statsBar','adminUsers'].forEach(id=>document.getElementById(id).classList.remove('hidden'));return;}
- if(role==='magasiniere'){['dashMagasin','statsBar'].forEach(id=>document.getElementById(id).classList.remove('hidden'));return;}
- if(['pdg','superviseur','secretaire_general'].includes(role)){['dashProduction','dashReception','dashMagasin','dashVeto','statsBar','adminUsers'].forEach(id=>document.getElementById(id).classList.remove('hidden'));}
+  const b=$('#mfBtn');b.disabled=true;const old=b.textContent;b.textContent='Veuillez patienter…';
+  try{await onSubmit(v);}catch(x){console.error(x);err(errMsg(x));b.disabled=false;b.textContent=old;}
+ };
+ setTimeout(()=>f.elements[0]?.focus(),40);
 }
-function calcP1(){p1_bons.textContent=(parseInt(p1_ramasses.value)||0)-(parseInt(p1_casses.value)||0);} p1_ramasses.addEventListener('input',calcP1); p1_casses.addEventListener('input',calcP1);
-function calcP2(){p2_bons.textContent=(parseInt(p2_recus.value)||0)-(parseInt(p2_cassesR.value)||0);} p2_recus.addEventListener('input',calcP2); p2_cassesR.addEventListener('input',calcP2);
-function calcP3(){const v=parseInt(p3_veille.value)||0,e=parseInt(p3_entree.value)||0,vn=parseInt(p3_vendus.value)||0,cm=parseInt(p3_cassesM.value)||0,pr=parseInt(p3_prix.value)||0;const tot=v+e,rest=tot-vn-cm,mnt=vn*pr;calc_total.textContent=tot;calc_reste.textContent=rest;calc_montant.textContent=mnt.toLocaleString()+' FCFA';return{total:tot,reste:rest,montant:mnt};}
-['p3_veille','p3_entree','p3_vendus','p3_cassesM','p3_prix'].forEach(id=>document.getElementById(id).addEventListener('input',calcP3));
-window.selectP1=(id,date,bons)=>{p2_prodId.value=id;p2_date.value=date;p2_recus.value=bons;calcP2();};
-window.selectP2=(id,date,bons)=>{p3_transfertId.value=id;p3_date.value=date;p3_entree.value=bons;calcP3();};
-window.filterUsers=(f)=>{currentFilter=f; renderUsers();};
-function renderUsers(){
- let list=allUsersCache; if(currentFilter!=='all') list=list.filter(u=>u.status===currentFilter);
- listUsers.innerHTML='';
- list.forEach(u=>{
-  const isPDGSup = currentUserData.role==='superviseur' || currentUserData.role==='pdg';
-  const badge=u.status==='pending'?'bg-amber-200':u.status==='active'?'bg-green-200':u.status==='banned'?'bg-red-300':'bg-gray-300';
-  listUsers.innerHTML+=`<div class="border rounded-xl p-3"><div class="flex justify-between"><div><b>${u.nom}</b> <span class="text-[10px] ${badge} px-2 py-1 rounded-full ml-2">${u.status}</span><br>Role:${u.role}<br>Gmail:${u.email}<br>Tel:${u.telephone}</div><div class="text-[10px] text-gray-400">${u.uid.slice(0,6)}</div></div>${isPDGSup?`<div class="mt-2 flex flex-wrap gap-1"><button onclick="updateStatus('${u.uid}','active')" class="bg-green-600 text-white px-3 py-1 rounded-lg">Valider</button><button onclick="updateStatus('${u.uid}','banned')" class="bg-red-600 text-white px-3 py-1 rounded-lg">Bannir</button></div>`:''}</div>`;
+function askConfirm(text,ok='Confirmer',danger=false){
+ return new Promise(res=>{
+  if(modalDone){modalDone(false);modalDone=null;}
+  $('#mbox').innerHTML=`<h3>Confirmation</h3><p style="margin:12px 0 22px">${esc(text)}</p><div class="row end"><button class="btn line" data-close>Annuler</button><button class="btn ${danger?'danger':'primary'}" id="okBtn">${esc(ok)}</button></div>`;
+  showModal();modalDone=res;
+  $('#okBtn').onclick=()=>{modalDone=null;closeModal();res(true);};
  });
 }
-window.updateStatus=async(uid,status)=>{if(currentUserData.role!=='superviseur' && currentUserData.role!=='pdg'){alert('Seul PDG/Superviseur');return;} await updateDoc(doc(db,'users',uid),{status:status}); alert(status);};
-function init(){
- onSnapshot(query(collection(db,'users'),orderBy('createdAt','desc'),limit(100)),snap=>{allUsersCache=[];snap.forEach(d=>allUsersCache.push(d.data()));renderUsers();});
- onSnapshot(query(collection(db,'production_journaliere'),orderBy('date','desc'),limit(20)),snap=>{listP1.innerHTML='';let last=0,sum=0;const today=todayISO();snap.forEach(x=>{const v=x.data();last=v.effectif||last;if(v.date===today)sum+=v.bonsDisponibles||0;listP1.innerHTML+=`<div class="border rounded-lg p-2 flex justify-between"><span>${v.date} - ${v.oeufsRamasses} (${v.bonsDisponibles})</span></div>`;});statPoules.textContent=last;statOeufs.textContent=sum;});
- onSnapshot(query(collection(db,'stock_vente'),orderBy('date','desc'),limit(30)),snap=>{let vend=0,benef=0,stockT=0,html=`<table class="min-w-full"><tr class="bg-gray-100"><th class="p-2">Date</th><th>Entree</th><th>Vendus</th><th>Reste</th><th>Montant</th></tr>`;snap.forEach(x=>{const v=x.data();if(v.date===todayISO()){vend+=v.vendus||0;benef+=v.montantTotal||0;stockT+=v.reste||0;}html+=`<tr class="border-b"><td class="p-2">${v.date}</td><td>${v.entreeJour}</td><td>${v.vendus}</td><td>${v.reste}</td><td>${(v.montantTotal||0).toLocaleString()}</td></tr>`;});html+=`</table>`;listP3.innerHTML=html;listClient.innerHTML=html;statVentes.textContent=vend;statBenef.textContent=benef.toLocaleString()+' FCFA';clientStock.textContent=stockT;});
- onSnapshot(query(collection(db,'production_journaliere'),where('status','==','transfere_reception'),orderBy('date','desc')),snap=>{listAttenteP1.innerHTML='';snap.forEach(x=>{const v=x.data();listAttenteP1.innerHTML+=`<div class="border bg-amber-50 rounded-lg p-3 flex justify-between"><div><b>${v.date}</b> - ${v.bonsDisponibles}</div><button onclick="selectP1('${x.id}','${v.date}',${v.bonsDisponibles})" class="btn-vert text-white px-3 py-1 rounded-lg text-xs">Receptionner</button></div>`;});if(snap.empty)listAttenteP1.innerHTML='<p class="text-center text-gray-400 py-4">Aucun</p>';});
- onSnapshot(query(collection(db,'transfert_reception'),where('status','==','transfere_magasin'),orderBy('date','desc')),snap=>{listAttenteP2.innerHTML='';snap.forEach(x=>{const v=x.data();listAttenteP2.innerHTML+=`<div class="border bg-green-50 rounded-lg p-3 flex justify-between"><div><b>${v.date}</b> - ${v.bonsTransferesMagasin}</div><button onclick="selectP2('${x.id}','${v.date}',${v.bonsTransferesMagasin})" class="btn-vert text-white px-3 py-1 rounded-lg text-xs">Vendre</button></div>`;});if(snap.empty)listAttenteP2.innerHTML='<p class="text-center text-gray-400 py-4">Aucun</p>';});
- onSnapshot(query(collection(db,'suivi_veterinaire'),orderBy('date','desc'),limit(20)),snap=>{listVeto.innerHTML='';snap.forEach(x=>{const v=x.data();listVeto.innerHTML+=`<div class="border rounded-lg p-2"><b>${v.date}</b> Mort:${v.mortalite} - ${v.notes}</div>`;});});
+
+/* ============ Connexion / Inscription ============ */
+function openLogin(){
+ openForm({title:'Connexion',intro:'Entrez votre adresse Gmail et votre mot de passe.',submit:'Se connecter',
+  fields:[{name:'email',label:'Adresse Gmail',type:'email',required:true,auto:'email'},{name:'password',label:'Mot de passe',type:'password',required:true,auto:'current-password'}],
+  footer:`<p class="links"><a href="#" data-act="forgot">Mot de passe oublié ?</a><br>Pas encore de compte ? <a href="#" data-act="register">Créer mon profil</a></p>`,
+  onSubmit:async v=>{await signInWithEmailAndPassword(auth,v.email,v.password);closeModal();toast('Connexion réussie');location.hash='espace';}});
 }
-btnP1.onclick=async()=>{const d=p1_date.value,e=parseInt(p1_effectif.value)||0,r=parseInt(p1_ramasses.value)||0,c=parseInt(p1_casses.value)||0;if(!d||!e||!r){alert('Remplis');return;}await addDoc(collection(db,'production_journaliere'),{date:d,effectif:e,oeufsRamasses:r,cassesPoulailler:c,bonsDisponibles:r-c,superviseurId:auth.currentUser.uid,superviseurNom:currentUserData.nom,status:'transfere_reception',createdAt:serverTimestamp()});};
-btnP2.onclick=async()=>{const pid=p2_prodId.value,d=p2_date.value,r=parseInt(p2_recus.value)||0,c=parseInt(p2_cassesR.value)||0;if(!pid){alert('Choisis lot');return;}await addDoc(collection(db,'transfert_reception'),{date:d,productionId:pid,oeufsRecus:r,cassesReception:c,bonsTransferesMagasin:r-c,receptionnisteId:auth.currentUser.uid,status:'transfere_magasin',createdAt:serverTimestamp()});};
-btnP3.onclick=async()=>{const d=p3_date.value,v=parseInt(p3_veille.value)||0,en=parseInt(p3_entree.value)||0,vn=parseInt(p3_vendus.value)||0,c=parseInt(p3_cassesM.value)||0,pr=parseInt(p3_prix.value)||0,cn=p3_clientNom.value,ct=p3_clientTel.value;const {total,reste,montant}=calcP3();if(!d||!en){alert('Date+entree');return;}await addDoc(collection(db,'stock_vente'),{date:d,stockVeille:v,entreeJour:en,stockTotal:total,vendus:vn,cassesMagasin:c,reste:reste,prixUnitaire:pr,montantTotal:montant,clientNom:cn,clientTel:ct,magasiniereId:auth.currentUser.uid,createdAt:serverTimestamp()});};
-btnVeto.onclick=async()=>{const d=vet_date.value,m=parseInt(vet_mort.value)||0,n=vet_notes.value;if(!d){alert('Date');return;}await addDoc(collection(db,'suivi_veterinaire'),{date:d,mortalite:m,notes:n,veterinaireId:auth.currentUser.uid,veterinaireNom:currentUserData.nom,createdAt:serverTimestamp()});};
+function openRegister(){
+ openForm({title:'Créer mon profil',intro:'Renseignez vos informations. Les comptes du personnel sont validés par un administrateur avant d\'être activés.',submit:'Créer mon profil',
+  fields:[
+   {name:'nom',label:'Nom complet',required:true,auto:'name'},
+   {name:'tel',label:'Numéro de téléphone',type:'tel',required:true,auto:'tel'},
+   {name:'adresse',label:'Adresse',auto:'street-address'},
+   {name:'email',label:'Adresse Gmail',type:'email',required:true,auto:'email'},
+   {name:'password',label:'Mot de passe',type:'password',required:true,auto:'new-password',help:'6 caractères minimum.'},
+   {name:'role',label:'Je suis',type:'select',value:'client',options:Object.entries(ROLES).map(([k,l])=>[k,k==='client'?'Client':l+' (à valider)']),help:'Un rôle du personnel doit être confirmé par le PDG ou le superviseur.'}],
+  footer:`<p class="links">Déjà un compte ? <a href="#" data-act="login">Connexion</a></p>`,
+  onSubmit:async v=>{
+   if(v.password.length<6)throw new Error('Mot de passe trop court (6 caractères minimum).');
+   const isClient=v.role==='client';let cred;registering=true;
+   try{
+    cred=await createUserWithEmailAndPassword(auth,v.email,v.password);
+    await setDoc(doc(db,'users',cred.user.uid),{uid:cred.user.uid,email:v.email,nom:v.nom,telephone:v.tel,adresse:v.adresse,role:'client',roleDemande:v.role,status:isClient?'active':'pending',createdAt:serverTimestamp()});
+   }catch(e){
+    if(cred){try{await deleteUser(cred.user);}catch(_){}}
+    registering=false;throw e;
+   }
+   registering=false;closeModal();
+   await handleUser(auth.currentUser);
+   location.hash='espace';
+   toast(isClient?'Bienvenue ! Votre profil est créé.':'Profil créé. Un administrateur doit valider votre rôle.');
+  }});
+}
+function openForgot(){
+ openForm({title:'Mot de passe oublié',intro:'Nous vous envoyons un lien pour choisir un nouveau mot de passe.',submit:'Envoyer le lien',
+  fields:[{name:'email',label:'Adresse Gmail',type:'email',required:true,auto:'email'}],
+  onSubmit:async v=>{await sendPasswordResetEmail(auth,v.email);closeModal();toast('Lien envoyé. Vérifiez votre boîte mail (et les spams).');}});
+}
+async function handleUser(u){
+ unsubMe&&unsubMe();unsubMe=null;stopPrivate();me=null;user=u;
+ if(!u){prof='ok';authReady=true;document.body.classList.remove('is-admin');renderAll();return;}
+ prof='loading';
+ unsubMe=onSnapshot(doc(db,'users',u.uid),async s=>{
+  authReady=true;
+  if(!s.exists()){me=null;prof='missing';renderAll();return;}
+  me=s.data();prof='ok';
+  if(me.status==='banned'){toast('Votre compte est suspendu. Contactez la direction.','err');await signOut(auth);return;}
+  document.body.classList.toggle('is-admin',isAdmin());
+  const key=me.role+'|'+me.status;
+  if(key!==privKey){stopPrivate();privKey=key;if(me.status==='active')startPrivate();}
+  renderAll();
+ },e=>{authReady=true;prof='missing';console.error(e);toast(errMsg(e),'err');renderAll();});
+}
+onAuthStateChanged(auth,u=>{if(registering)return;handleUser(u);});
+
+/* ============ Données publiques ============ */
+const pubErr=e=>{console.error(e);if(!warned){warned=true;toast("Impossible de charger le contenu du site. Vérifiez les règles Firestore.",'err');}};
+onSnapshot(doc(db,'site','config'),s=>{cfg={...DEF_CFG,...(s.exists()?s.data():{})};renderAll();},pubErr);
+onSnapshot(collection(db,'animaux'),s=>{animaux=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.nom).localeCompare(String(b.nom),'fr'));renderAll();},pubErr);
+onSnapshot(collection(db,'historique'),s=>{histo=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.ordre??99)-(b.ordre??99));renderAll();},pubErr);
+onSnapshot(doc(db,'stats','public'),s=>{stats=s.exists()?s.data():{};renderAll();},pubErr);
+
+/* ============ Données privées (équipe) ============ */
+function stopPrivate(){privUnsubs.forEach(f=>f());privUnsubs=[];privKey='';Object.keys(D).forEach(k=>D[k]=[]);}
+function startPrivate(){
+ const w=(q,k)=>privUnsubs.push(onSnapshot(q,s=>{D[k]=s.docs.map(d=>({id:d.id,...d.data()}));renderEspace();renderAuth();},e=>console.warn(k,e)));
+ const r=me.role;
+ if(STAFF.includes(r)){
+  w(query(collection(db,'production_journaliere'),orderBy('date','desc'),limit(60)),'prod');
+  w(query(collection(db,'transfert_reception'),orderBy('date','desc'),limit(60)),'trans');
+  w(query(collection(db,'ventes'),orderBy('date','desc'),limit(300)),'ventes');
+  w(query(collection(db,'sante'),orderBy('date','desc'),limit(40)),'sante');
+ }
+ if(FIN.includes(r))w(query(collection(db,'depenses'),orderBy('date','desc'),limit(200)),'dep');
+ if(ADMINS.includes(r))w(query(collection(db,'users'),limit(300)),'users');
+}
+
+/* ============ Navigation ============ */
+function route(){
+ let h=location.hash.replace('#','')||'accueil';if(!VIEWS.includes(h))h='accueil';
+ VIEWS.forEach(v=>$('#v-'+v).classList.toggle('active',v===h));
+ document.querySelectorAll('#menu nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+h));
+ $('#menu').classList.remove('open');window.scrollTo({top:0});
+ if(h==='espace')renderEspace();
+}
+window.addEventListener('hashchange',route);
+
+/* ============ Affichage : site public ============ */
+function renderAuth(){
+ const el=$('#authArea');
+ if(!authReady){el.innerHTML='';return;}
+ if(!user){el.innerHTML=`<button class="btn ghost" data-act="login">Connexion</button><button class="btn jaune" data-act="register">Créer mon profil</button>`;return;}
+ const n=isAdmin()?D.users.filter(u=>u.status==='pending').length:0;
+ el.innerHTML=`<a class="btn jaune" href="#espace">Mon espace${n?` (${n})`:''}</a><span class="chip">${esc(me?.nom||user.email)}${me?' · '+esc(ROLES[me.role]||me.role):''}</span><button class="btn ghost sm" data-act="logout">Déconnexion</button>`;
+}
+function animalCard(a){
+ const q=a.quantite!=null&&a.quantite!==''?`<span class="badge green">${fmt(a.quantite)} têtes</span>`:'';
+ const adm=a.id?`<div class="adm row" style="margin-top:14px"><button class="btn sm line" data-act="edit-animal" data-id="${esc(a.id)}">✏️ Modifier</button><button class="btn sm danger" data-act="del-animal" data-id="${esc(a.id)}">Supprimer</button></div>`:'';
+ return `<article class="card an"><div class="ico">${esc(a.icone||'🐔')}</div><h3>${esc(a.nom)}</h3>${q}<p>${esc(a.description||'')}</p>${adm}</article>`;
+}
+function seedNote(which){return animaux.length&&which==='animaux'||histo.length&&which==='historique'?'':`<div class="note adm-block">Contenu d'exemple affiché aux visiteurs. <button class="btn sm primary" data-act="seed" data-id="${which}">Enregistrer ces exemples pour les modifier</button></div>`;}
+function renderHome(){
+ $('#h-title').textContent=cfg.heroTitre;
+ $('#h-sub').textContent=cfg.heroSoustitre;
+ $('#h-about').textContent=cfg.apropos;
+ $('#h-cta').innerHTML=(user?`<a class="btn jaune" href="#espace">Accéder à mon espace</a>`:`<button class="btn jaune" data-act="login">Connexion</button><button class="btn ghost" data-act="register">Créer mon profil</button>`)+`<a class="btn ghost" href="#historique">Notre historique</a><a class="btn ghost" href="#animaux">Animaux élevés</a>`;
+ $('#s-stock').textContent=stats.stock!=null?fmt(stats.stock):'–';
+ const bits=[];if(stats.effectif)bits.push(`${fmt(stats.effectif)} poules actuellement en élevage`);bits.push(`${animList().length} types d'animaux élevés`);
+ $('#h-facts').textContent=bits.join(' · ');
+ $('#h-animaux').innerHTML=animList().slice(0,3).map(animalCard).join('');
+}
+function renderAnimaux(){$('#l-animaux').innerHTML=seedNote('animaux')+`<div class="grid">${animList().map(animalCard).join('')}</div>`;}
+function renderHisto(){
+ $('#l-histo').innerHTML=seedNote('historique')+`<div class="tl">${histoList().map(h=>`<div class="it"><span class="yr">${esc(h.annee)}</span><h3>${esc(h.titre)}</h3><p>${esc(h.texte||'')}</p>${h.id?`<div class="adm row"><button class="btn sm line" data-act="edit-histo" data-id="${esc(h.id)}">✏️ Modifier</button><button class="btn sm danger" data-act="del-histo" data-id="${esc(h.id)}">Supprimer</button></div>`:''}</div>`).join('')}</div>`;
+}
+function renderContact(){
+ const tel=(cfg.telephone||'').trim(),digits=tel.replace(/\D/g,''),ph=tel.replace(/[^\d+]/g,'');
+ const none='<span class="muted">Non renseigné</span>';
+ $('#l-contact').innerHTML=`
+  <div class="card"><div class="ico">📞</div><b>Téléphone</b>${tel?`<a href="tel:${esc(ph)}">${esc(tel)}</a>`:none}${digits?`<div style="margin-top:12px"><a class="btn sm primary" href="https://wa.me/${esc(digits)}" target="_blank" rel="noopener">Écrire sur WhatsApp</a></div>`:''}</div>
+  <div class="card"><div class="ico">✉️</div><b>Email</b>${cfg.email?`<a href="mailto:${esc(cfg.email)}">${esc(cfg.email)}</a>`:none}</div>
+  <div class="card"><div class="ico">📍</div><b>Adresse</b>${cfg.adresse?esc(cfg.adresse):none}</div>
+  <div class="card"><div class="ico">🕒</div><b>Horaires</b>${cfg.horaires?esc(cfg.horaires):none}</div>`;
+}
+
+/* ============ Affichage : espace connecté ============ */
+const badge=(t,c='')=>`<span class="badge ${c}">${esc(t)}</span>`;
+const table=(heads,rows)=>rows.length?`<div class="tw"><table><thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`:'';
+const stat=(l,v,c='')=>`<div class="stat ${c}"><small>${esc(l)}</small><b>${v}</b></div>`;
+const btnIf=(ok,act,label,cls='primary',id='')=>ok?`<button class="btn sm ${cls}" data-act="${act}"${id?` data-id="${esc(id)}"`:''}>${label}</button>`:'';
+const stock=()=>stats.stock||0;
+
+function tabsFor(){
+ const r=me.role,t=[['resume','📊 Résumé']];
+ if(STAFF.includes(r))t.push(['production','🥚 Production'],['reception','📦 Réception'],['magasin','🏪 Magasin et ventes'],['sante','🩺 Santé']);
+ if(FIN.includes(r))t.push(['depenses','💸 Dépenses']);
+ if(isAdmin()){const n=D.users.filter(u=>u.status==='pending').length;t.push(['inscrits','👥 Inscrits'+(n?` (${n})`:'')]);}
+ return t;
+}
+function renderEspace(){
+ if(!$('#v-espace').classList.contains('active'))return;
+ const box=$('#espace');
+ if(!authReady||(user&&prof==='loading')){box.innerHTML='<p class="empty">Chargement…</p>';return;}
+ if(!user){box.innerHTML=`<div class="card center"><h2>Mon espace</h2><p>Connectez-vous pour accéder à votre espace.</p><div class="row" style="justify-content:center"><button class="btn primary" data-act="login">Connexion</button><button class="btn line" data-act="register">Créer mon profil</button></div></div>`;return;}
+ if(prof==='missing'||!me){box.innerHTML=`<div class="card center"><h2>Profil introuvable</h2><p>Votre compte existe mais son profil n'a pas été trouvé (ou l'accès est refusé par les règles Firestore). Déconnectez-vous puis recréez votre profil, ou contactez la direction.</p><button class="btn primary" data-act="logout">Se déconnecter</button></div>`;return;}
+ if(me.status==='pending'){box.innerHTML=`<div class="card center"><h2>Compte en attente de validation</h2><p>Bonjour ${esc(me.nom)}. Vous avez demandé le rôle <b>${esc(ROLES[me.roleDemande]||me.roleDemande)}</b>. Le PDG ou le superviseur doit le valider. Cette page se met à jour automatiquement.</p><button class="btn line" data-act="logout">Se déconnecter</button></div>`;return;}
+ const tabs=tabsFor();if(!tabs.some(t=>t[0]===curTab))curTab='resume';
+ const panel={resume:pResume,production:pProd,reception:pRecep,magasin:pMag,sante:pSante,depenses:pDep,inscrits:pUsers}[curTab]();
+ box.innerHTML=`<div class="head"><div><h2>Bonjour ${esc(me.nom)}</h2><p>${badge(ROLES[me.role]||me.role,'green')}</p></div></div><div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab ${k===curTab?'on':''}" role="tab" data-act="tab" data-id="${k}">${l}</button>`).join('')}</div>${panel}`;
+}
+function pResume(){
+ if(!STAFF.includes(me.role)){
+  return `<div class="bloc"><h3>Œufs disponibles aujourd'hui</h3><div class="bigstock">${fmt(stock())}</div><p class="muted" style="margin-top:10px">Pour commander, contactez la ferme.</p><div class="row" style="margin-top:14px"><a class="btn primary" href="#contact">Nos coordonnées</a><a class="btn line" href="#animaux">Nos animaux</a></div></div>`;
+ }
+ const t=today(),m=t.slice(0,7);
+ const vj=D.ventes.filter(v=>v.type==='vente'&&v.date===t);
+ const poules=D.prod[0]?.effectif??stats.effectif;
+ let h=`<div class="stats">${stat('Poules',poules!=null?fmt(poules):'–')}${stat("Bons œufs produits aujourd'hui",fmt(sum(D.prod.filter(p=>p.date===t),'bons')),'j')}${stat('Stock disponible',fmt(stock()),'b')}${stat("Ventes d'aujourd'hui",money(sum(vj,'montant')))}`;
+ if(FIN.includes(me.role)){
+  const ca=sum(D.ventes.filter(v=>v.type==='vente'&&(v.date||'').startsWith(m)),'montant'),dp=sum(D.dep.filter(d=>(d.date||'').startsWith(m)),'montant');
+  h+=stat('Ventes du mois',money(ca))+stat('Dépenses du mois',money(dp),'r')+stat('Résultat du mois (ventes − dépenses)',money(ca-dp),ca-dp<0?'r':'');
+ }
+ h+='</div>';
+ const todo=[];
+ const nr=D.prod.filter(p=>p.status==='a_receptionner').length,ns=D.trans.filter(p=>p.status==='a_vendre').length;
+ if(nr&&can(CAN.recep))todo.push(`${nr} lot(s) à réceptionner (onglet Réception)`);
+ if(ns&&can(CAN.vente))todo.push(`${ns} lot(s) à mettre en stock (onglet Magasin et ventes)`);
+ if(todo.length)h+=`<div class="note"><b>À faire :</b> ${todo.map(esc).join(' · ')}</div>`;
+ return h;
+}
+function pProd(){
+ const rows=D.prod.map(p=>`<tr><td>${dateFr(p.date)}</td><td>${fmt(p.effectif)}</td><td>${fmt(p.oeufsRamasses)}</td><td>${fmt(p.casses)}</td><td><b>${fmt(p.bons)}</b></td><td>${p.status==='a_receptionner'?badge('À réceptionner','amber'):badge('Réceptionné','green')}</td><td>${esc(p.superviseurNom||'')}</td><td>${p.status==='a_receptionner'&&isAdmin()?btnIf(true,'del-prod','Supprimer','danger',p.id):''}</td></tr>`);
+ return `<div class="bloc"><div class="head"><div><h3>Production journalière</h3><p class="muted">Œufs ramassés au poulailler.</p></div>${btnIf(can(CAN.prod),'new-prod','＋ Enregistrer la production')}</div>${table(['Date','Poules','Ramassés','Cassés','Bons','Statut','Saisi par',''],rows)||'<p class="empty">Aucune production enregistrée.</p>'}</div>`;
+}
+function pRecep(){
+ const wait=D.prod.filter(p=>p.status==='a_receptionner');
+ const lots=wait.map(p=>`<div class="lot"><span><b>${dateFr(p.date)}</b> · ${fmt(p.bons)} bons œufs envoyés par ${esc(p.superviseurNom||'le poulailler')}</span>${btnIf(can(CAN.recep),'recep','Réceptionner','primary',p.id)}</div>`).join('')||'<p class="empty">Aucun lot en attente.</p>';
+ const rows=D.trans.map(t=>`<tr><td>${dateFr(t.date)}</td><td>${dateFr(t.datePonte)}</td><td>${fmt(t.oeufsRecus)}</td><td>${fmt(t.cassesReception)}</td><td><b>${fmt(t.bons)}</b></td><td>${t.status==='a_vendre'?badge('À mettre en stock','amber'):badge('En stock','green')}</td><td>${esc(t.receptionnisteNom||'')}</td></tr>`);
+ return `<div class="bloc"><div class="head"><div><h3>Lots à réceptionner</h3></div></div>${lots}</div><div class="bloc"><h3>Historique des réceptions</h3>${table(['Date','Lot du','Reçus','Cassés','Bons','Statut','Par'],rows)||'<p class="empty">Aucune réception.</p>'}</div>`;
+}
+function pMag(){
+ const wait=D.trans.filter(t=>t.status==='a_vendre');
+ const lots=wait.map(t=>`<div class="lot"><span><b>${dateFr(t.date)}</b> · ${fmt(t.bons)} bons œufs</span>${btnIf(can(CAN.vente),'stock-in','Mettre en stock','primary',t.id)}</div>`).join('')||'<p class="empty">Aucun lot à mettre en stock.</p>';
+ const TL={vente:['Vente','green'],perte:['Perte','red'],ajustement:['Ajustement','blue']};
+ const rows=D.ventes.map(v=>{const [l,c]=TL[v.type]||['',''];return `<tr><td>${dateFr(v.date)}</td><td>${badge(l,c)}</td><td>${fmt(v.quantite)}</td><td>${v.type==='vente'?fmt(v.prix):''}</td><td>${v.type==='vente'?money(v.montant):''}</td><td>${esc(v.clientNom||v.motif||'')}</td><td>${esc(v.clientTel||'')}</td></tr>`;});
+ return `<div class="bloc"><div class="head"><div><h3>Stock disponible</h3><div class="bigstock">${fmt(stock())}</div><p class="muted">Prix actuel : ${money(cfg.prixOeuf)} l'œuf</p></div><div class="row">${btnIf(can(CAN.vente),'sell','Vendre','primary')}${btnIf(can(CAN.vente),'loss','Déclarer une perte','line')}${btnIf(isAdmin(),'adjust','Ajuster le stock','line')}${btnIf(isAdmin(),'price','Prix de l\'œuf','line')}</div></div></div>
+ <div class="bloc"><h3>Lots à mettre en stock</h3>${lots}</div>
+ <div class="bloc"><h3>Mouvements de stock</h3>${table(['Date','Type','Quantité','Prix','Montant','Client / motif','Téléphone'],rows)||'<p class="empty">Aucun mouvement.</p>'}</div>`;
+}
+function pSante(){
+ const rows=D.sante.map(s=>`<tr><td>${dateFr(s.date)}</td><td>${fmt(s.mortalite)}</td><td>${esc(s.notes||'')}</td><td>${esc(s.veterinaireNom||'')}</td><td>${isAdmin()?btnIf(true,'del-sante','Supprimer','danger',s.id):''}</td></tr>`);
+ return `<div class="bloc"><div class="head"><div><h3>Suivi vétérinaire</h3><p class="muted">Mortalité et observations.</p></div>${btnIf(can(CAN.veto),'new-sante','＋ Nouveau suivi')}</div>${table(['Date','Mortalité','Observations','Par',''],rows)||'<p class="empty">Aucun suivi enregistré.</p>'}</div>`;
+}
+function pDep(){
+ const m=today().slice(0,7);
+ const rows=D.dep.map(d=>`<tr><td>${dateFr(d.date)}</td><td>${esc(d.libelle)}</td><td>${esc(d.categorie||'')}</td><td>${money(d.montant)}</td><td>${isAdmin()?btnIf(true,'del-dep','Supprimer','danger',d.id):''}</td></tr>`);
+ return `<div class="bloc"><div class="head"><div><h3>Dépenses</h3><p class="muted">Total du mois : <b>${money(sum(D.dep.filter(d=>(d.date||'').startsWith(m)),'montant'))}</b></p></div>${btnIf(isAdmin(),'new-dep','＋ Ajouter une dépense')}</div>${table(['Date','Libellé','Catégorie','Montant',''],rows)||'<p class="empty">Aucune dépense enregistrée.</p>'}</div>`;
+}
+function pUsers(){
+ const f=[['all','Tous'],['pending','En attente'],['active','Actifs'],['banned','Suspendus']];
+ const list=D.users.filter(u=>uFilter==='all'||u.status===uFilter).sort((a,b)=>(a.status==='pending'?0:1)-(b.status==='pending'?0:1)||String(a.nom).localeCompare(String(b.nom),'fr'));
+ const rows=list.map(u=>{
+  const [sl,sc]=STATUS[u.status]||[u.status,''],self=u.id===user.uid;
+  const dem=u.roleDemande&&u.roleDemande!==u.role?` · rôle demandé : <b>${esc(ROLES[u.roleDemande]||u.roleDemande)}</b>`:'';
+  return `<div class="urow"><div><b>${esc(u.nom)}</b> ${badge(sl,sc)}${self?' '+badge('Vous','blue'):''}<small>Rôle actuel : ${esc(ROLES[u.role]||u.role)}${dem}</small><small>${esc(u.email)} · ${esc(u.telephone||'')} ${u.adresse?'· '+esc(u.adresse):''}</small></div>${self?'':`<div class="row">${btnIf(true,'user-role',u.status==='pending'?'Valider':'Changer le rôle','primary',u.id)}${u.status==='banned'?btnIf(true,'user-unban','Réactiver','line',u.id):btnIf(true,'user-ban','Suspendre','danger',u.id)}</div>`}</div>`;
+ });
+ return `<div class="bloc"><h3>Gestion des inscrits</h3><div class="chips" style="margin-top:12px">${f.map(([k,l])=>`<button class="tab ${uFilter===k?'on':''}" data-act="ufilter" data-id="${k}">${l}</button>`).join('')}</div>${rows.join('')||'<p class="empty">Aucun inscrit dans cette catégorie.</p>'}</div>`;
+}
+function renderAll(){renderAuth();renderHome();renderAnimaux();renderHisto();renderContact();renderEspace();}
+
+/* ============ Actions (modification du site) ============ */
+const saveCfg=p=>setDoc(doc(db,'site','config'),p,{merge:true});
+const num=v=>Number.isFinite(v)?v:0;
+function editHome(){
+ openForm({title:"Modifier l'accueil",fields:[
+  {name:'heroTitre',label:'Titre principal',required:true,value:cfg.heroTitre},
+  {name:'heroSoustitre',label:'Sous-titre',type:'textarea',value:cfg.heroSoustitre},
+  {name:'apropos',label:'Présentation de la ferme',type:'textarea',value:cfg.apropos}],
+  onSubmit:async v=>{await saveCfg(v);closeModal();toast('Accueil mis à jour');}});
+}
+function editContact(){
+ openForm({title:'Modifier les coordonnées',fields:[
+  {name:'telephone',label:'Téléphone (avec indicatif)',type:'tel',value:cfg.telephone,placeholder:'+229 …'},
+  {name:'email',label:'Email',type:'email',value:cfg.email},
+  {name:'adresse',label:'Adresse',value:cfg.adresse},
+  {name:'horaires',label:'Horaires',value:cfg.horaires,placeholder:'Lundi – Samedi : 7h – 18h'}],
+  onSubmit:async v=>{await saveCfg(v);closeModal();toast('Coordonnées mises à jour');}});
+}
+function animalForm(id){
+ const a=id?animaux.find(x=>x.id===id):null;
+ openForm({title:a?"Modifier l'animal":'Ajouter un animal',fields:[
+  {name:'icone',label:'Icône (un emoji)',value:a?.icone||'🐔'},
+  {name:'nom',label:'Nom',required:true,value:a?.nom},
+  {name:'quantite',label:"Nombre d'animaux (facultatif)",type:'number',value:a?.quantite},
+  {name:'description',label:'Description',type:'textarea',value:a?.description}],
+  onSubmit:async v=>{const d={icone:v.icone||'🐔',nom:v.nom,quantite:v.quantite,description:v.description};
+   if(a)await updateDoc(doc(db,'animaux',id),d);else await addDoc(collection(db,'animaux'),{...d,createdAt:serverTimestamp()});
+   closeModal();toast('Animal enregistré');}});
+}
+function histoForm(id){
+ const h=id?histo.find(x=>x.id===id):null;
+ openForm({title:h?"Modifier l'étape":'Ajouter une étape',fields:[
+  {name:'annee',label:'Année ou période',required:true,value:h?.annee,placeholder:'2021'},
+  {name:'titre',label:'Titre',required:true,value:h?.titre},
+  {name:'texte',label:'Texte',type:'textarea',value:h?.texte},
+  {name:'ordre',label:"Ordre d'affichage (1 = en premier)",type:'number',required:true,value:h?.ordre??histo.length+1}],
+  onSubmit:async v=>{const d={annee:v.annee,titre:v.titre,texte:v.texte,ordre:v.ordre};
+   if(h)await updateDoc(doc(db,'historique',id),d);else await addDoc(collection(db,'historique'),{...d,createdAt:serverTimestamp()});
+   closeModal();toast('Étape enregistrée');}});
+}
+async function removeDoc(col,id,label){
+ if(!await askConfirm(`Supprimer ${label} ? Cette action est définitive.`,'Supprimer',true))return;
+ try{await deleteDoc(doc(db,col,id));toast('Supprimé');}catch(e){toast(errMsg(e),'err');}
+}
+async function seed(which){
+ try{const b=writeBatch(db);(which==='animaux'?DEF_ANIMAUX:DEF_HISTO).forEach(x=>b.set(doc(collection(db,which)),{...x,createdAt:serverTimestamp()}));await b.commit();toast('Exemples enregistrés. Vous pouvez maintenant les modifier.');}
+ catch(e){toast(errMsg(e),'err');}
+}
+
+/* ============ Actions (activité de la ferme) ============ */
+function newProd(){
+ openForm({title:'Production du jour',intro:'Les œufs ramassés au poulailler. Ils seront envoyés à la réception.',fields:[
+  {name:'date',label:'Date',type:'date',required:true,value:today()},
+  {name:'effectif',label:'Nombre de poules',type:'number',required:true,value:D.prod[0]?.effectif??stats.effectif},
+  {name:'ramasses',label:'Œufs ramassés',type:'number',required:true},
+  {name:'casses',label:'Œufs cassés',type:'number',value:0}],
+  onSubmit:async v=>{
+   v.casses=num(v.casses);
+   if(v.casses>v.ramasses)throw new Error('Les œufs cassés dépassent les œufs ramassés.');
+   await addDoc(collection(db,'production_journaliere'),{date:v.date,effectif:v.effectif,oeufsRamasses:v.ramasses,casses:v.casses,bons:v.ramasses-v.casses,status:'a_receptionner',superviseurId:user.uid,superviseurNom:me.nom,createdAt:serverTimestamp()});
+   await setDoc(doc(db,'stats','public'),{effectif:v.effectif,updatedAt:serverTimestamp()},{merge:true});
+   closeModal();toast('Production enregistrée');}});
+}
+function recep(id){
+ const lot=D.prod.find(p=>p.id===id);if(!lot)return;
+ openForm({title:'Réceptionner le lot du '+dateFr(lot.date).replace(/<[^>]*>/g,''),intro:`${fmt(lot.bons)} bons œufs ont été envoyés. Comptez ce que vous recevez.`,fields:[
+  {name:'recus',label:'Œufs reçus',type:'number',required:true,value:lot.bons},
+  {name:'casses',label:'Œufs cassés à la réception',type:'number',value:0}],
+  onSubmit:async v=>{
+   v.casses=num(v.casses);
+   if(v.casses>v.recus)throw new Error('Les œufs cassés dépassent les œufs reçus.');
+   await runTransaction(db,async tx=>{
+    const pr=doc(db,'production_journaliere',id),s=await tx.get(pr);
+    if(!s.exists()||s.data().status!=='a_receptionner')throw new Error('Ce lot a déjà été réceptionné.');
+    tx.set(doc(collection(db,'transfert_reception')),{date:today(),productionId:id,datePonte:s.data().date,oeufsRecus:v.recus,cassesReception:v.casses,bons:v.recus-v.casses,status:'a_vendre',receptionnisteId:user.uid,receptionnisteNom:me.nom,createdAt:serverTimestamp()});
+    tx.update(pr,{status:'receptionne'});
+   });
+   closeModal();toast('Lot réceptionné et transféré au magasin');}});
+}
+async function stockIn(id){
+ const t=D.trans.find(x=>x.id===id);if(!t)return;
+ if(!await askConfirm(`Ajouter ${fmt(t.bons)} œufs au stock du magasin ?`,'Mettre en stock'))return;
+ try{
+  await runTransaction(db,async tx=>{
+   const tr=doc(db,'transfert_reception',id),st=doc(db,'stats','public'),[a,b]=[await tx.get(tr),await tx.get(st)];
+   if(!a.exists()||a.data().status!=='a_vendre')throw new Error('Ce lot est déjà en stock.');
+   tx.set(st,{stock:(b.exists()?b.data().stock||0:0)+a.data().bons,updatedAt:serverTimestamp()},{merge:true});
+   tx.update(tr,{status:'en_stock',dateStock:today(),magasiniereId:user.uid});
+  });
+  toast('Lot ajouté au stock');
+ }catch(e){toast(errMsg(e),'err');}
+}
+async function moveStock(delta,entry,allowNeg=false){
+ await runTransaction(db,async tx=>{
+  const st=doc(db,'stats','public'),s=await tx.get(st),cur=s.exists()?s.data().stock||0:0,nv=cur+delta;
+  if(nv<0&&!allowNeg)throw new Error(`Stock insuffisant : ${fmt(cur)} œufs disponibles.`);
+  tx.set(st,{stock:nv,updatedAt:serverTimestamp()},{merge:true});
+  tx.set(doc(collection(db,'ventes')),{...entry,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
+ });
+}
+function sell(){
+ openForm({title:'Enregistrer une vente',intro:`Stock disponible : <b>${fmt(stock())}</b> œufs.`,submit:'Valider la vente',fields:[
+  {name:'quantite',label:"Nombre d'œufs vendus",type:'number',required:true},
+  {name:'prix',label:"Prix d'un œuf (FCFA)",type:'number',required:true,value:cfg.prixOeuf},
+  {name:'clientNom',label:'Nom du client',auto:'off'},
+  {name:'clientTel',label:'Téléphone du client',type:'tel'}],
+  onSubmit:async v=>{
+   if(v.quantite<=0)throw new Error('Indiquez une quantité supérieure à 0.');
+   await moveStock(-v.quantite,{type:'vente',quantite:v.quantite,prix:v.prix,montant:v.quantite*v.prix,clientNom:v.clientNom,clientTel:v.clientTel});
+   closeModal();toast(`Vente enregistrée : ${money(v.quantite*v.prix)}`);}});
+}
+function loss(){
+ openForm({title:'Déclarer une perte',intro:`Stock disponible : <b>${fmt(stock())}</b> œufs.`,fields:[
+  {name:'quantite',label:"Nombre d'œufs perdus",type:'number',required:true},
+  {name:'motif',label:'Motif',required:true,placeholder:'Casse au magasin, don, …'}],
+  onSubmit:async v=>{
+   if(v.quantite<=0)throw new Error('Indiquez une quantité supérieure à 0.');
+   await moveStock(-v.quantite,{type:'perte',quantite:v.quantite,motif:v.motif});
+   closeModal();toast('Perte enregistrée');}});
+}
+function adjust(){
+ openForm({title:'Ajuster le stock',intro:`Stock actuel : <b>${fmt(stock())}</b> œufs. À utiliser après un comptage physique.`,fields:[
+  {name:'nouveau',label:'Stock réel compté',type:'number',required:true},
+  {name:'motif',label:'Motif',required:true,placeholder:'Inventaire du …'}],
+  onSubmit:async v=>{
+   await runTransaction(db,async tx=>{
+    const st=doc(db,'stats','public'),s=await tx.get(st),cur=s.exists()?s.data().stock||0:0;
+    tx.set(st,{stock:v.nouveau,updatedAt:serverTimestamp()},{merge:true});
+    tx.set(doc(collection(db,'ventes')),{type:'ajustement',quantite:v.nouveau-cur,motif:v.motif,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
+   });
+   closeModal();toast('Stock ajusté');}});
+}
+function price(){
+ openForm({title:"Prix de l'œuf",fields:[{name:'prix',label:'Prix par défaut (FCFA)',type:'number',required:true,value:cfg.prixOeuf}],
+  onSubmit:async v=>{await saveCfg({prixOeuf:v.prix});closeModal();toast('Prix mis à jour');}});
+}
+function newSante(){
+ openForm({title:'Suivi vétérinaire',fields:[
+  {name:'date',label:'Date',type:'date',required:true,value:today()},
+  {name:'mortalite',label:'Nombre de morts',type:'number',value:0},
+  {name:'notes',label:'Observations, soins, vaccins',type:'textarea'}],
+  onSubmit:async v=>{await addDoc(collection(db,'sante'),{date:v.date,mortalite:num(v.mortalite),notes:v.notes,veterinaireId:user.uid,veterinaireNom:me.nom,createdAt:serverTimestamp()});closeModal();toast('Suivi enregistré');}});
+}
+function newDep(){
+ openForm({title:'Ajouter une dépense',fields:[
+  {name:'date',label:'Date',type:'date',required:true,value:today()},
+  {name:'libelle',label:'Libellé',required:true,placeholder:'Sacs d\'aliment'},
+  {name:'categorie',label:'Catégorie',type:'select',value:'Aliment',options:['Aliment','Médicaments et vaccins','Salaires','Entretien','Transport','Autre'].map(x=>[x,x])},
+  {name:'montant',label:'Montant (FCFA)',type:'number',required:true}],
+  onSubmit:async v=>{await addDoc(collection(db,'depenses'),{...v,createdBy:user.uid,createdAt:serverTimestamp()});closeModal();toast('Dépense enregistrée');}});
+}
+function userRole(id){
+ const u=D.users.find(x=>x.id===id);if(!u)return;
+ openForm({title:u.status==='pending'?'Valider le compte':'Changer le rôle',intro:`<b>${esc(u.nom)}</b> (${esc(u.email)})${u.roleDemande?`<br>Rôle demandé : ${esc(ROLES[u.roleDemande]||u.roleDemande)}`:''}`,submit:'Enregistrer et activer',fields:[
+  {name:'role',label:'Rôle accordé',type:'select',value:u.status==='pending'&&u.roleDemande?u.roleDemande:u.role,options:Object.entries(ROLES)}],
+  onSubmit:async v=>{await updateDoc(doc(db,'users',id),{role:v.role,status:'active',validatedBy:user.uid,validatedAt:serverTimestamp()});closeModal();toast('Compte activé');}});
+}
+async function userStatus(id,status){
+ const u=D.users.find(x=>x.id===id);if(!u)return;
+ const msg=status==='banned'?`Suspendre ${u.nom} ? Cette personne ne pourra plus accéder à son espace.`:`Réactiver le compte de ${u.nom} ?`;
+ if(!await askConfirm(msg,status==='banned'?'Suspendre':'Réactiver',status==='banned'))return;
+ try{await updateDoc(doc(db,'users',id),{status,validatedBy:user.uid,validatedAt:serverTimestamp()});toast(status==='banned'?'Compte suspendu':'Compte réactivé');}catch(e){toast(errMsg(e),'err');}
+}
+
+/* ============ Gestion des clics ============ */
+const ACT={
+ login:openLogin,register:openRegister,forgot:openForgot,
+ logout:async()=>{await signOut(auth);location.hash='accueil';toast('Déconnecté');},
+ burger:()=>$('#menu').classList.toggle('open'),
+ 'edit-home':editHome,'edit-contact':editContact,
+ 'add-animal':()=>animalForm(),'edit-animal':animalForm,'del-animal':id=>removeDoc('animaux',id,'cet animal'),
+ 'add-histo':()=>histoForm(),'edit-histo':histoForm,'del-histo':id=>removeDoc('historique',id,'cette étape'),
+ seed,
+ tab:id=>{curTab=id;renderEspace();},
+ 'new-prod':newProd,'del-prod':id=>removeDoc('production_journaliere',id,'cette production'),
+ recep,'stock-in':stockIn,sell,loss,adjust,price,
+ 'new-sante':newSante,'del-sante':id=>removeDoc('sante',id,'ce suivi'),
+ 'new-dep':newDep,'del-dep':id=>removeDoc('depenses',id,'cette dépense'),
+ ufilter:id=>{uFilter=id;renderEspace();},
+ 'user-role':userRole,'user-ban':id=>userStatus(id,'banned'),'user-unban':id=>userStatus(id,'active')
+};
+document.addEventListener('click',e=>{
+ if(e.target.id==='modal'||e.target.closest('[data-close]')){closeModal();return;}
+ const t=e.target.closest('[data-act]');if(!t)return;
+ e.preventDefault();
+ const f=ACT[t.dataset.act];
+ if(f)Promise.resolve(f(t.dataset.id)).catch(x=>{console.error(x);toast(errMsg(x),'err');});
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').classList.contains('hidden'))closeModal();});
+
+renderAll();route();
 </script>
 </body>
 </html>
