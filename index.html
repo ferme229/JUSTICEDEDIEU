@@ -154,6 +154,7 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
  .egg-wrap{min-height:320px;order:-1}
  .hero-in{padding-top:30px}
 }
+@media print{.top,footer,.tabs,.btn,#toasts,.adm{display:none!important}body{background:#fff}.bloc,.stat{box-shadow:none;border:1px solid #999}.bloc{break-inside:avoid}.page{padding:0}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -314,8 +315,8 @@ $('#yr').textContent=new Date().getFullYear();
 /* ============ État ============ */
 let user=null,me=null,prof='loading',authReady=false,registering=false;
 let cfg={...DEF_CFG},animaux=[],histo=[],stats={};
-const D={prod:[],trans:[],ventes:[],sante:[],dep:[],users:[]};
-let curTab='resume',uFilter='all',unsubMe=null,privUnsubs=[],privKey='',warned=false,creatingProfile=false,fixingAdmin=false;
+const D={prod:[],trans:[],ventes:[],sante:[],dep:[],users:[],visas:[]};
+let curTab='resume',uFilter='all',unsubMe=null,privUnsubs=[],privKey='',warned=false,creatingProfile=false,fixingAdmin=false,curMonth=today().slice(0,7);
 const isAdmin=()=>!!me&&me.status==='active'&&ADMINS.includes(me.role);
 const can=l=>!!me&&me.status==='active'&&l.includes(me.role);
 const animList=()=>animaux.length?animaux:DEF_ANIMAUX.map(a=>({...a}));
@@ -442,10 +443,11 @@ function startPrivate(){
  const w=(q,k)=>privUnsubs.push(onSnapshot(q,s=>{D[k]=s.docs.map(d=>({id:d.id,...d.data()}));renderEspace();renderAuth();},e=>console.warn(k,e)));
  const r=me.role;
  if(STAFF.includes(r)){
-  w(query(collection(db,'production_journaliere'),orderBy('date','desc'),limit(60)),'prod');
-  w(query(collection(db,'transfert_reception'),orderBy('date','desc'),limit(60)),'trans');
-  w(query(collection(db,'ventes'),orderBy('date','desc'),limit(300)),'ventes');
+  w(query(collection(db,'production_journaliere'),orderBy('date','desc'),limit(400)),'prod');
+  w(query(collection(db,'transfert_reception'),orderBy('date','desc'),limit(400)),'trans');
+  w(query(collection(db,'ventes'),orderBy('date','desc'),limit(1500)),'ventes');
   w(query(collection(db,'sante'),orderBy('date','desc'),limit(40)),'sante');
+  w(query(collection(db,'visas'),limit(200)),'visas');
  }
  if(FIN.includes(r))w(query(collection(db,'depenses'),orderBy('date','desc'),limit(200)),'dep');
  if(ADMINS.includes(r))w(query(collection(db,'users'),limit(300)),'users');
@@ -544,24 +546,57 @@ function pResume(){
  if(todo.length)h+=`<div class="note"><b>À faire :</b> ${todo.map(esc).join(' · ')}</div>`;
  return h;
 }
+const monthBar=()=>`<div class="row" style="margin-bottom:16px"><label for="mSel" style="font-weight:600">Mois :</label><input type="month" id="mSel" value="${esc(curMonth)}" style="border:1.5px solid #c9d3c6;border-radius:10px;padding:8px 10px;font:inherit"><button class="btn sm line" data-act="print">🖨️ Imprimer la fiche</button></div>`;
+const VISA_ROLES={production:CAN.prod,reception:CAN.recep,magasin:CAN.vente};
+function visaRow(fiche){
+ const v=D.visas.find(x=>x.id===`${fiche}_${curMonth}`);
+ if(v)return `<p style="margin-top:14px"><b>Visa :</b> ${esc(v.nom)} (${esc(ROLES[v.role]||v.role)}) le ${dateFr(v.date)}</p>`;
+ return can(VISA_ROLES[fiche])?`<div style="margin-top:14px">${btnIf(true,'visa','Apposer mon visa pour ce mois','primary',fiche)}</div>`:'<p class="muted" style="margin-top:14px">Visa : en attente</p>';
+}
 function pProd(){
- const rows=D.prod.map(p=>`<tr><td>${dateFr(p.date)}</td><td>${fmt(p.effectif)}</td><td>${fmt(p.oeufsRamasses)}</td><td>${fmt(p.casses)}</td><td><b>${fmt(p.bons)}</b></td><td>${p.status==='a_receptionner'?badge('À réceptionner','amber'):badge('Réceptionné','green')}</td><td>${esc(p.superviseurNom||'')}</td><td>${p.status==='a_receptionner'&&isAdmin()?btnIf(true,'del-prod','Supprimer','danger',p.id):''}</td></tr>`);
- return `<div class="bloc"><div class="head"><div><h3>Production journalière</h3><p class="muted">Œufs ramassés au poulailler.</p></div>${btnIf(can(CAN.prod),'new-prod','＋ Enregistrer la production')}</div>${table(['Date','Poules','Ramassés','Cassés','Bons','Statut','Saisi par',''],rows)||'<p class="empty">Aucune production enregistrée.</p>'}</div>`;
+ const L=D.prod.filter(p=>(p.date||'').startsWith(curMonth)).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+ const rows=L.map(p=>`<tr><td>${dateFr(p.date)}</td><td>${fmt(p.effectif)}</td><td>${fmt(p.oeufsRamasses)}</td><td>${fmt(p.casses)}</td><td><b>${fmt(p.bons)}</b></td><td>${esc(p.superviseurNom||'')}</td><td>${p.status==='a_receptionner'?badge('À réceptionner','amber'):badge('Réceptionné','green')}</td><td>${esc(p.observations||'')}</td><td>${p.status==='a_receptionner'&&isAdmin()?btnIf(true,'del-prod','Supprimer','danger',p.id):''}</td></tr>`);
+ const tot=`<div class="stats">${stat('Total œufs ramassés du mois',fmt(sum(L,'oeufsRamasses')))}${stat('Total œufs cassés',fmt(sum(L,'casses')),'r')}${stat('Total œufs bons du mois',fmt(sum(L,'bons')),'j')}</div>`;
+ return `<div class="bloc"><div class="head"><div><h3>Fiche journalière de production</h3><p class="muted">Poulailler → Réception. Rempli par le Superviseur Général.</p></div>${btnIf(can(CAN.prod),'new-prod','＋ Enregistrer la production')}</div>${monthBar()}${table(['Date','Poules présentes','Œufs ramassés','Cassés au poulailler','Bons disponibles (ramassés − cassés)','Superviseur','Statut','Observations (mortalité, aliment)',''],rows)||'<p class="empty">Aucune production ce mois-ci.</p>'}<h3 style="margin-top:22px">Calcul du mois</h3>${tot}${visaRow('production')}</div>`;
 }
 function pRecep(){
  const wait=D.prod.filter(p=>p.status==='a_receptionner');
  const lots=wait.map(p=>`<div class="lot"><span><b>${dateFr(p.date)}</b> · ${fmt(p.bons)} bons œufs envoyés par ${esc(p.superviseurNom||'le poulailler')}</span>${btnIf(can(CAN.recep),'recep','Réceptionner','primary',p.id)}</div>`).join('')||'<p class="empty">Aucun lot en attente.</p>';
- const rows=D.trans.map(t=>`<tr><td>${dateFr(t.date)}</td><td>${dateFr(t.datePonte)}</td><td>${fmt(t.oeufsRecus)}</td><td>${fmt(t.cassesReception)}</td><td><b>${fmt(t.bons)}</b></td><td>${t.status==='a_vendre'?badge('À mettre en stock','amber'):badge('En stock','green')}</td><td>${esc(t.receptionnisteNom||'')}</td></tr>`);
- return `<div class="bloc"><div class="head"><div><h3>Lots à réceptionner</h3></div></div>${lots}</div><div class="bloc"><h3>Historique des réceptions</h3>${table(['Date','Lot du','Reçus','Cassés','Bons','Statut','Par'],rows)||'<p class="empty">Aucune réception.</p>'}</div>`;
+ const L=D.trans.filter(t=>(t.date||'').startsWith(curMonth)).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+ const rows=L.map(t=>{const ec=t.attendus!=null&&t.oeufsRecus!==t.attendus?` ${badge('Écart '+(t.oeufsRecus-t.attendus>0?'+':'')+fmt(t.oeufsRecus-t.attendus),'red')}`:'';
+  return `<tr><td>${dateFr(t.date)}</td><td>${dateFr(t.datePonte)}</td><td>${fmt(t.oeufsRecus)}${ec}</td><td>${fmt(t.cassesReception)}</td><td><b>${fmt(t.bons)}</b></td><td>${esc(t.magasiniereNom||'')}</td><td>${esc(t.receptionnisteNom||'')}</td><td>${t.status==='a_vendre'?badge('À mettre en stock','amber'):badge('En stock','green')}</td><td>${esc(t.observations||'')}</td></tr>`;});
+ const tot=`<div class="stats">${stat('Total reçus du mois',fmt(sum(L,'oeufsRecus')))}${stat('Total cassés',fmt(sum(L,'cassesReception')),'r')}${stat('Total transférés au magasin',fmt(sum(L,'bons')),'j')}</div>`;
+ return `<div class="bloc"><div class="head"><div><h3>Lots à réceptionner</h3><p class="muted">Contrôle : œufs reçus − œufs cassés = œufs transférés. Le nombre « reçus » doit être identique aux « bons disponibles » de la fiche de production.</p></div></div>${lots}</div>
+ <div class="bloc"><div class="head"><div><h3>Fiche de transfert</h3><p class="muted">Réception → Magasin. Rempli par la Réceptionniste.</p></div></div>${monthBar()}${table(['Date','Lot du','Œufs reçus du poulailler','Cassés à la réception','Bons transférés (reçus − cassés)','Magasinière','Réceptionniste','Statut','Observations'],rows)||'<p class="empty">Aucune réception ce mois-ci.</p>'}<h3 style="margin-top:22px">Calcul du mois</h3>${tot}${visaRow('reception')}</div>`;
+}
+function dayRows(){
+ const L=D.ventes.filter(v=>(v.date||'').startsWith(curMonth)).sort((a,b)=>String(a.date).localeCompare(String(b.date))||((a.createdAt?.seconds??9e12)-(b.createdAt?.seconds??9e12)));
+ const days=[];let cur=null;
+ L.forEach(v=>{
+  if(!cur||cur.date!==v.date){cur={date:v.date,veille:v.stockAvant??0,entree:0,vendus:0,casses:0,ajust:0,reste:null,prix:[],montant:0,clients:[],ops:[]};days.push(cur);}
+  const q=Number(v.quantite)||0;
+  if(v.type==='entree')cur.entree+=q;
+  else if(v.type==='vente'){cur.vendus+=q;cur.montant+=Number(v.montant)||0;if(!cur.prix.includes(v.prix))cur.prix.push(v.prix);if(v.clientNom&&!cur.clients.includes(v.clientNom))cur.clients.push(v.clientNom);}
+  else if(v.type==='perte')cur.casses+=q;
+  else if(v.type==='ajustement')cur.ajust+=q;
+  if(v.operateurNom&&!cur.ops.includes(v.operateurNom))cur.ops.push(v.operateurNom);
+  if(v.stockApres!=null)cur.reste=v.stockApres;
+ });
+ days.forEach(d=>{if(d.reste===null)d.reste=d.veille+d.entree+d.ajust-d.vendus-d.casses;});
+ return days;
 }
 function pMag(){
  const wait=D.trans.filter(t=>t.status==='a_vendre');
  const lots=wait.map(t=>`<div class="lot"><span><b>${dateFr(t.date)}</b> · ${fmt(t.bons)} bons œufs</span>${btnIf(can(CAN.vente),'stock-in','Mettre en stock','primary',t.id)}</div>`).join('')||'<p class="empty">Aucun lot à mettre en stock.</p>';
- const TL={vente:['Vente','green'],perte:['Perte','red'],ajustement:['Ajustement','blue']};
- const rows=D.ventes.map(v=>{const [l,c]=TL[v.type]||['',''];return `<tr><td>${dateFr(v.date)}</td><td>${badge(l,c)}</td><td>${fmt(v.quantite)}</td><td>${v.type==='vente'?fmt(v.prix):''}</td><td>${v.type==='vente'?money(v.montant):''}</td><td>${esc(v.clientNom||v.motif||'')}</td><td>${esc(v.clientTel||'')}</td></tr>`;});
- return `<div class="bloc"><div class="head"><div><h3>Stock disponible</h3><div class="bigstock">${fmt(stock())}</div><p class="muted">Prix actuel : ${money(cfg.prixOeuf)} l'œuf</p></div><div class="row">${btnIf(can(CAN.vente),'sell','Vendre','primary')}${btnIf(can(CAN.vente),'loss','Déclarer une perte','line')}${btnIf(isAdmin(),'adjust','Ajuster le stock','line')}${btnIf(isAdmin(),'price','Prix de l\'œuf','line')}</div></div></div>
+ const days=dayRows();
+ const rows=days.map(d=>`<tr><td>${dateFr(d.date)}</td><td>${fmt(d.veille)}</td><td>${fmt(d.entree)}</td><td>${fmt(d.veille+d.entree)}</td><td>${fmt(d.vendus)}</td><td>${fmt(d.casses)}</td><td>${d.ajust?(d.ajust>0?'+':'')+fmt(d.ajust):''}</td><td><b>${fmt(d.reste)}</b></td><td>${d.prix.map(x=>fmt(x)).join(' / ')}</td><td>${money(d.montant)}</td><td>${esc(d.clients.join(', '))}</td><td>${esc(d.ops.join(', '))}</td></tr>`);
+ const tot=`<div class="stats">${stat('Total entrées du mois',fmt(sum(days,'entree')))}${stat('Total œufs vendus',fmt(sum(days,'vendus')),'j')}${stat('Total cassés au magasin',fmt(sum(days,'casses')),'r')}${stat('Montant total vendu',money(sum(days,'montant')))}</div>`;
+ const TL={vente:['Vente','green'],perte:['Cassés','red'],ajustement:['Ajustement','blue'],entree:['Entrée','amber']};
+ const det=D.ventes.filter(v=>(v.date||'').startsWith(curMonth)).map(v=>{const [l,c]=TL[v.type]||['',''];return `<tr><td>${dateFr(v.date)}</td><td>${badge(l,c)}</td><td>${fmt(v.quantite)}</td><td>${v.type==='vente'?fmt(v.prix):''}</td><td>${v.type==='vente'?money(v.montant):''}</td><td>${esc(v.clientNom||v.motif||'')}</td><td>${esc(v.clientTel||'')}</td><td>${esc(v.operateurNom||'')}</td></tr>`;});
+ return `<div class="bloc"><div class="head"><div><h3>Stock disponible</h3><div class="bigstock">${fmt(stock())}</div><p class="muted">Prix actuel : ${money(cfg.prixOeuf)} l'œuf</p></div><div class="row">${btnIf(can(CAN.vente),'sell','Vendre','primary')}${btnIf(can(CAN.vente),'loss','Œufs cassés au magasin','line')}${btnIf(isAdmin(),'adjust','Ajuster le stock','line')}${btnIf(isAdmin(),'price',"Prix de l'œuf",'line')}</div></div></div>
  <div class="bloc"><h3>Lots à mettre en stock</h3>${lots}</div>
- <div class="bloc"><h3>Mouvements de stock</h3>${table(['Date','Type','Quantité','Prix','Montant','Client / motif','Téléphone'],rows)||'<p class="empty">Aucun mouvement.</p>'}</div>`;
+ <div class="bloc"><div class="head"><div><h3>Fiche de stock et vente journalière</h3><p class="muted">Stock total = veille + entrée du jour. Reste du jour = stock total − vendus − cassés. Le reste du jour devient le stock veille du lendemain.</p></div></div>${monthBar()}${table(['Date','Stock veille','Entrée du jour','Stock total disponible','Œufs vendus','Cassés au magasin','Ajust.','Reste du jour','Prix unitaire (FCFA)','Montant total vendu','Client / destination','Magasinière'],rows)||'<p class="empty">Aucun mouvement ce mois-ci.</p>'}<h3 style="margin-top:22px">Total du mois</h3>${tot}${visaRow('magasin')}</div>
+ <div class="bloc"><h3>Détail des mouvements du mois</h3>${table(['Date','Type','Quantité','Prix','Montant','Client / motif','Téléphone','Par'],det)||'<p class="empty">Aucun mouvement.</p>'}</div>`;
 }
 function pSante(){
  const rows=D.sante.map(s=>`<tr><td>${dateFr(s.date)}</td><td>${fmt(s.mortalite)}</td><td>${esc(s.notes||'')}</td><td>${esc(s.veterinaireNom||'')}</td><td>${isAdmin()?btnIf(true,'del-sante','Supprimer','danger',s.id):''}</td></tr>`);
@@ -639,26 +674,29 @@ function newProd(){
   {name:'date',label:'Date',type:'date',required:true,value:today()},
   {name:'effectif',label:'Nombre de poules',type:'number',required:true,value:D.prod[0]?.effectif??stats.effectif},
   {name:'ramasses',label:'Œufs ramassés',type:'number',required:true},
-  {name:'casses',label:'Œufs cassés',type:'number',value:0}],
+  {name:'casses',label:'Œufs cassés',type:'number',value:0},
+  {name:'observations',label:'Observations (mortalité, aliment)',type:'textarea'}],
   onSubmit:async v=>{
    v.casses=num(v.casses);
    if(v.casses>v.ramasses)throw new Error('Les œufs cassés dépassent les œufs ramassés.');
-   await addDoc(collection(db,'production_journaliere'),{date:v.date,effectif:v.effectif,oeufsRamasses:v.ramasses,casses:v.casses,bons:v.ramasses-v.casses,status:'a_receptionner',superviseurId:user.uid,superviseurNom:me.nom,createdAt:serverTimestamp()});
+   await addDoc(collection(db,'production_journaliere'),{date:v.date,effectif:v.effectif,oeufsRamasses:v.ramasses,casses:v.casses,bons:v.ramasses-v.casses,observations:v.observations,status:'a_receptionner',superviseurId:user.uid,superviseurNom:me.nom,createdAt:serverTimestamp()});
    await setDoc(doc(db,'stats','public'),{effectif:v.effectif,updatedAt:serverTimestamp()},{merge:true});
    closeModal();toast('Production enregistrée');}});
 }
 function recep(id){
  const lot=D.prod.find(p=>p.id===id);if(!lot)return;
- openForm({title:'Réceptionner le lot du '+dateFr(lot.date).replace(/<[^>]*>/g,''),intro:`${fmt(lot.bons)} bons œufs ont été envoyés. Comptez ce que vous recevez.`,fields:[
-  {name:'recus',label:'Œufs reçus',type:'number',required:true,value:lot.bons},
-  {name:'casses',label:'Œufs cassés à la réception',type:'number',value:0}],
+ openForm({title:'Réceptionner le lot du '+(lot.date||'').split('-').reverse().join('/'),intro:`Le poulailler annonce <b>${fmt(lot.bons)}</b> bons œufs. Le nombre reçu doit être identique ; sinon expliquez l'écart.`,fields:[
+  {name:'recus',label:'Œufs reçus du poulailler',type:'number',required:true,value:lot.bons},
+  {name:'casses',label:'Œufs cassés à la réception',type:'number',value:0},
+  {name:'observations',label:'Observations',type:'textarea'}],
   onSubmit:async v=>{
    v.casses=num(v.casses);
    if(v.casses>v.recus)throw new Error('Les œufs cassés dépassent les œufs reçus.');
+   if(v.recus!==lot.bons&&!v.observations)throw new Error(`Le nombre reçu (${fmt(v.recus)}) diffère du lot annoncé (${fmt(lot.bons)}). Expliquez l'écart dans les observations.`);
    await runTransaction(db,async tx=>{
     const pr=doc(db,'production_journaliere',id),s=await tx.get(pr);
     if(!s.exists()||s.data().status!=='a_receptionner')throw new Error('Ce lot a déjà été réceptionné.');
-    tx.set(doc(collection(db,'transfert_reception')),{date:today(),productionId:id,datePonte:s.data().date,oeufsRecus:v.recus,cassesReception:v.casses,bons:v.recus-v.casses,status:'a_vendre',receptionnisteId:user.uid,receptionnisteNom:me.nom,createdAt:serverTimestamp()});
+    tx.set(doc(collection(db,'transfert_reception')),{date:today(),productionId:id,datePonte:s.data().date,attendus:s.data().bons,oeufsRecus:v.recus,cassesReception:v.casses,bons:v.recus-v.casses,observations:v.observations,status:'a_vendre',receptionnisteId:user.uid,receptionnisteNom:me.nom,createdAt:serverTimestamp()});
     tx.update(pr,{status:'receptionne'});
    });
    closeModal();toast('Lot réceptionné et transféré au magasin');}});
@@ -668,27 +706,30 @@ async function stockIn(id){
  if(!await askConfirm(`Ajouter ${fmt(t.bons)} œufs au stock du magasin ?`,'Mettre en stock'))return;
  try{
   await runTransaction(db,async tx=>{
-   const tr=doc(db,'transfert_reception',id),st=doc(db,'stats','public'),[a,b]=[await tx.get(tr),await tx.get(st)];
+   const tr=doc(db,'transfert_reception',id),st=doc(db,'stats','public');
+   const a=await tx.get(tr),b=await tx.get(st);
    if(!a.exists()||a.data().status!=='a_vendre')throw new Error('Ce lot est déjà en stock.');
-   tx.set(st,{stock:(b.exists()?b.data().stock||0:0)+a.data().bons,updatedAt:serverTimestamp()},{merge:true});
-   tx.update(tr,{status:'en_stock',dateStock:today(),magasiniereId:user.uid});
+   const cur=b.exists()?b.data().stock||0:0,q=a.data().bons;
+   tx.set(st,{stock:cur+q,updatedAt:serverTimestamp()},{merge:true});
+   tx.update(tr,{status:'en_stock',dateStock:today(),magasiniereId:user.uid,magasiniereNom:me.nom});
+   tx.set(doc(collection(db,'ventes')),{type:'entree',quantite:q,stockAvant:cur,stockApres:cur+q,transfertId:id,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
   });
   toast('Lot ajouté au stock');
  }catch(e){toast(errMsg(e),'err');}
 }
-async function moveStock(delta,entry,allowNeg=false){
+async function moveStock(delta,entry){
  await runTransaction(db,async tx=>{
   const st=doc(db,'stats','public'),s=await tx.get(st),cur=s.exists()?s.data().stock||0:0,nv=cur+delta;
-  if(nv<0&&!allowNeg)throw new Error(`Stock insuffisant : ${fmt(cur)} œufs disponibles.`);
+  if(nv<0)throw new Error(`Stock insuffisant : ${fmt(cur)} œufs disponibles.`);
   tx.set(st,{stock:nv,updatedAt:serverTimestamp()},{merge:true});
-  tx.set(doc(collection(db,'ventes')),{...entry,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
+  tx.set(doc(collection(db,'ventes')),{...entry,stockAvant:cur,stockApres:nv,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
  });
 }
 function sell(){
  openForm({title:'Enregistrer une vente',intro:`Stock disponible : <b>${fmt(stock())}</b> œufs.`,submit:'Valider la vente',fields:[
   {name:'quantite',label:"Nombre d'œufs vendus",type:'number',required:true},
-  {name:'prix',label:"Prix d'un œuf (FCFA)",type:'number',required:true,value:cfg.prixOeuf},
-  {name:'clientNom',label:'Nom du client',auto:'off'},
+  {name:'prix',label:"Prix unitaire (FCFA)",type:'number',required:true,value:cfg.prixOeuf},
+  {name:'clientNom',label:'Nom du client / destination',required:true},
   {name:'clientTel',label:'Téléphone du client',type:'tel'}],
   onSubmit:async v=>{
    if(v.quantite<=0)throw new Error('Indiquez une quantité supérieure à 0.');
@@ -696,13 +737,13 @@ function sell(){
    closeModal();toast(`Vente enregistrée : ${money(v.quantite*v.prix)}`);}});
 }
 function loss(){
- openForm({title:'Déclarer une perte',intro:`Stock disponible : <b>${fmt(stock())}</b> œufs.`,fields:[
-  {name:'quantite',label:"Nombre d'œufs perdus",type:'number',required:true},
-  {name:'motif',label:'Motif',required:true,placeholder:'Casse au magasin, don, …'}],
+ openForm({title:'Œufs cassés au magasin',intro:`Stock disponible : <b>${fmt(stock())}</b> œufs.`,fields:[
+  {name:'quantite',label:"Nombre d'œufs cassés",type:'number',required:true},
+  {name:'motif',label:'Observation',value:'Casse au magasin'}],
   onSubmit:async v=>{
    if(v.quantite<=0)throw new Error('Indiquez une quantité supérieure à 0.');
-   await moveStock(-v.quantite,{type:'perte',quantite:v.quantite,motif:v.motif});
-   closeModal();toast('Perte enregistrée');}});
+   await moveStock(-v.quantite,{type:'perte',quantite:v.quantite,motif:v.motif||'Casse au magasin'});
+   closeModal();toast('Casse enregistrée');}});
 }
 function adjust(){
  openForm({title:'Ajuster le stock',intro:`Stock actuel : <b>${fmt(stock())}</b> œufs. À utiliser après un comptage physique.`,fields:[
@@ -712,9 +753,14 @@ function adjust(){
    await runTransaction(db,async tx=>{
     const st=doc(db,'stats','public'),s=await tx.get(st),cur=s.exists()?s.data().stock||0:0;
     tx.set(st,{stock:v.nouveau,updatedAt:serverTimestamp()},{merge:true});
-    tx.set(doc(collection(db,'ventes')),{type:'ajustement',quantite:v.nouveau-cur,motif:v.motif,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
+    tx.set(doc(collection(db,'ventes')),{type:'ajustement',quantite:v.nouveau-cur,stockAvant:cur,stockApres:v.nouveau,motif:v.motif,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
    });
    closeModal();toast('Stock ajusté');}});
+}
+async function visa(fiche){
+ if(!await askConfirm(`Apposer votre visa sur la fiche « ${fiche} » du mois ${curMonth} ? Il ne pourra plus être modifié.`,'Apposer le visa'))return;
+ try{await setDoc(doc(db,'visas',`${fiche}_${curMonth}`),{fiche,mois:curMonth,nom:me.nom,role:me.role,date:today(),createdAt:serverTimestamp()});toast('Visa enregistré');}
+ catch(e){toast(errMsg(e),'err');}
 }
 function price(){
  openForm({title:"Prix de l'œuf",fields:[{name:'prix',label:'Prix par défaut (FCFA)',type:'number',required:true,value:cfg.prixOeuf}],
@@ -759,7 +805,7 @@ const ACT={
  seed,
  tab:id=>{curTab=id;renderEspace();},
  'new-prod':newProd,'del-prod':id=>removeDoc('production_journaliere',id,'cette production'),
- recep,'stock-in':stockIn,sell,loss,adjust,price,
+ recep,'stock-in':stockIn,sell,loss,adjust,price,visa,print:()=>window.print(),
  'new-sante':newSante,'del-sante':id=>removeDoc('sante',id,'ce suivi'),
  'new-dep':newDep,'del-dep':id=>removeDoc('depenses',id,'cette dépense'),
  ufilter:id=>{uFilter=id;renderEspace();},
@@ -774,6 +820,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').classList.contains('hidden'))closeModal();});
 
+document.addEventListener('change',e=>{if(e.target.id==='mSel'&&e.target.value){curMonth=e.target.value;renderEspace();}});
 renderAll();route();
 </script>
 </body>
