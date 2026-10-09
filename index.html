@@ -245,7 +245,7 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,sendPasswordResetEmail,deleteUser} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore,collection,doc,addDoc,setDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,limit,serverTimestamp,runTransaction,writeBatch} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {initializeFirestore,collection,doc,addDoc,setDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,limit,serverTimestamp,runTransaction,writeBatch} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 /* ============ Firebase ============ */
 const firebaseConfig={
@@ -259,12 +259,18 @@ const firebaseConfig={
 };
 const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
-const db=getFirestore(app);
+const db=initializeFirestore(app,{experimentalAutoDetectLongPolling:true});
 
 /* ============ Constantes ============ */
 const ROLES={pdg:'PDG',superviseur:'Superviseur général',secretaire_general:'Secrétaire général',veterinaire:'Vétérinaire',receptionniste:'Réceptionniste',magasiniere:'Magasinière',stagiaire:'Stagiaire',client:'Client'};
 const STAFF=['pdg','superviseur','secretaire_general','veterinaire','receptionniste','magasiniere','stagiaire'];
 const ADMINS=['pdg','superviseur'];
+/* ⚠️ À MODIFIER : mettez ici les adresses Gmail (en minuscules) du PDG et du superviseur.
+   Ces comptes sont activés automatiquement avec le bon rôle à l'inscription ou à la connexion.
+   Les mêmes adresses doivent aussi figurer dans les règles Firestore. */
+const PDG_EMAILS=['email-du-pdg@gmail.com'];
+const SUPERVISEUR_EMAILS=['email-du-superviseur@gmail.com'];
+const adminRoleFor=e=>{e=(e||'').toLowerCase();return PDG_EMAILS.includes(e)?'pdg':SUPERVISEUR_EMAILS.includes(e)?'superviseur':null;};
 const FIN=['pdg','superviseur','secretaire_general'];
 const CAN={prod:ADMINS,recep:[...ADMINS,'receptionniste'],vente:[...ADMINS,'magasiniere'],veto:[...ADMINS,'veterinaire']};
 const STATUS={pending:['En attente','amber'],active:['Actif','green'],banned:['Suspendu','red']};
@@ -293,7 +299,15 @@ const money=n=>fmt(n)+' FCFA';
 const today=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);};
 const dateFr=d=>{if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d))return esc(d||'');const[y,m,j]=d.split('-');return `${j}/${m}/${y}`;};
 const sum=(a,k)=>a.reduce((s,x)=>s+(Number(x[k])||0),0);
-const errMsg=e=>AUTH_ERR[e?.code]||(e?.code==='permission-denied'?"Action refusée par les règles de sécurité Firestore (vérifiez qu'elles sont publiées et que votre compte est actif).":(e?.code?`Erreur (${e.code})`:(e?.message||'Une erreur est survenue.')));
+const errMsg=e=>{
+ const c=e?.code;
+ if(AUTH_ERR[c])return AUTH_ERR[c];
+ if(c==='timeout')return e.message;
+ if(c==='permission-denied')return "Action refusée par les règles de sécurité Firestore. Publiez les règles fournies (Firestore Database → Règles).";
+ if(c==='unavailable'||c==='not-found')return "Base Firestore introuvable ou injoignable. Vérifiez qu'elle est créée (Firebase → Firestore Database → Créer une base) et que la connexion internet fonctionne.";
+ return c?`Erreur (${c})`:(e?.message||'Une erreur est survenue.');
+};
+const withTimeout=(p,ms=15000)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(Object.assign(new Error("Firestore ne répond pas. Vérifiez qu'une base Firestore Database existe dans votre projet Firebase et que les règles sont publiées."),{code:'timeout'})),ms))]);
 function toast(msg,type='ok'){const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.classList.add('out'),3500);setTimeout(()=>t.remove(),4100);}
 $('#yr').textContent=new Date().getFullYear();
 
@@ -301,7 +315,7 @@ $('#yr').textContent=new Date().getFullYear();
 let user=null,me=null,prof='loading',authReady=false,registering=false;
 let cfg={...DEF_CFG},animaux=[],histo=[],stats={};
 const D={prod:[],trans:[],ventes:[],sante:[],dep:[],users:[]};
-let curTab='resume',uFilter='all',unsubMe=null,privUnsubs=[],privKey='',warned=false;
+let curTab='resume',uFilter='all',unsubMe=null,privUnsubs=[],privKey='',warned=false,creatingProfile=false,fixingAdmin=false;
 const isAdmin=()=>!!me&&me.status==='active'&&ADMINS.includes(me.role);
 const can=l=>!!me&&me.status==='active'&&l.includes(me.role);
 const animList=()=>animaux.length?animaux:DEF_ANIMAUX.map(a=>({...a}));
@@ -364,10 +378,12 @@ function openRegister(){
   footer:`<p class="links">Déjà un compte ? <a href="#" data-act="login">Connexion</a></p>`,
   onSubmit:async v=>{
    if(v.password.length<6)throw new Error('Mot de passe trop court (6 caractères minimum).');
-   const isClient=v.role==='client';let cred;registering=true;
+   const isClient=v.role==='client';let cred,adminRole=null;registering=true;
    try{
     cred=await createUserWithEmailAndPassword(auth,v.email,v.password);
-    await setDoc(doc(db,'users',cred.user.uid),{uid:cred.user.uid,email:v.email,nom:v.nom,telephone:v.tel,adresse:v.adresse,role:'client',roleDemande:v.role,status:isClient?'active':'pending',createdAt:serverTimestamp()});
+    adminRole=adminRoleFor(cred.user.email);
+    const active=!!adminRole||isClient;
+    await withTimeout(setDoc(doc(db,'users',cred.user.uid),{uid:cred.user.uid,email:cred.user.email,nom:v.nom,telephone:v.tel,adresse:v.adresse,role:adminRole||'client',roleDemande:adminRole||v.role,status:active?'active':'pending',createdAt:serverTimestamp()}));
    }catch(e){
     if(cred){try{await deleteUser(cred.user);}catch(_){}}
     registering=false;throw e;
@@ -375,7 +391,7 @@ function openRegister(){
    registering=false;closeModal();
    await handleUser(auth.currentUser);
    location.hash='espace';
-   toast(isClient?'Bienvenue ! Votre profil est créé.':'Profil créé. Un administrateur doit valider votre rôle.');
+   toast(adminRole?`Profil ${ROLES[adminRole]} créé et activé.`:isClient?'Bienvenue ! Votre profil est créé.':'Profil créé. Un administrateur doit valider votre rôle.');
   }});
 }
 function openForgot(){
@@ -384,14 +400,27 @@ function openForgot(){
   onSubmit:async v=>{await sendPasswordResetEmail(auth,v.email);closeModal();toast('Lien envoyé. Vérifiez votre boîte mail (et les spams).');}});
 }
 async function handleUser(u){
- unsubMe&&unsubMe();unsubMe=null;stopPrivate();me=null;user=u;
+ unsubMe&&unsubMe();unsubMe=null;stopPrivate();me=null;user=u;creatingProfile=false;
  if(!u){prof='ok';authReady=true;document.body.classList.remove('is-admin');renderAll();return;}
  prof='loading';
  unsubMe=onSnapshot(doc(db,'users',u.uid),async s=>{
   authReady=true;
-  if(!s.exists()){me=null;prof='missing';renderAll();return;}
+  const ar=adminRoleFor(u.email);
+  if(!s.exists()){
+   if(!creatingProfile){
+    creatingProfile=true;
+    try{await withTimeout(setDoc(doc(db,'users',u.uid),{uid:u.uid,email:u.email,nom:u.displayName||(u.email||'').split('@')[0],telephone:'',adresse:'',role:ar||'client',roleDemande:ar||'client',status:'active',createdAt:serverTimestamp()}));}
+    catch(e){console.error(e);creatingProfile=false;me=null;prof='missing';renderAll();toast(errMsg(e),'err');}
+   }
+   return;
+  }
+  creatingProfile=false;
   me=s.data();prof='ok';
-  if(me.status==='banned'){toast('Votre compte est suspendu. Contactez la direction.','err');await signOut(auth);return;}
+  if(ar&&(me.role!==ar||me.status!=='active')&&!fixingAdmin){
+   fixingAdmin=true;
+   updateDoc(doc(db,'users',u.uid),{role:ar,status:'active'}).catch(e=>{console.error(e);toast(errMsg(e),'err');}).finally(()=>{fixingAdmin=false;});
+  }
+  if(me.status==='banned'&&!ar){toast('Votre compte est suspendu. Contactez la direction.','err');await signOut(auth);return;}
   document.body.classList.toggle('is-admin',isAdmin());
   const key=me.role+'|'+me.status;
   if(key!==privKey){stopPrivate();privKey=key;if(me.status==='active')startPrivate();}
