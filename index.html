@@ -11,11 +11,11 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
 <header class="bg-vert text-white p-4 flex justify-between items-center sticky top-0 z-50">
-<div class="flex items-center gap-3"><i class="fa-solid fa-egg text-2xl"></i><div><h1 class="font-black text-[15px]">LA JUSTICE DE DIEU</h1><p class="text-[10px] opacity-90">Ferme Dogbo</p></div></div>
+<div class="flex items-center gap-3"><i class="fa-solid fa-egg text-2xl"></i><div><h1 class="font-black text-[15px]">LA JUSTICE DE DIEU</h1><p class="text-[10px] opacity-90">1 PDG + 1 Superviseur seulement</p></div></div>
 <div id="userBox" class="hidden items-center gap-2"><span id="userNom" class="text-xs font-bold hidden md:block"></span><span id="userRole" class="bg-white text-vert px-3 py-1 rounded-full text-[10px] font-black uppercase"></span><button id="btnLogout" class="bg-white/20 px-3 py-1.5 rounded-lg"><i class="fa-solid fa-right-from-bracket"></i></button></div>
 </header>
 <section id="authSection" class="max-w-md mx-auto mt-6 p-6 bg-white rounded-2xl card">
-<div class="text-center mb-5"><div class="w-16 h-16 bg-vert rounded-2xl mx-auto flex items-center justify-center text-white text-2xl mb-3"><i class="fa-solid fa-egg"></i></div><h2 class="text-xl font-black">LA JUSTICE DE DIEU</h2><p class="text-xs text-gray-500">PDG et Superviseur auto-validés</p></div>
+<div class="text-center mb-5"><div class="w-16 h-16 bg-vert rounded-2xl mx-auto flex items-center justify-center text-white text-2xl mb-3"><i class="fa-solid fa-egg"></i></div><h2 class="text-xl font-black">LA JUSTICE DE DIEU</h2><p class="text-xs text-gray-500">PDG et Superviseur auto-validés - uniques</p></div>
 <div class="space-y-3">
 <input id="email" type="email" placeholder="Gmail" class="w-full border rounded-xl px-4 py-3">
 <input id="password" type="password" placeholder="Mot de passe" class="w-full border rounded-xl px-4 py-3">
@@ -23,11 +23,11 @@
 <input id="tel" type="tel" placeholder="Numéro téléphone" class="w-full border rounded-xl px-4 py-3">
 <input id="adresse" type="text" placeholder="Adresse" class="w-full border rounded-xl px-4 py-3">
 <select id="role" class="w-full border rounded-xl px-4 py-3 bg-white text-sm">
-<option value="pdg">PDG - Direction (auto-validé)</option>
-<option value="superviseur">Superviseur (auto-validé)</option>
+<option value="pdg">PDG - Direction (unique - auto-validé)</option>
+<option value="superviseur">Superviseur (unique - auto-validé)</option>
 <option value="secretaire_general">Secrétaire Général</option>
 <option value="veterinaire">Vétérinaire</option>
-<option value="receptionniste">Réceptionniste</option>
+<option value="receptionniste">Réceptionniste (lecture seule)</option>
 <option value="magasiniere">Magasinière</option>
 <option value="stagiaire">Stagiaire</option>
 <option value="client" selected>Client</option>
@@ -40,7 +40,7 @@
 </section>
 <section id="appSection" class="hidden max-w-7xl mx-auto p-4">
 <div id="adminUsers" class="hidden bg-white rounded-2xl p-5 card mb-6 border-2 border-red-100">
-<h3 class="font-black mb-3 text-red-700"><i class="fa-solid fa-users-gear mr-2"></i>GESTION INSCRITS - PDG/Superviseur/Receptionniste</h3>
+<h3 class="font-black mb-3 text-red-700"><i class="fa-solid fa-users-gear mr-2"></i>GESTION INSCRITS - PDG/Superviseur seuls peuvent valider</h3>
 <div class="grid grid-cols-4 gap-2 mb-3 text-xs">
 <button onclick="filterUsers('all')" class="border rounded-lg py-2 font-bold">Tous</button>
 <button onclick="filterUsers('pending')" class="bg-amber-100 border rounded-lg py-2">En attente</button>
@@ -59,7 +59,7 @@
 <div id="dashVeto" class="hidden"><div class="bg-white rounded-2xl p-5 card mb-6"><h3 class="font-bold mb-3">SUIVI VETO</h3><div class="grid grid-cols-2 gap-3"><div><label class="text-xs font-bold">Date</label><input id="vet_date" type="date" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Mortalité</label><input id="vet_mort" type="number" value="0" class="w-full border rounded-lg px-3 py-2"></div><div class="col-span-2"><label class="text-xs font-bold">Obs</label><textarea id="vet_notes" class="w-full border rounded-lg px-3 py-2 h-20"></textarea></div></div><button id="btnVeto" class="mt-3 w-full bg-blue-600 text-white py-2.5 rounded-xl font-bold">Enregistrer</button><div id="listVeto" class="mt-4 space-y-2 text-xs max-h-[200px] overflow-auto"></div></div></div><div id="dashProduction" class="hidden"><div class="grid md:grid-cols-2 gap-6 mb-6"><div class="bg-white rounded-2xl p-5 card"><h3 class="font-bold mb-3">PRODUCTION</h3><div class="grid grid-cols-2 gap-3"><div><label class="text-xs font-bold">Date</label><input id="p1_date" type="date" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Effectif</label><input id="p1_effectif" type="number" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Ramassés</label><input id="p1_ramasses" type="number" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Cassés</label><input id="p1_casses" type="number" value="0" class="w-full border rounded-lg px-3 py-2"></div><div class="col-span-2 bg-green-50 p-3 rounded-lg text-sm">Bons: <b id="p1_bons">0</b></div></div><button id="btnP1" class="mt-3 w-full btn-vert text-white py-2.5 rounded-xl font-bold">Enregistrer</button></div><div class="bg-white rounded-2xl p-5 card"><h3 class="font-bold text-sm">Historique</h3><div id="listP1" class="mt-3 max-h-[300px] overflow-auto space-y-2 text-xs"></div></div></div></div>
 <div id="dashReception" class="hidden"><div class="grid md:grid-cols-2 gap-6 mb-6"><div class="bg-white rounded-2xl p-5 card"><h3 class="font-bold mb-2">RECEPTION</h3><div id="listAttenteP1" class="space-y-2 max-h-[300px] overflow-auto"></div></div><div class="bg-white rounded-2xl p-5 card"><h3 class="font-bold mb-3">Valider Réception</h3><input type="hidden" id="p2_prodId"><div class="grid grid-cols-2 gap-3"><div><label class="text-xs font-bold">Date</label><input id="p2_date" type="date" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Reçus</label><input id="p2_recus" type="number" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Cassés</label><input id="p2_cassesR" type="number" value="0" class="w-full border rounded-lg px-3 py-2"></div><div class="col-span-2 bg-amber-50 p-3 rounded-lg text-sm">Bons magasin: <b id="p2_bons">0</b></div></div><button id="btnP2" class="mt-3 w-full btn-vert text-white py-2.5 rounded-xl font-bold">Transférer</button></div></div></div>
 <div id="dashMagasin" class="hidden"><div class="grid md:grid-cols-2 gap-6 mb-6"><div class="bg-white rounded-2xl p-5 card"><h3 class="font-bold mb-2">STOCK A VENDRE</h3><div id="listAttenteP2" class="space-y-2 max-h-[300px] overflow-auto"></div></div><div class="bg-white rounded-2xl p-5 card"><h3 class="font-bold mb-3">Vente</h3><input type="hidden" id="p3_transfertId"><div class="grid grid-cols-2 gap-3"><div><label class="text-xs font-bold">Date</label><input id="p3_date" type="date" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Veille</label><input id="p3_veille" type="number" value="0" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Entrée</label><input id="p3_entree" type="number" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Prix</label><input id="p3_prix" type="number" value="120" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Vendus</label><input id="p3_vendus" type="number" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Cassés</label><input id="p3_cassesM" type="number" value="0" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Client</label><input id="p3_clientNom" type="text" class="w-full border rounded-lg px-3 py-2"></div><div><label class="text-xs font-bold">Tel</label><input id="p3_clientTel" type="tel" class="w-full border rounded-lg px-3 py-2"></div><div class="col-span-2 bg-green-50 p-2 rounded-lg text-xs">Total <b id="calc_total">0</b> | Reste <b id="calc_reste">0</b> | <b id="calc_montant">0</b></div></div><button id="btnP3" class="mt-3 w-full btn-vert text-white py-2.5 rounded-xl font-bold">Vendre</button></div></div><div class="bg-white rounded-2xl p-5 card mt-2"><h3 class="font-bold">Historique Ventes</h3><div id="listP3" class="mt-3 overflow-auto text-xs"></div></div></div>
-<div class="mt-6 text-center text-[10px] text-gray-400">© LA JUSTICE DE DIEU</div>
+<div class="mt-6 text-center text-[10px] text-gray-400">© LA JUSTICE DE DIEU - 1 PDG / 1 Superviseur</div>
 </section>
 <script type="module">
 import { initializeApp } from 'firebase/app';
@@ -80,13 +80,19 @@ btnRegister.onclick=async()=>{
  const e=email.value.trim(), p=password.value, r=role.value, n=nom.value.trim(), t=tel.value.trim(), a=adresse.value.trim();
  if(!e||p.length<6||!n||!t){authMsg.textContent='Remplis nom gmail tel mdp';return;}
  try{
-  const qActive=query(collection(db,'users'), where('status','==','active'), limit(1));
-  const snapActive=await getDocs(qActive);
+  if(r==='pdg' || r==='superviseur'){
+    const qRole = query(collection(db,'users'), where('role','==',r), limit(1));
+    const snapRole = await getDocs(qRole);
+    if(!snapRole.empty){
+      authMsg.textContent = r==='pdg'? '❌ PDG existe déjà! Un seul PDG autorisé.' : '❌ Superviseur existe déjà! Un seul Superviseur autorisé.';
+      return;
+    }
+  }
   let statut='pending';
-  if(r==='pdg' || r==='superviseur' || snapActive.empty){ statut='active'; }
+  if(r==='pdg' || r==='superviseur'){ statut='active'; }
   const c=await createUserWithEmailAndPassword(auth,e,p);
   await setDoc(doc(db,'users',c.user.uid),{uid:c.user.uid,email:e,role:r,nom:n,telephone:t,adresse:a,status:statut,createdAt:serverTimestamp()});
-  authMsg.textContent=statut==='active'?'Compte '+r+' actif! Connecte-toi':'En attente validation PDG/Superviseur';
+  authMsg.textContent=statut==='active'?'✅ Compte '+r+' actif! Connecte-toi':'En attente validation PDG/Superviseur';
   await signOut(auth);
  }catch(err){authMsg.textContent=err.message;}
 };
@@ -98,7 +104,7 @@ onAuthStateChanged(auth,async(user)=>{
  currentUserData=s.data();
  if(['banned','rejected','deactivated'].includes(currentUserData.status)){alert('Compte '+currentUserData.status);await signOut(auth);return;}
  if(currentUserData.status==='pending'){authSection.classList.remove('hidden');appSection.classList.add('hidden');userBox.classList.add('hidden');pendingBox.classList.remove('hidden');return;}
- authSection.classList.add('hidden');appSection.classList.remove('hidden');userBox.classList.remove('hidden');userBox.classList.add('flex');userNom.textContent=currentUserData.nom;userRole.textContent=currentUserData.role;showByRole(currentUserData.role);init();
+ authSection.classList.add('hidden');appSection.classList.remove('hidden');userBox.classList.add('flex');userNom.textContent=currentUserData.nom;userRole.textContent=currentUserData.role;showByRole(currentUserData.role);init();
 });
 function todayISO(){return new Date().toISOString().split('T')[0];}
 ['p1_date','p2_date','p3_date','vet_date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=todayISO();});
@@ -123,12 +129,12 @@ function renderUsers(){
  let list=allUsersCache; if(currentFilter!=='all') list=list.filter(u=>u.status===currentFilter);
  listUsers.innerHTML='';
  list.forEach(u=>{
-  const canAct=currentUserData.role==='superviseur' || currentUserData.role==='pdg';
+  const isPDGSup = currentUserData.role==='superviseur' || currentUserData.role==='pdg';
   const badge=u.status==='pending'?'bg-amber-200':u.status==='active'?'bg-green-200':u.status==='banned'?'bg-red-300':'bg-gray-300';
-  listUsers.innerHTML+=`<div class="border rounded-xl p-3"><div class="flex justify-between"><div><b>${u.nom}</b> <span class="text-[10px] ${badge} px-2 py-1 rounded-full ml-2">${u.status}</span><br>Role:${u.role}<br>Gmail:${u.email}<br>Tel:${u.telephone}<br>Adresse:${u.adresse}</div><div class="text-[10px] text-gray-400">${u.uid.slice(0,6)}</div></div>${canAct?`<div class="mt-2 flex flex-wrap gap-1"><button onclick="updateStatus('${u.uid}','active')" class="bg-green-600 text-white px-3 py-1 rounded-lg">Valider</button><button onclick="updateStatus('${u.uid}','rejected')" class="bg-gray-500 text-white px-3 py-1 rounded-lg">Rejeter</button><button onclick="updateStatus('${u.uid}','deactivated')" class="bg-orange-500 text-white px-3 py-1 rounded-lg">Desactiver</button><button onclick="updateStatus('${u.uid}','active')" class="bg-blue-600 text-white px-3 py-1 rounded-lg">Reactiver</button><button onclick="updateStatus('${u.uid}','banned')" class="bg-red-600 text-white px-3 py-1 rounded-lg">Bannir</button></div>`:''}</div>`;
+  listUsers.innerHTML+=`<div class="border rounded-xl p-3"><div class="flex justify-between"><div><b>${u.nom}</b> <span class="text-[10px] ${badge} px-2 py-1 rounded-full ml-2">${u.status}</span><br>Role:${u.role}<br>Gmail:${u.email}<br>Tel:${u.telephone}<br>Adresse:${u.adresse}</div><div class="text-[10px] text-gray-400">${u.uid.slice(0,6)}</div></div>${isPDGSup?`<div class="mt-2 flex flex-wrap gap-1"><button onclick="updateStatus('${u.uid}','active')" class="bg-green-600 text-white px-3 py-1 rounded-lg">Valider</button><button onclick="updateStatus('${u.uid}','rejected')" class="bg-gray-500 text-white px-3 py-1 rounded-lg">Rejeter</button><button onclick="updateStatus('${u.uid}','deactivated')" class="bg-orange-500 text-white px-3 py-1 rounded-lg">Desactiver</button><button onclick="updateStatus('${u.uid}','active')" class="bg-blue-600 text-white px-3 py-1 rounded-lg">Reactiver</button><button onclick="updateStatus('${u.uid}','banned')" class="bg-red-600 text-white px-3 py-1 rounded-lg">Bannir</button></div>`:`<p class="mt-2 text-[10px] text-gray-400">Lecture seule - seul PDG/Superviseur peut valider</p>`}</div>`;
  });
 }
-window.updateStatus=async(uid,status)=>{if(currentUserData.role!=='superviseur' && currentUserData.role!=='pdg'){alert('Seul PDG/Superviseur');return;} await updateDoc(doc(db,'users',uid),{status:status, validatedBy:auth.currentUser.uid, validatedAt:serverTimestamp()}); alert(status);};
+window.updateStatus=async(uid,status)=>{if(currentUserData.role!=='superviseur' && currentUserData.role!=='pdg'){alert('Seul PDG/Superviseur peut valider');return;} await updateDoc(doc(db,'users',uid),{status:status, validatedBy:auth.currentUser.uid, validatedAt:serverTimestamp()}); alert(status);};
 function init(){
  onSnapshot(query(collection(db,'users'),orderBy('createdAt','desc'),limit(100)),snap=>{allUsersCache=[];snap.forEach(d=>allUsersCache.push(d.data()));renderUsers();});
  onSnapshot(query(collection(db,'production_journaliere'),orderBy('date','desc'),limit(20)),snap=>{listP1.innerHTML='';let last=0,sum=0;const today=todayISO();snap.forEach(x=>{const v=x.data();last=v.effectif||last;if(v.date===today)sum+=v.bonsDisponibles||0;listP1.innerHTML+=`<div class="border rounded-lg p-2 flex justify-between"><span>${v.date} - ${v.oeufsRamasses} (${v.bonsDisponibles})</span></div>`;});statPoules.textContent=last;statOeufs.textContent=sum;});
