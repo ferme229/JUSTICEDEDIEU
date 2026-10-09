@@ -259,7 +259,7 @@ const firebaseConfig={
 };
 const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
-const db=initializeFirestore(app,{experimentalAutoDetectLongPolling:true});
+const db=initializeFirestore(app,{experimentalAutoDetectLongPolling:true},'default');
 
 /* ============ Constantes ============ */
 const ROLES={pdg:'PDG',superviseur:'Superviseur général',secretaire_general:'Secrétaire général',veterinaire:'Vétérinaire',receptionniste:'Réceptionniste',magasiniere:'Magasinière',stagiaire:'Stagiaire',client:'Client'};
@@ -268,8 +268,8 @@ const ADMINS=['pdg','superviseur'];
 /* ⚠️ À MODIFIER : mettez ici les adresses Gmail (en minuscules) du PDG et du superviseur.
    Ces comptes sont activés automatiquement avec le bon rôle à l'inscription ou à la connexion.
    Les mêmes adresses doivent aussi figurer dans les règles Firestore. */
-const PDG_EMAILS=['email-du-pdg@gmail.com'];
-const SUPERVISEUR_EMAILS=['email-du-superviseur@gmail.com'];
+const PDG_EMAILS=[];
+const SUPERVISEUR_EMAILS=['franckadre7@gmail.com'];
 const adminRoleFor=e=>{e=(e||'').toLowerCase();return PDG_EMAILS.includes(e)?'pdg':SUPERVISEUR_EMAILS.includes(e)?'superviseur':null;};
 const FIN=['pdg','superviseur','secretaire_general'];
 const CAN={prod:ADMINS,recep:[...ADMINS,'receptionniste'],vente:[...ADMINS,'magasiniere'],veto:[...ADMINS,'veterinaire']};
