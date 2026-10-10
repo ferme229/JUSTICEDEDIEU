@@ -145,6 +145,52 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
 .toast{background:var(--vert-d);color:#fff;padding:12px 16px;border-radius:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:14px}
 .toast.err{background:var(--rouge)}
 .toast.out{opacity:0;transition:opacity .4s}
+.slider{position:relative;max-width:940px;margin:0 auto;border-radius:20px;overflow:hidden;background:#fff;box-shadow:var(--sh)}
+.slide{display:none}
+.slide.on{display:grid;grid-template-columns:1.1fr .9fr;animation:fadein .7s}
+.slide.noimg.on{grid-template-columns:1fr}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.slide .ph{min-height:280px;background:var(--vert-l) center/cover no-repeat}
+.slide .tx{padding:30px 30px 56px;display:flex;flex-direction:column;justify-content:center;gap:10px}
+.slide h3{font-size:1.6rem}
+.slide p{white-space:pre-line;color:var(--gris)}
+.sl-nav{position:absolute;bottom:12px;right:14px;display:flex;gap:8px}
+.sl-nav button{border:0;background:#fff;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:20px;box-shadow:0 1px 8px rgba(0,0,0,.25)}
+.dots{display:flex;gap:6px;justify-content:center;margin-top:14px}
+.dots button{width:10px;height:10px;border-radius:99px;border:0;background:#c9d3c6;cursor:pointer;padding:0;transition:width .2s}
+.dots button.on{background:var(--vert);width:26px}
+.gal{columns:3 260px;column-gap:18px}
+.gal .card{break-inside:avoid;margin-bottom:18px;padding:0;overflow:hidden}
+.gal img{width:100%;display:block;cursor:zoom-in}
+.gal .cap{padding:14px 16px}
+.gal h3{font-size:1.05rem}
+.gal p{color:var(--gris);font-size:14px;white-space:pre-line;margin-top:4px}
+.mbox.wide{max-width:920px;padding:16px}
+.stars{color:var(--jaune);letter-spacing:2px;font-size:18px}
+.avis p{margin:10px 0;font-style:italic}
+.alerts{display:grid;gap:8px;margin-bottom:18px}
+.alert{padding:10px 14px;border-radius:12px;font-size:14px;font-weight:600;border-left:5px solid}
+.alert.r{background:#fbe3df;border-color:var(--rouge);color:#7a1d12}
+.alert.a{background:#fff3d1;border-color:var(--jaune);color:#5e4300}
+.alert.i{background:#e0eefa;border-color:#3b82c4;color:#17426b}
+.alert.ok{background:var(--vert-l);border-color:var(--vert);color:var(--vert-d)}
+.chart{margin:8px 0 22px}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{font-size:13px;fill:#5a6a60}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;margin-top:6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.wafloat{position:fixed;right:16px;bottom:16px;width:56px;height:56px;border-radius:50%;background:#25d366;color:#fff;display:grid;place-items:center;font-size:28px;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.3);z-index:60}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--vert-l);padding:8px 12px;border-radius:10px;display:block;margin:6px 0 12px;word-break:break-all;font-size:16px}
+#printArea{display:none}
+.rc{max-width:380px;margin:0 auto;color:#000}
+.rc h2{text-align:center;font-size:20px}
+.rc .sub{text-align:center;font-size:13px;margin-bottom:10px}
+.rc table{width:100%;font-size:14px;margin:10px 0}
+.rc td{border:0;padding:3px 0}
+.rc .tot{font-size:18px;font-weight:800;border-top:2px dashed #000;padding-top:8px;display:flex;justify-content:space-between}
+.rc .foot{text-align:center;font-size:12px;margin-top:14px}
+@media print{.wafloat{display:none!important}body.print-receipt>*:not(#printArea){display:none!important}body.print-receipt #printArea{display:block}}
+@media(max-width:700px){.slide.on{grid-template-columns:1fr}.slide .ph{min-height:210px}}
 @media(max-width:860px){
  .burger{display:block}
  #menu{display:none;position:absolute;left:0;right:0;top:68px;background:var(--vert-d);flex-direction:column;align-items:stretch;padding:14px 20px 22px;gap:14px}
@@ -168,6 +214,7 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
     <a href="#accueil">Accueil</a>
     <a href="#historique">Notre historique</a>
     <a href="#animaux">Animaux élevés</a>
+    <a href="#galerie">Galerie</a>
     <a href="#contact">Contact</a>
    </nav>
    <div id="authArea"></div>
@@ -191,6 +238,10 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
     <div class="egg"><span class="n" id="s-stock">–</span><span class="l">œufs frais disponibles</span></div>
    </div>
   </div></div>
+  <div class="sec alt" id="sec-une" style="display:none"><div class="wrap">
+   <div class="head"><div><h2>À la une</h2></div><button class="btn primary adm" data-act="add-gal">＋ Ajouter une photo ou un texte</button></div>
+   <div id="h-une"></div>
+  </div></div>
   <div class="sec"><div class="wrap two">
    <div><h2>La ferme</h2><p id="h-about"></p></div>
    <div class="points">
@@ -203,7 +254,11 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
    <div class="head"><div><h2>Nos animaux</h2></div><a class="btn line" href="#animaux">Voir tous les animaux</a></div>
    <div class="grid" id="h-animaux"></div>
   </div></div>
-  <div class="sec"><div class="wrap row" style="justify-content:space-between">
+  <div class="sec" id="sec-avis"><div class="wrap">
+   <div class="head"><div><h2>Ce que disent nos clients</h2></div><button class="btn line" data-act="go-avis">Laisser un avis</button></div>
+   <div class="grid" id="h-avis"></div>
+  </div></div>
+  <div class="sec alt"><div class="wrap row" style="justify-content:space-between">
    <div><h2>Une question, une commande ?</h2><p class="muted">Retrouvez nos coordonnées sur la page Contact.</p></div>
    <a class="btn primary" href="#contact">Nous contacter</a>
   </div></div>
@@ -223,6 +278,13 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
   <div id="l-animaux"></div>
  </div></section>
 
+ <!-- GALERIE -->
+ <section id="v-galerie" class="view"><div class="wrap page">
+  <div class="head"><div><h2>Galerie</h2><p>Photos et nouvelles de la ferme.</p></div>
+   <button class="btn primary adm" data-act="add-gal">＋ Ajouter une photo ou un texte</button></div>
+  <div id="l-galerie"></div>
+ </div></section>
+
  <!-- CONTACT -->
  <section id="v-contact" class="view"><div class="wrap page">
   <div class="head"><div><h2>Contact</h2><p>Venez nous voir ou écrivez-nous.</p></div>
@@ -236,17 +298,19 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
 
 <footer><div class="wrap">
  <span>© <span id="yr"></span> La Justice de Dieu — Ferme d'élevage à Dogbo</span>
- <span><a href="#accueil">Accueil</a> · <a href="#animaux">Animaux</a> · <a href="#contact">Contact</a> · <a href="#espace">Espace équipe</a></span>
+ <span><a href="#accueil">Accueil</a> · <a href="#animaux">Animaux</a> · <a href="#galerie">Galerie</a> · <a href="#contact">Contact</a> · <a href="#espace">Espace équipe</a><span id="f-social"></span></span>
 </div></footer>
 
+<div id="printArea"></div>
+<a id="waFloat" class="wafloat hidden" href="#" target="_blank" rel="noopener" aria-label="Écrire sur WhatsApp">💬</a>
 <div id="modal" class="modal hidden" role="dialog" aria-modal="true"><div class="mbox" id="mbox"></div></div>
 <div id="toasts" aria-live="polite"></div>
 <noscript><p style="padding:20px;text-align:center">Ce site nécessite JavaScript pour fonctionner.</p></noscript>
 
 <script type="module">
-import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,sendPasswordResetEmail,deleteUser} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {initializeFirestore,collection,doc,addDoc,setDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,limit,serverTimestamp,runTransaction,writeBatch} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {initializeApp,deleteApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,sendPasswordResetEmail,deleteUser,EmailAuthProvider,reauthenticateWithCredential,updatePassword} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {initializeFirestore,collection,doc,addDoc,setDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,limit,serverTimestamp,runTransaction,writeBatch,where} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 /* ============ Firebase ============ */
 const firebaseConfig={
@@ -271,12 +335,15 @@ const ADMINS=['pdg','superviseur'];
    Les mêmes adresses doivent aussi figurer dans les règles Firestore. */
 const PDG_EMAILS=[];
 const SUPERVISEUR_EMAILS=['franckadre7@gmail.com'];
+/* Postes à compte unique (un seul titulaire actif). Clients et stagiaires : illimité. */
+const UNIQUE=['pdg','superviseur','secretaire_general','veterinaire','receptionniste','magasiniere'];
 const adminRoleFor=e=>{e=(e||'').toLowerCase();return PDG_EMAILS.includes(e)?'pdg':SUPERVISEUR_EMAILS.includes(e)?'superviseur':null;};
 const FIN=['pdg','superviseur','secretaire_general'];
 const CAN={prod:ADMINS,recep:[...ADMINS,'receptionniste'],vente:[...ADMINS,'magasiniere'],veto:[...ADMINS,'veterinaire']};
+const ORDER_STAFF=[...ADMINS,'magasiniere'];
 const STATUS={pending:['En attente','amber'],active:['Actif','green'],banned:['Suspendu','red']};
-const VIEWS=['accueil','historique','animaux','contact','espace'];
-const DEF_CFG={heroTitre:'LA JUSTICE DE DIEU',heroSoustitre:"Ferme d'élevage à Dogbo. Des œufs frais, un élevage suivi au quotidien.",apropos:"La Justice de Dieu est une ferme d'élevage située à Dogbo. Nous élevons des volailles avec soin et fournissons des œufs frais à nos clients.\nChaque jour, notre équipe enregistre la production, la réception, le stock et la santé des animaux.",telephone:'',email:'',adresse:'Dogbo, Bénin',horaires:'',prixOeuf:120};
+const VIEWS=['accueil','historique','animaux','galerie','contact','espace'];
+const DEF_CFG={heroTitre:'LA JUSTICE DE DIEU',heroSoustitre:"Ferme d'élevage à Dogbo. Des œufs frais, un élevage suivi au quotidien.",apropos:"La Justice de Dieu est une ferme d'élevage située à Dogbo. Nous élevons des volailles avec soin et fournissons des œufs frais à nos clients.\nChaque jour, notre équipe enregistre la production, la réception, le stock et la santé des animaux.",telephone:'',email:'',adresse:'Dogbo, Bénin',horaires:'',prixOeuf:120,facebook:'',whatsapp:'',seuilStock:200,seuilMortalite:5,seuilCasse:5};
 const DEF_ANIMAUX=[
  {icone:'🐔',nom:'Poules pondeuses',quantite:null,description:"Notre élevage principal : des poules pondeuses suivies chaque jour pour fournir des œufs frais."},
  {icone:'🍗',nom:'Poulets de chair',quantite:null,description:"Des poulets élevés pour la consommation de viande."},
@@ -290,7 +357,7 @@ const AUTH_ERR={
  'auth/invalid-email':'Adresse email invalide.','auth/email-already-in-use':'Cette adresse est déjà utilisée. Cliquez sur Connexion.',
  'auth/weak-password':'Mot de passe trop court (6 caractères minimum).','auth/network-request-failed':'Pas de connexion internet. Réessayez.',
  'auth/too-many-requests':'Trop de tentatives. Patientez quelques minutes.','auth/operation-not-allowed':"La connexion par email n'est pas activée dans Firebase (Authentication → Méthode de connexion).",
- 'auth/unauthorized-domain':"Ce site n'est pas autorisé dans Firebase (Authentication → Paramètres → Domaines autorisés).",'auth/user-disabled':'Ce compte est désactivé.'};
+ 'auth/unauthorized-domain':"Ce site n'est pas autorisé dans Firebase (Authentication → Paramètres → Domaines autorisés).",'auth/user-disabled':'Ce compte est désactivé.','auth/requires-recent-login':'Reconnectez-vous puis réessayez.'};
 
 /* ============ Outils ============ */
 const $=(s,r=document)=>r.querySelector(s);
@@ -311,12 +378,45 @@ const errMsg=e=>{
 const withTimeout=(p,ms=15000)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(Object.assign(new Error("Firestore ne répond pas. Vérifiez qu'une base Firestore Database existe dans votre projet Firebase et que les règles sont publiées."),{code:'timeout'})),ms))]);
 function toast(msg,type='ok'){const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.classList.add('out'),3500);setTimeout(()=>t.remove(),4100);}
 $('#yr').textContent=new Date().getFullYear();
+const waNumber=t=>{let d=String(t||'').replace(/\D/g,'');if(d.length===8)d='22901'+d;else if(d.length===10)d='229'+d;return d;};
+const stars=n=>{n=Math.min(5,Math.max(1,parseInt(n)||5));return '★'.repeat(n)+'☆'.repeat(5-n);};
+const safeUrl=u=>/^https?:\/\/[^\s"'<>]+$/i.test(u||'')?u:'';
+const safeImg=u=>typeof u==='string'&&u.startsWith('data:image/jpeg;base64,')&&!/[^A-Za-z0-9+/=]/.test(u.slice(23))?u:'';
+const tsDate=t=>{const d=t&&t.toDate?t.toDate():null;return d?d.toLocaleDateString('fr-FR'):'';};
+const tsTime=t=>{const d=t&&t.toDate?t.toDate():null;return d?d.toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}):'';};
+function downloadFile(name,text,mime){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:mime}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);}
+function exportCSV(name,heads,rows){
+ const q=v=>{if(typeof v==='string'&&/^[=+\-@]/.test(v))v="'"+v;return `"${String(v??'').replace(/"/g,'""')}"`;};
+ downloadFile(name+'.csv','\ufeff'+[heads,...rows].map(r=>r.map(q).join(';')).join('\r\n'),'text/csv;charset=utf-8');
+}
+function logAct(action,detail=''){
+ if(!user||!me)return;
+ addDoc(collection(db,'journal'),{action,detail:String(detail).slice(0,300),uid:user.uid,nom:me.nom,role:me.role,createdAt:serverTimestamp()}).catch(e=>console.warn('journal',e));
+}
+function imgToData(file,max=900){
+ return new Promise((res,rej)=>{
+  if(!file||!file.type.startsWith('image/'))return rej(new Error('Choisissez un fichier image (JPG, PNG…).'));
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{
+   URL.revokeObjectURL(url);
+   const k=Math.min(1,max/Math.max(img.width,img.height)),w=Math.round(img.width*k),h=Math.round(img.height*k);
+   const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(img,0,0,w,h);
+   let q=.75,d=c.toDataURL('image/jpeg',q);
+   while(d.length>700000&&q>.35){q-=.1;d=c.toDataURL('image/jpeg',q);}
+   d.length>900000?rej(new Error('Image trop lourde. Choisissez une image plus petite.')):res(d);
+  };
+  img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('Impossible de lire cette image.'));};
+  img.src=url;
+ });
+}
+
 
 /* ============ État ============ */
 let user=null,me=null,prof='loading',authReady=false,registering=false;
 let cfg={...DEF_CFG},animaux=[],histo=[],stats={};
-const D={prod:[],trans:[],ventes:[],sante:[],dep:[],users:[],visas:[]};
-let curTab='resume',uFilter='all',unsubMe=null,privUnsubs=[],privKey='',warned=false,creatingProfile=false,fixingAdmin=false,curMonth=today().slice(0,7);
+const D={prod:[],trans:[],ventes:[],sante:[],dep:[],users:[],visas:[],cmd:[],journal:[],avisAll:[],mesAvis:[]};
+let galerie=[],avisPub=[],slideIdx=0,sliderPaused=false,lastReceipt=null;
+let curTab='resume',uFilter='all',unsubMe=null,privUnsubs=[],privKey='',warned=false,creatingProfile=false,fixingAdmin=false,slots={},slotsReady=false,claimTried='',curMonth=today().slice(0,7);
 const isAdmin=()=>!!me&&me.status==='active'&&ADMINS.includes(me.role);
 const can=l=>!!me&&me.status==='active'&&l.includes(me.role);
 const animList=()=>animaux.length?animaux:DEF_ANIMAUX.map(a=>({...a}));
@@ -329,20 +429,21 @@ function closeModal(){$('#modal').classList.add('hidden');document.body.classLis
 const fieldHTML=f=>{
  const id='f_'+f.name,req=f.required?' <i>*</i>':'';let inp;
  if(f.type==='textarea')inp=`<textarea id="${id}" name="${f.name}" rows="4" placeholder="${esc(f.placeholder||'')}">${esc(f.value??'')}</textarea>`;
- else if(f.type==='select')inp=`<select id="${id}" name="${f.name}">${f.options.map(([v,l])=>`<option value="${esc(v)}"${v===f.value?' selected':''}>${esc(l)}</option>`).join('')}</select>`;
- else inp=`<input id="${id}" name="${f.name}" type="${f.type||'text'}" value="${esc(f.value??'')}" placeholder="${esc(f.placeholder||'')}" autocomplete="${f.auto||'off'}"${f.type==='number'?' inputmode="numeric" min="0" step="1"':''}>`;
+ else if(f.type==='select')inp=`<select id="${id}" name="${f.name}">${f.options.map(([v,l,dis])=>`<option value="${esc(v)}"${v===f.value?' selected':''}${dis?' disabled':''}>${esc(l)}</option>`).join('')}</select>`;
+ else if(f.type==='file')inp=`<input id="${id}" name="${f.name}" type="file" accept="image/*">`;
+ else inp=`<input id="${id}" name="${f.name}" type="${f.type||'text'}" value="${esc(f.value??'')}" placeholder="${esc(f.placeholder||'')}" autocomplete="${f.auto||'off'}"${f.type==='number'?' inputmode="numeric" min="0" step="1"':''}${f.type==='date'&&f.min?` min="${esc(f.min)}"`:''}>`;
  return `<div class="field"><label for="${id}">${esc(f.label)}${req}</label>${inp}${f.help?`<small>${esc(f.help)}</small>`:''}</div>`;
 };
 function openForm({title,intro,fields,submit='Enregistrer',onSubmit,footer=''}){
  if(modalDone){modalDone(false);modalDone=null;}
- $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><h3>${esc(title)}</h3>${intro?`<p class="intro">${intro}</p>`:''}<form id="mf" novalidate>${fields.map(fieldHTML).join('')}<p class="err" id="mfErr" role="alert"></p><button class="btn primary block" id="mfBtn" type="submit">${esc(submit)}</button>${footer}</form>`;
+ $('#mbox').className='mbox';$('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><h3>${esc(title)}</h3>${intro?`<p class="intro">${intro}</p>`:''}<form id="mf" novalidate>${fields.map(fieldHTML).join('')}<p class="err" id="mfErr" role="alert"></p><button class="btn primary block" id="mfBtn" type="submit">${esc(submit)}</button>${footer}</form>`;
  showModal();
  const f=$('#mf'),err=m=>{$('#mfErr').textContent=m;};
  f.onsubmit=async e=>{
   e.preventDefault();err('');const v={};
   for(const fl of fields){
    const el=f.elements[fl.name];
-   v[fl.name]=el.type==='number'?(el.value===''?null:Number(el.value)):(el.type==='password'?el.value:el.value.trim());
+   v[fl.name]=el.type==='file'?(el.files[0]||null):el.type==='number'?(el.value===''?null:Number(el.value)):(el.type==='password'?el.value:el.value.trim());
    if(fl.required&&(v[fl.name]===''||v[fl.name]===null)){err(`${fl.label} : champ obligatoire.`);el.focus();return;}
    if(el.type==='number'&&v[fl.name]!==null&&(v[fl.name]<0||!Number.isFinite(v[fl.name]))){err(`${fl.label} : nombre invalide.`);el.focus();return;}
   }
@@ -354,7 +455,7 @@ function openForm({title,intro,fields,submit='Enregistrer',onSubmit,footer=''}){
 function askConfirm(text,ok='Confirmer',danger=false){
  return new Promise(res=>{
   if(modalDone){modalDone(false);modalDone=null;}
-  $('#mbox').innerHTML=`<h3>Confirmation</h3><p style="margin:12px 0 22px">${esc(text)}</p><div class="row end"><button class="btn line" data-close>Annuler</button><button class="btn ${danger?'danger':'primary'}" id="okBtn">${esc(ok)}</button></div>`;
+  $('#mbox').className='mbox';$('#mbox').innerHTML=`<h3>Confirmation</h3><p style="margin:12px 0 22px">${esc(text)}</p><div class="row end"><button class="btn line" data-close>Annuler</button><button class="btn ${danger?'danger':'primary'}" id="okBtn">${esc(ok)}</button></div>`;
   showModal();modalDone=res;
   $('#okBtn').onclick=()=>{modalDone=null;closeModal();res(true);};
  });
@@ -375,16 +476,17 @@ function openRegister(){
    {name:'adresse',label:'Adresse',auto:'street-address'},
    {name:'email',label:'Adresse Gmail',type:'email',required:true,auto:'email'},
    {name:'password',label:'Mot de passe',type:'password',required:true,auto:'new-password',help:'6 caractères minimum.'},
-   {name:'role',label:'Je suis',type:'select',value:'client',options:Object.entries(ROLES).map(([k,l])=>[k,k==='client'?'Client':l+' (à valider)']),help:'Un rôle du personnel doit être confirmé par le PDG ou le superviseur.'}],
+   {name:'role',label:'Je suis',type:'select',value:'client',options:Object.entries(ROLES).map(([k,l])=>[k,k==='client'?'Client':(UNIQUE.includes(k)&&slots[k]?l+' (déjà attribué)':l+' (à valider)'),UNIQUE.includes(k)&&!!slots[k]]),help:'Un seul compte par poste du personnel (sauf stagiaires). Le rôle doit être confirmé par le PDG ou le superviseur.'}],
   footer:`<p class="links">Déjà un compte ? <a href="#" data-act="login">Connexion</a></p>`,
   onSubmit:async v=>{
    if(v.password.length<6)throw new Error('Mot de passe trop court (6 caractères minimum).');
-   const isClient=v.role==='client';let cred,adminRole=null;registering=true;
+   const isClient=v.role==='client';let cred,adminRole=null,claimed=null;
+   if(UNIQUE.includes(v.role)&&slots[v.role]&&!adminRoleFor(v.email))throw new Error(`Le poste « ${ROLES[v.role]} » est déjà attribué. Choisissez un autre rôle.`);
+   registering=true;
    try{
     cred=await createUserWithEmailAndPassword(auth,v.email,v.password);
     adminRole=adminRoleFor(cred.user.email);
-    const active=!!adminRole||isClient;
-    await withTimeout(setDoc(doc(db,'users',cred.user.uid),{uid:cred.user.uid,email:cred.user.email,nom:v.nom,telephone:v.tel,adresse:v.adresse,role:adminRole||'client',roleDemande:adminRole||v.role,status:active?'active':'pending',createdAt:serverTimestamp()}));
+    await saveProfile(cred.user,c=>{claimed=c;return {uid:cred.user.uid,email:cred.user.email,nom:v.nom,telephone:v.tel,adresse:v.adresse,role:c||'client',roleDemande:c||v.role,status:(c||isClient)?'active':'pending',createdAt:serverTimestamp()};},adminRole,true);
    }catch(e){
     if(cred){try{await deleteUser(cred.user);}catch(_){}}
     registering=false;throw e;
@@ -392,7 +494,7 @@ function openRegister(){
    registering=false;closeModal();
    await handleUser(auth.currentUser);
    location.hash='espace';
-   toast(adminRole?`Profil ${ROLES[adminRole]} créé et activé.`:isClient?'Bienvenue ! Votre profil est créé.':'Profil créé. Un administrateur doit valider votre rôle.');
+   toast(claimed?`Profil ${ROLES[claimed]} créé et activé.`:isClient?'Bienvenue ! Votre profil est créé.':'Profil créé. Un administrateur doit valider votre rôle.');
   }});
 }
 function openForgot(){
@@ -400,8 +502,27 @@ function openForgot(){
   fields:[{name:'email',label:'Adresse Gmail',type:'email',required:true,auto:'email'}],
   onSubmit:async v=>{await sendPasswordResetEmail(auth,v.email);closeModal();toast('Lien envoyé. Vérifiez votre boîte mail (et les spams).');}});
 }
+async function saveProfile(u,build,adminRole,isNew){
+ await withTimeout(runTransaction(db,async tx=>{
+  let claimed=null;
+  if(adminRole){
+   const sref=doc(db,'roleSlots',adminRole),ss=await tx.get(sref);
+   if(!ss.exists()){tx.set(sref,{uid:u.uid,createdAt:serverTimestamp()});claimed=adminRole;}
+   else if(ss.data().uid===u.uid)claimed=adminRole;
+  }
+  const data=build(claimed);
+  if(!Object.keys(data).length)return;
+  const uref=doc(db,'users',u.uid);
+  isNew?tx.set(uref,data):tx.update(uref,data);
+ }));
+}
+function maybeClaim(){
+ if(!slotsReady||!user||!me||me.status!=='active'||!UNIQUE.includes(me.role)||slots[me.role]||claimTried===me.role)return;
+ claimTried=me.role;
+ setDoc(doc(db,'roleSlots',me.role),{uid:user.uid,createdAt:serverTimestamp()}).catch(e=>console.warn('poste',e));
+}
 async function handleUser(u){
- unsubMe&&unsubMe();unsubMe=null;stopPrivate();me=null;user=u;creatingProfile=false;
+ unsubMe&&unsubMe();unsubMe=null;stopPrivate();me=null;user=u;creatingProfile=false;claimTried='';
  if(!u){prof='ok';authReady=true;document.body.classList.remove('is-admin');renderAll();return;}
  prof='loading';
  unsubMe=onSnapshot(doc(db,'users',u.uid),async s=>{
@@ -410,16 +531,16 @@ async function handleUser(u){
   if(!s.exists()){
    if(!creatingProfile){
     creatingProfile=true;
-    try{await withTimeout(setDoc(doc(db,'users',u.uid),{uid:u.uid,email:u.email,nom:u.displayName||(u.email||'').split('@')[0],telephone:'',adresse:'',role:ar||'client',roleDemande:ar||'client',status:'active',createdAt:serverTimestamp()}));}
+    try{await saveProfile(u,c=>({uid:u.uid,email:u.email,nom:u.displayName||(u.email||'').split('@')[0],telephone:'',adresse:'',role:c||'client',roleDemande:c||'client',status:'active',createdAt:serverTimestamp()}),ar,true);}
     catch(e){console.error(e);creatingProfile=false;me=null;prof='missing';renderAll();toast(errMsg(e),'err');}
    }
    return;
   }
   creatingProfile=false;
-  me=s.data();prof='ok';
+  me=s.data();prof='ok';maybeClaim();
   if(ar&&(me.role!==ar||me.status!=='active')&&!fixingAdmin){
    fixingAdmin=true;
-   updateDoc(doc(db,'users',u.uid),{role:ar,status:'active'}).catch(e=>{console.error(e);toast(errMsg(e),'err');}).finally(()=>{fixingAdmin=false;});
+   saveProfile(u,c=>c?{role:c,status:'active'}:{},ar,false).catch(e=>{console.error(e);toast(errMsg(e),'err');}).finally(()=>{fixingAdmin=false;});
   }
   if(me.status==='banned'&&!ar){toast('Votre compte est suspendu. Contactez la direction.','err');await signOut(auth);return;}
   document.body.classList.toggle('is-admin',isAdmin());
@@ -435,6 +556,9 @@ const pubErr=e=>{console.error(e);if(!warned){warned=true;toast("Impossible de c
 onSnapshot(doc(db,'site','config'),s=>{cfg={...DEF_CFG,...(s.exists()?s.data():{})};renderAll();},pubErr);
 onSnapshot(collection(db,'animaux'),s=>{animaux=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.nom).localeCompare(String(b.nom),'fr'));renderAll();},pubErr);
 onSnapshot(collection(db,'historique'),s=>{histo=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.ordre??99)-(b.ordre??99));renderAll();},pubErr);
+onSnapshot(query(collection(db,'galerie'),orderBy('createdAt','desc'),limit(24)),s=>{galerie=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();},pubErr);
+onSnapshot(query(collection(db,'avis'),where('status','==','approved'),limit(30)),s=>{avisPub=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();},pubErr);
+onSnapshot(collection(db,'roleSlots'),s=>{slots={};s.docs.forEach(d=>{slots[d.id]=d.data().uid;});slotsReady=true;maybeClaim();renderAll();},pubErr);
 onSnapshot(doc(db,'stats','public'),s=>{stats=s.exists()?s.data():{};renderAll();},pubErr);
 
 /* ============ Données privées (équipe) ============ */
@@ -451,6 +575,10 @@ function startPrivate(){
  }
  if(FIN.includes(r))w(query(collection(db,'depenses'),orderBy('date','desc'),limit(200)),'dep');
  if(ADMINS.includes(r))w(query(collection(db,'users'),limit(300)),'users');
+ if(ORDER_STAFF.includes(r))w(query(collection(db,'commandes'),orderBy('createdAt','desc'),limit(200)),'cmd');
+ else w(query(collection(db,'commandes'),where('uid','==',user.uid),limit(100)),'cmd');
+ w(query(collection(db,'avis'),where('uid','==',user.uid),limit(1)),'mesAvis');
+ if(ADMINS.includes(r)){w(query(collection(db,'journal'),orderBy('createdAt','desc'),limit(200)),'journal');w(query(collection(db,'avis'),limit(200)),'avisAll');}
 }
 
 /* ============ Navigation ============ */
@@ -487,18 +615,48 @@ function renderHome(){
  $('#h-facts').textContent=bits.join(' · ');
  $('#h-animaux').innerHTML=animList().slice(0,3).map(animalCard).join('');
 }
+function renderUne(){
+ const sec=$('#sec-une'),box=$('#h-une');
+ sec.style.display=(galerie.length||isAdmin())?'':'none';
+ if(!galerie.length){box.innerHTML='<div class="note adm-block">Aucune publication pour l\'instant. Ajoutez des photos et des textes : ils défileront ici, sur la page d\'accueil.</div>';return;}
+ if(slideIdx>=galerie.length)slideIdx=0;
+ box.innerHTML=`<div class="slider" role="region" aria-roledescription="carrousel" aria-label="À la une">${galerie.map((g,i)=>{const im=safeImg(g.image);return `<article class="slide ${i===slideIdx?'on':''}${im?'':' noimg'}">${im?`<div class="ph" role="img" aria-label="${esc(g.titre||'Photo de la ferme')}" style="background-image:url('${im}')"></div>`:''}<div class="tx"><h3>${esc(g.titre||'')}</h3><p>${esc(g.texte||'')}</p></div></article>`;}).join('')}${galerie.length>1?'<div class="sl-nav"><button data-act="slide-prev" aria-label="Précédent">‹</button><button data-act="slide-next" aria-label="Suivant">›</button></div>':''}</div>${galerie.length>1?`<div class="dots">${galerie.map((_,i)=>`<button class="${i===slideIdx?'on':''}" data-act="slide-go" data-id="${i}" aria-label="Diapositive ${i+1}"></button>`).join('')}</div>`:''}`;
+}
+function goSlide(i){
+ const n=galerie.length;if(!n)return;slideIdx=(i%n+n)%n;
+ document.querySelectorAll('#h-une .slide').forEach((el,k)=>el.classList.toggle('on',k===slideIdx));
+ document.querySelectorAll('#h-une .dots button').forEach((el,k)=>el.classList.toggle('on',k===slideIdx));
+}
+function galItem(g){
+ const im=safeImg(g.image);
+ return `<article class="card">${im?`<img loading="lazy" src="${im}" alt="${esc(g.titre||'Photo de la ferme')}" data-act="view-img" data-id="${esc(g.id)}">`:''}<div class="cap">${g.titre?`<h3>${esc(g.titre)}</h3>`:''}${g.texte?`<p>${esc(g.texte)}</p>`:''}<div class="adm row" style="margin-top:12px"><button class="btn sm line" data-act="edit-gal" data-id="${esc(g.id)}">✏️ Modifier</button><button class="btn sm danger" data-act="del-gal" data-id="${esc(g.id)}">Supprimer</button></div></div></article>`;
+}
+function renderGalerie(){$('#l-galerie').innerHTML=galerie.length?`<div class="gal">${galerie.map(galItem).join('')}</div>`:'<p class="empty">Aucune publication pour l\'instant.</p>';}
+function renderAvisPub(){
+ $('#h-avis').innerHTML=avisPub.length?avisPub.map(a=>`<article class="card avis"><div class="stars" role="img" aria-label="${parseInt(a.note)||5} sur 5">${stars(a.note)}</div><p>« ${esc(a.texte)} »</p><b>${esc(a.nom)}</b></article>`).join(''):'<p class="empty" style="grid-column:1/-1">Aucun avis pour le moment. Soyez le premier à partager votre expérience.</p>';
+}
+function viewImg(id){
+ const g=galerie.find(x=>x.id===id);if(!g)return;
+ if(modalDone){modalDone(false);modalDone=null;}
+ $('#mbox').className='mbox wide';
+ $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><img src="${safeImg(g.image)}" alt="${esc(g.titre||'Photo')}" style="width:100%;border-radius:12px;display:block">${g.titre?`<h3 style="margin-top:12px">${esc(g.titre)}</h3>`:''}${g.texte?`<p class="muted" style="white-space:pre-line">${esc(g.texte)}</p>`:''}`;
+ showModal();
+}
 function renderAnimaux(){$('#l-animaux').innerHTML=seedNote('animaux')+`<div class="grid">${animList().map(animalCard).join('')}</div>`;}
 function renderHisto(){
  $('#l-histo').innerHTML=seedNote('historique')+`<div class="tl">${histoList().map(h=>`<div class="it"><span class="yr">${esc(h.annee)}</span><h3>${esc(h.titre)}</h3><p>${esc(h.texte||'')}</p>${h.id?`<div class="adm row"><button class="btn sm line" data-act="edit-histo" data-id="${esc(h.id)}">✏️ Modifier</button><button class="btn sm danger" data-act="del-histo" data-id="${esc(h.id)}">Supprimer</button></div>`:''}</div>`).join('')}</div>`;
 }
 function renderContact(){
- const tel=(cfg.telephone||'').trim(),digits=tel.replace(/\D/g,''),ph=tel.replace(/[^\d+]/g,'');
+ const tel=(cfg.telephone||'').trim(),ph=tel.replace(/[^\d+]/g,''),wa=waNumber(cfg.whatsapp||cfg.telephone),fb=safeUrl(cfg.facebook);
  const none='<span class="muted">Non renseigné</span>';
  $('#l-contact').innerHTML=`
-  <div class="card"><div class="ico">📞</div><b>Téléphone</b>${tel?`<a href="tel:${esc(ph)}">${esc(tel)}</a>`:none}${digits?`<div style="margin-top:12px"><a class="btn sm primary" href="https://wa.me/${esc(digits)}" target="_blank" rel="noopener">Écrire sur WhatsApp</a></div>`:''}</div>
+  <div class="card"><div class="ico">📞</div><b>Téléphone</b>${tel?`<a href="tel:${esc(ph)}">${esc(tel)}</a>`:none}</div>
   <div class="card"><div class="ico">✉️</div><b>Email</b>${cfg.email?`<a href="mailto:${esc(cfg.email)}">${esc(cfg.email)}</a>`:none}</div>
   <div class="card"><div class="ico">📍</div><b>Adresse</b>${cfg.adresse?esc(cfg.adresse):none}</div>
-  <div class="card"><div class="ico">🕒</div><b>Horaires</b>${cfg.horaires?esc(cfg.horaires):none}</div>`;
+  <div class="card"><div class="ico">🕒</div><b>Horaires</b>${cfg.horaires?esc(cfg.horaires):none}</div>
+  <div class="card"><div class="ico">💬</div><b>Réseaux sociaux</b><div class="row" style="margin-top:8px">${wa?`<a class="btn sm primary" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`:''}${fb?`<a class="btn sm line" href="${esc(fb)}" target="_blank" rel="noopener">Facebook</a>`:''}${!wa&&!fb?none:''}</div></div>`;
+ $('#f-social').innerHTML=(fb?` · <a href="${esc(fb)}" target="_blank" rel="noopener">Facebook</a>`:'')+(wa?` · <a href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`:'');
+ const fl=$('#waFloat');if(wa){fl.href='https://wa.me/'+wa;fl.classList.remove('hidden');}else fl.classList.add('hidden');
 }
 
 /* ============ Affichage : espace connecté ============ */
@@ -509,10 +667,16 @@ const btnIf=(ok,act,label,cls='primary',id='')=>ok?`<button class="btn sm ${cls}
 const stock=()=>stats.stock||0;
 
 function tabsFor(){
- const r=me.role,t=[['resume','📊 Résumé']];
- if(STAFF.includes(r))t.push(['production','🥚 Production'],['reception','📦 Réception'],['magasin','🏪 Magasin et ventes'],['sante','🩺 Santé']);
+ const r=me.role,staff=STAFF.includes(r),na=staff?computeAlerts().length:0,t=[['resume','📊 Résumé'+(na?` (${na})`:'')]];
+ if(staff)t.push(['production','🥚 Production'],['reception','📦 Réception'],['magasin','🏪 Magasin et ventes'],['sante','🩺 Santé']);
  if(FIN.includes(r))t.push(['depenses','💸 Dépenses']);
- if(isAdmin()){const n=D.users.filter(u=>u.status==='pending').length;t.push(['inscrits','👥 Inscrits'+(n?` (${n})`:'')]);}
+ if(ORDER_STAFF.includes(r)){const n=D.cmd.filter(c=>c.status==='nouvelle').length;t.push(['commandes','🛒 Commandes'+(n?` (${n})`:'')]);}
+ else t.push(['commandes','🛒 Mes commandes']);
+ if(isAdmin()){
+  const n=D.users.filter(u=>u.status==='pending').length,a=D.avisAll.filter(x=>x.status==='pending').length;
+  t.push(['inscrits','👥 Inscrits'+(n?` (${n})`:'')],['avisadm','⭐ Avis'+(a?` (${a})`:'')],['journal','📜 Journal']);
+ }
+ t.push(['profil','👤 Mon profil']);
  return t;
 }
 function renderEspace(){
@@ -523,30 +687,72 @@ function renderEspace(){
  if(prof==='missing'||!me){box.innerHTML=`<div class="card center"><h2>Profil introuvable</h2><p>Votre compte existe mais son profil n'a pas été trouvé (ou l'accès est refusé par les règles Firestore). Déconnectez-vous puis recréez votre profil, ou contactez la direction.</p><button class="btn primary" data-act="logout">Se déconnecter</button></div>`;return;}
  if(me.status==='pending'){box.innerHTML=`<div class="card center"><h2>Compte en attente de validation</h2><p>Bonjour ${esc(me.nom)}. Vous avez demandé le rôle <b>${esc(ROLES[me.roleDemande]||me.roleDemande)}</b>. Le PDG ou le superviseur doit le valider. Cette page se met à jour automatiquement.</p><button class="btn line" data-act="logout">Se déconnecter</button></div>`;return;}
  const tabs=tabsFor();if(!tabs.some(t=>t[0]===curTab))curTab='resume';
- const panel={resume:pResume,production:pProd,reception:pRecep,magasin:pMag,sante:pSante,depenses:pDep,inscrits:pUsers}[curTab]();
+ const panel={resume:pResume,production:pProd,reception:pRecep,magasin:pMag,sante:pSante,depenses:pDep,inscrits:pUsers,commandes:pCmd,profil:pProfil,journal:pJournal,avisadm:pAvisAdm}[curTab]();
  box.innerHTML=`<div class="head"><div><h2>Bonjour ${esc(me.nom)}</h2><p>${badge(ROLES[me.role]||me.role,'green')}</p></div></div><div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab ${k===curTab?'on':''}" role="tab" data-act="tab" data-id="${k}">${l}</button>`).join('')}</div>${panel}`;
+}
+const lastDays=n=>{const r=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);r.push(new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10));}return r;};
+const lastMonths=n=>{const r=[],d=new Date();for(let i=n-1;i>=0;i--){const x=new Date(d.getFullYear(),d.getMonth()-i,1);r.push(`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}`);}return r;};
+function chart({title,labels,series,type='line'}){
+ const W=480,H=230,pl=54,pr=10,pt=12,pb=28,n=labels.length,iw=W-pl-pr,ih=H-pt-pb;
+ const max=Math.max(1,...series.flatMap(x=>x.values)),p10=Math.pow(10,Math.floor(Math.log10(max))),f=max/p10,top=(f<=1?1:f<=2?2:f<=5?5:10)*p10;
+ const y=v=>pt+ih*(1-v/top),step=Math.ceil(n/6);let g='';
+ for(let k=0;k<=4;k++){const v=top*k/4,yy=y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" stroke="#dde3d8"/><text x="${pl-6}" y="${yy+4}" text-anchor="end">${fmt(Math.round(v))}</text>`;}
+ if(type==='line'){
+  const x=i=>pl+(n<=1?iw/2:i*iw/(n-1));
+  labels.forEach((l,i)=>{if(i%step===0||i===n-1)g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${esc(l)}</text>`;});
+  series.forEach(se=>{g+=`<polyline points="${se.values.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')}" fill="none" stroke="${se.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;if(n<=14)se.values.forEach((v,i)=>{g+=`<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="${se.color}"/>`;});});
+ }else{
+  const gw=iw/n,bw=gw*.7/series.length;
+  labels.forEach((l,i)=>{g+=`<text x="${(pl+gw*i+gw/2).toFixed(1)}" y="${H-8}" text-anchor="middle">${esc(l)}</text>`;series.forEach((se,k)=>{const h=ih*se.values[i]/top;g+=`<rect x="${(pl+gw*i+gw*.15+k*bw).toFixed(1)}" y="${(pt+ih-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${se.color}"/>`;});});
+ }
+ return `<h3 style="font-size:1rem;margin-top:6px">${esc(title)}</h3><div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${g}</svg><div class="legend">${series.map(se=>`<span><i style="background:${se.color}"></i>${esc(se.name)} (total ${fmt(se.values.reduce((a,b)=>a+b,0))})</span>`).join('')}</div></div>`;
+}
+function computeAlerts(){
+ const t=today(),A=[],m=t.slice(0,7),hr=new Date().getHours();
+ const nr=D.prod.filter(p=>p.status==='a_receptionner'),vieux=nr.filter(p=>p.date<t);
+ if(stock()<=0)A.push(['r','Le stock est vide.']);
+ else if(stock()<=cfg.seuilStock)A.push(['a',`Stock bas : ${fmt(stock())} œufs (seuil d'alerte : ${fmt(cfg.seuilStock)}).`]);
+ const morts=sum(D.sante.filter(x=>x.date>=lastDays(7)[0]),'mortalite');
+ if(cfg.seuilMortalite>0&&morts>=cfg.seuilMortalite)A.push(['r',`Mortalité élevée : ${fmt(morts)} poules mortes sur les 7 derniers jours (seuil : ${fmt(cfg.seuilMortalite)}).`]);
+ const pj=D.prod.filter(p=>p.date===t),ram=sum(pj,'oeufsRamasses'),cas=sum(pj,'casses');
+ if(ram>0&&cas*100/ram>cfg.seuilCasse)A.push(['a',`Casse élevée au poulailler aujourd'hui : ${(cas*100/ram).toFixed(1)} % (seuil : ${cfg.seuilCasse} %).`]);
+ if(vieux.length)A.push(['r',`${vieux.length} lot(s) de production non réceptionné(s) depuis plus d'un jour.`]);
+ else if(nr.length)A.push(['i',`${nr.length} lot(s) à réceptionner aujourd'hui.`]);
+ const ns=D.trans.filter(x=>x.status==='a_vendre').length;
+ if(ns)A.push(['i',`${ns} lot(s) réceptionné(s) à mettre en stock.`]);
+ const ec=D.trans.filter(x=>(x.date||'').startsWith(m)&&x.attendus!=null&&x.attendus!==x.oeufsRecus).length;
+ if(ec)A.push(['a',`${ec} réception(s) avec écart ce mois-ci (voir l'onglet Réception).`]);
+ if(hr>=12&&!pj.length&&can(CAN.prod))A.push(['a',"Aucune production n'a encore été enregistrée aujourd'hui."]);
+ const nc=D.cmd.filter(c=>c.status==='nouvelle').length;
+ if(nc&&ORDER_STAFF.includes(me.role))A.push(['i',`${nc} nouvelle(s) commande(s) à traiter.`]);
+ if(isAdmin()){const np=D.users.filter(u=>u.status==='pending').length;if(np)A.push(['i',`${np} compte(s) en attente de validation.`]);const na=D.avisAll.filter(x=>x.status==='pending').length;if(na)A.push(['i',`${na} avis client à valider.`]);}
+ return A;
 }
 function pResume(){
  if(!STAFF.includes(me.role)){
-  return `<div class="bloc"><h3>Œufs disponibles aujourd'hui</h3><div class="bigstock">${fmt(stock())}</div><p class="muted" style="margin-top:10px">Pour commander, contactez la ferme.</p><div class="row" style="margin-top:14px"><a class="btn primary" href="#contact">Nos coordonnées</a><a class="btn line" href="#animaux">Nos animaux</a></div></div>`;
+  const enCours=D.cmd.filter(c=>c.status==='nouvelle'||c.status==='confirmee').length;
+  return `<div class="bloc"><h3>Œufs disponibles aujourd'hui</h3><div class="bigstock">${fmt(stock())}</div><p class="muted" style="margin-top:10px">Prix : ${money(cfg.prixOeuf)} l'œuf.</p></div>
+  <div class="bloc"><h3>Mes commandes</h3><p class="muted">${enCours?`${enCours} commande(s) en cours.`:'Aucune commande en cours.'}</p><div class="row" style="margin-top:14px"><button class="btn primary" data-act="new-cmd">🛒 Passer une commande</button><button class="btn line" data-act="tab" data-id="commandes">Voir mes commandes</button><a class="btn line" href="#contact">Nos coordonnées</a></div></div>`;
  }
- const t=today(),m=t.slice(0,7);
- const vj=D.ventes.filter(v=>v.type==='vente'&&v.date===t);
- const poules=D.prod[0]?.effectif??stats.effectif;
- let h=`<div class="stats">${stat('Poules',poules!=null?fmt(poules):'–')}${stat("Bons œufs produits aujourd'hui",fmt(sum(D.prod.filter(p=>p.date===t),'bons')),'j')}${stat('Stock disponible',fmt(stock()),'b')}${stat("Ventes d'aujourd'hui",money(sum(vj,'montant')))}`;
+ const t=today(),m=t.slice(0,7),vj=D.ventes.filter(v=>v.type==='vente'&&v.date===t),poules=D.prod[0]?.effectif??stats.effectif,A=computeAlerts();
+ let h=`<div class="alerts">${A.length?A.map(([c,x])=>`<div class="alert ${c}" role="status">${esc(x)}</div>`).join(''):'<div class="alert ok">Aucune alerte : tout est en ordre.</div>'}</div>`;
+ h+=`<div class="stats">${stat('Poules',poules!=null?fmt(poules):'–')}${stat("Bons œufs produits aujourd'hui",fmt(sum(D.prod.filter(p=>p.date===t),'bons')),'j')}${stat('Stock disponible',fmt(stock()),'b')}${stat("Ventes d'aujourd'hui",money(sum(vj,'montant')))}`;
  if(FIN.includes(me.role)){
   const ca=sum(D.ventes.filter(v=>v.type==='vente'&&(v.date||'').startsWith(m)),'montant'),dp=sum(D.dep.filter(d=>(d.date||'').startsWith(m)),'montant');
   h+=stat('Ventes du mois',money(ca))+stat('Dépenses du mois',money(dp),'r')+stat('Résultat du mois (ventes − dépenses)',money(ca-dp),ca-dp<0?'r':'');
  }
  h+='</div>';
- const todo=[];
- const nr=D.prod.filter(p=>p.status==='a_receptionner').length,ns=D.trans.filter(p=>p.status==='a_vendre').length;
- if(nr&&can(CAN.recep))todo.push(`${nr} lot(s) à réceptionner (onglet Réception)`);
- if(ns&&can(CAN.vente))todo.push(`${ns} lot(s) à mettre en stock (onglet Magasin et ventes)`);
- if(todo.length)h+=`<div class="note"><b>À faire :</b> ${todo.map(esc).join(' · ')}</div>`;
+ const days=lastDays(30);
+ h+=`<div class="bloc">${chart({title:'Production et ventes sur 30 jours (en œufs)',labels:days.map(d=>d.slice(8)+'/'+d.slice(5,7)),series:[{name:'Bons œufs produits',color:'#0a7a42',values:days.map(d=>sum(D.prod.filter(p=>p.date===d),'bons'))},{name:'Œufs vendus',color:'#f5b82e',values:days.map(d=>sum(D.ventes.filter(v=>v.type==='vente'&&v.date===d),'quantite'))}]})}`;
+ if(FIN.includes(me.role)){
+  const ms=lastMonths(6);
+  h+=chart({title:'Ventes et dépenses sur 6 mois (en FCFA)',type:'bar',labels:ms.map(x=>x.slice(5)+'/'+x.slice(2,4)),series:[{name:'Ventes',color:'#0a7a42',values:ms.map(x=>sum(D.ventes.filter(v=>v.type==='vente'&&(v.date||'').startsWith(x)),'montant'))},{name:'Dépenses',color:'#c0392b',values:ms.map(x=>sum(D.dep.filter(d=>(d.date||'').startsWith(x)),'montant'))}]});
+ }
+ h+='</div>';
+ if(isAdmin())h+=`<div class="bloc"><h3>Administration</h3><div class="row" style="margin-top:12px"><button class="btn sm line" data-act="seuils">⚙️ Seuils d'alerte</button><button class="btn sm line" data-act="backup">💾 Sauvegarde complète (JSON)</button></div></div>`;
  return h;
 }
-const monthBar=()=>`<div class="row" style="margin-bottom:16px"><label for="mSel" style="font-weight:600">Mois :</label><input type="month" id="mSel" value="${esc(curMonth)}" style="border:1.5px solid #c9d3c6;border-radius:10px;padding:8px 10px;font:inherit"><button class="btn sm line" data-act="print">🖨️ Imprimer la fiche</button></div>`;
+const monthBar=k=>`<div class="row" style="margin-bottom:16px"><label for="mSel" style="font-weight:600">Mois :</label><input type="month" id="mSel" value="${esc(curMonth)}" style="border:1.5px solid #c9d3c6;border-radius:10px;padding:8px 10px;font:inherit"><button class="btn sm line" data-act="export" data-id="${k}">📥 Excel</button><button class="btn sm line" data-act="print">🖨️ Imprimer</button></div>`;
 const VISA_ROLES={production:CAN.prod,reception:CAN.recep,magasin:CAN.vente};
 function visaRow(fiche){
  const v=D.visas.find(x=>x.id===`${fiche}_${curMonth}`);
@@ -557,7 +763,7 @@ function pProd(){
  const L=D.prod.filter(p=>(p.date||'').startsWith(curMonth)).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
  const rows=L.map(p=>`<tr><td>${dateFr(p.date)}</td><td>${fmt(p.effectif)}</td><td>${fmt(p.oeufsRamasses)}</td><td>${fmt(p.casses)}</td><td><b>${fmt(p.bons)}</b></td><td>${esc(p.superviseurNom||'')}</td><td>${p.status==='a_receptionner'?badge('À réceptionner','amber'):badge('Réceptionné','green')}</td><td>${esc(p.observations||'')}</td><td>${p.status==='a_receptionner'&&isAdmin()?btnIf(true,'del-prod','Supprimer','danger',p.id):''}</td></tr>`);
  const tot=`<div class="stats">${stat('Total œufs ramassés du mois',fmt(sum(L,'oeufsRamasses')))}${stat('Total œufs cassés',fmt(sum(L,'casses')),'r')}${stat('Total œufs bons du mois',fmt(sum(L,'bons')),'j')}</div>`;
- return `<div class="bloc"><div class="head"><div><h3>Fiche journalière de production</h3><p class="muted">Poulailler → Réception. Rempli par le Superviseur Général.</p></div>${btnIf(can(CAN.prod),'new-prod','＋ Enregistrer la production')}</div>${monthBar()}${table(['Date','Poules présentes','Œufs ramassés','Cassés au poulailler','Bons disponibles (ramassés − cassés)','Superviseur','Statut','Observations (mortalité, aliment)',''],rows)||'<p class="empty">Aucune production ce mois-ci.</p>'}<h3 style="margin-top:22px">Calcul du mois</h3>${tot}${visaRow('production')}</div>`;
+ return `<div class="bloc"><div class="head"><div><h3>Fiche journalière de production</h3><p class="muted">Poulailler → Réception. Rempli par le Superviseur Général.</p></div>${btnIf(can(CAN.prod),'new-prod','＋ Enregistrer la production')}</div>${monthBar('prod')}${table(['Date','Poules présentes','Œufs ramassés','Cassés au poulailler','Bons disponibles (ramassés − cassés)','Superviseur','Statut','Observations (mortalité, aliment)',''],rows)||'<p class="empty">Aucune production ce mois-ci.</p>'}<h3 style="margin-top:22px">Calcul du mois</h3>${tot}${visaRow('production')}</div>`;
 }
 function pRecep(){
  const wait=D.prod.filter(p=>p.status==='a_receptionner');
@@ -567,7 +773,7 @@ function pRecep(){
   return `<tr><td>${dateFr(t.date)}</td><td>${dateFr(t.datePonte)}</td><td>${fmt(t.oeufsRecus)}${ec}</td><td>${fmt(t.cassesReception)}</td><td><b>${fmt(t.bons)}</b></td><td>${esc(t.magasiniereNom||'')}</td><td>${esc(t.receptionnisteNom||'')}</td><td>${t.status==='a_vendre'?badge('À mettre en stock','amber'):badge('En stock','green')}</td><td>${esc(t.observations||'')}</td></tr>`;});
  const tot=`<div class="stats">${stat('Total reçus du mois',fmt(sum(L,'oeufsRecus')))}${stat('Total cassés',fmt(sum(L,'cassesReception')),'r')}${stat('Total transférés au magasin',fmt(sum(L,'bons')),'j')}</div>`;
  return `<div class="bloc"><div class="head"><div><h3>Lots à réceptionner</h3><p class="muted">Contrôle : œufs reçus − œufs cassés = œufs transférés. Le nombre « reçus » doit être identique aux « bons disponibles » de la fiche de production.</p></div></div>${lots}</div>
- <div class="bloc"><div class="head"><div><h3>Fiche de transfert</h3><p class="muted">Réception → Magasin. Rempli par la Réceptionniste.</p></div></div>${monthBar()}${table(['Date','Lot du','Œufs reçus du poulailler','Cassés à la réception','Bons transférés (reçus − cassés)','Magasinière','Réceptionniste','Statut','Observations'],rows)||'<p class="empty">Aucune réception ce mois-ci.</p>'}<h3 style="margin-top:22px">Calcul du mois</h3>${tot}${visaRow('reception')}</div>`;
+ <div class="bloc"><div class="head"><div><h3>Fiche de transfert</h3><p class="muted">Réception → Magasin. Rempli par la Réceptionniste.</p></div></div>${monthBar('trans')}${table(['Date','Lot du','Œufs reçus du poulailler','Cassés à la réception','Bons transférés (reçus − cassés)','Magasinière','Réceptionniste','Statut','Observations'],rows)||'<p class="empty">Aucune réception ce mois-ci.</p>'}<h3 style="margin-top:22px">Calcul du mois</h3>${tot}${visaRow('reception')}</div>`;
 }
 function dayRows(){
  const L=D.ventes.filter(v=>(v.date||'').startsWith(curMonth)).sort((a,b)=>String(a.date).localeCompare(String(b.date))||((a.createdAt?.seconds??9e12)-(b.createdAt?.seconds??9e12)));
@@ -592,22 +798,23 @@ function pMag(){
  const rows=days.map(d=>`<tr><td>${dateFr(d.date)}</td><td>${fmt(d.veille)}</td><td>${fmt(d.entree)}</td><td>${fmt(d.veille+d.entree)}</td><td>${fmt(d.vendus)}</td><td>${fmt(d.casses)}</td><td>${d.ajust?(d.ajust>0?'+':'')+fmt(d.ajust):''}</td><td><b>${fmt(d.reste)}</b></td><td>${d.prix.map(x=>fmt(x)).join(' / ')}</td><td>${money(d.montant)}</td><td>${esc(d.clients.join(', '))}</td><td>${esc(d.ops.join(', '))}</td></tr>`);
  const tot=`<div class="stats">${stat('Total entrées du mois',fmt(sum(days,'entree')))}${stat('Total œufs vendus',fmt(sum(days,'vendus')),'j')}${stat('Total cassés au magasin',fmt(sum(days,'casses')),'r')}${stat('Montant total vendu',money(sum(days,'montant')))}</div>`;
  const TL={vente:['Vente','green'],perte:['Cassés','red'],ajustement:['Ajustement','blue'],entree:['Entrée','amber']};
- const det=D.ventes.filter(v=>(v.date||'').startsWith(curMonth)).map(v=>{const [l,c]=TL[v.type]||['',''];return `<tr><td>${dateFr(v.date)}</td><td>${badge(l,c)}</td><td>${fmt(v.quantite)}</td><td>${v.type==='vente'?fmt(v.prix):''}</td><td>${v.type==='vente'?money(v.montant):''}</td><td>${esc(v.clientNom||v.motif||'')}</td><td>${esc(v.clientTel||'')}</td><td>${esc(v.operateurNom||'')}</td></tr>`;});
+ const det=D.ventes.filter(v=>(v.date||'').startsWith(curMonth)).map(v=>{const [l,c]=TL[v.type]||['',''];return `<tr><td>${dateFr(v.date)}</td><td>${badge(l,c)}</td><td>${fmt(v.quantite)}</td><td>${v.type==='vente'?fmt(v.prix):''}</td><td>${v.type==='vente'?money(v.montant):''}</td><td>${esc(v.clientNom||v.motif||'')}</td><td>${esc(v.clientTel||'')}</td><td>${esc(v.operateurNom||'')}</td><td>${v.type==='vente'?btnIf(true,'receipt','🧾 Reçu','line',v.id):''}</td></tr>`;});
  return `<div class="bloc"><div class="head"><div><h3>Stock disponible</h3><div class="bigstock">${fmt(stock())}</div><p class="muted">Prix actuel : ${money(cfg.prixOeuf)} l'œuf</p></div><div class="row">${btnIf(can(CAN.vente),'sell','Vendre','primary')}${btnIf(can(CAN.vente),'loss','Œufs cassés au magasin','line')}${btnIf(isAdmin(),'adjust','Ajuster le stock','line')}${btnIf(isAdmin(),'price',"Prix de l'œuf",'line')}</div></div></div>
  <div class="bloc"><h3>Lots à mettre en stock</h3>${lots}</div>
- <div class="bloc"><div class="head"><div><h3>Fiche de stock et vente journalière</h3><p class="muted">Stock total = veille + entrée du jour. Reste du jour = stock total − vendus − cassés. Le reste du jour devient le stock veille du lendemain.</p></div></div>${monthBar()}${table(['Date','Stock veille','Entrée du jour','Stock total disponible','Œufs vendus','Cassés au magasin','Ajust.','Reste du jour','Prix unitaire (FCFA)','Montant total vendu','Client / destination','Magasinière'],rows)||'<p class="empty">Aucun mouvement ce mois-ci.</p>'}<h3 style="margin-top:22px">Total du mois</h3>${tot}${visaRow('magasin')}</div>
- <div class="bloc"><h3>Détail des mouvements du mois</h3>${table(['Date','Type','Quantité','Prix','Montant','Client / motif','Téléphone','Par'],det)||'<p class="empty">Aucun mouvement.</p>'}</div>`;
+ <div class="bloc"><div class="head"><div><h3>Fiche de stock et vente journalière</h3><p class="muted">Stock total = veille + entrée du jour. Reste du jour = stock total − vendus − cassés. Le reste du jour devient le stock veille du lendemain.</p></div></div>${monthBar('mag')}${table(['Date','Stock veille','Entrée du jour','Stock total disponible','Œufs vendus','Cassés au magasin','Ajust.','Reste du jour','Prix unitaire (FCFA)','Montant total vendu','Client / destination','Magasinière'],rows)||'<p class="empty">Aucun mouvement ce mois-ci.</p>'}<h3 style="margin-top:22px">Total du mois</h3>${tot}${visaRow('magasin')}</div>
+ <div class="bloc"><h3>Détail des mouvements du mois</h3>${table(['Date','Type','Quantité','Prix','Montant','Client / motif','Téléphone','Par',''],det)||'<p class="empty">Aucun mouvement.</p>'}</div>`;
 }
 function pSante(){
  const rows=D.sante.map(s=>`<tr><td>${dateFr(s.date)}</td><td>${fmt(s.mortalite)}</td><td>${esc(s.notes||'')}</td><td>${esc(s.veterinaireNom||'')}</td><td>${isAdmin()?btnIf(true,'del-sante','Supprimer','danger',s.id):''}</td></tr>`);
- return `<div class="bloc"><div class="head"><div><h3>Suivi vétérinaire</h3><p class="muted">Mortalité et observations.</p></div>${btnIf(can(CAN.veto),'new-sante','＋ Nouveau suivi')}</div>${table(['Date','Mortalité','Observations','Par',''],rows)||'<p class="empty">Aucun suivi enregistré.</p>'}</div>`;
+ return `<div class="bloc"><div class="head"><div><h3>Suivi vétérinaire</h3><p class="muted">Mortalité et observations.</p></div><div class="row">${btnIf(true,'export','📥 Excel','line','sante')}${btnIf(can(CAN.veto),'new-sante','＋ Nouveau suivi')}</div></div>${table(['Date','Mortalité','Observations','Par',''],rows)||'<p class="empty">Aucun suivi enregistré.</p>'}</div>`;
 }
 function pDep(){
  const m=today().slice(0,7);
  const rows=D.dep.map(d=>`<tr><td>${dateFr(d.date)}</td><td>${esc(d.libelle)}</td><td>${esc(d.categorie||'')}</td><td>${money(d.montant)}</td><td>${isAdmin()?btnIf(true,'del-dep','Supprimer','danger',d.id):''}</td></tr>`);
- return `<div class="bloc"><div class="head"><div><h3>Dépenses</h3><p class="muted">Total du mois : <b>${money(sum(D.dep.filter(d=>(d.date||'').startsWith(m)),'montant'))}</b></p></div>${btnIf(isAdmin(),'new-dep','＋ Ajouter une dépense')}</div>${table(['Date','Libellé','Catégorie','Montant',''],rows)||'<p class="empty">Aucune dépense enregistrée.</p>'}</div>`;
+ return `<div class="bloc"><div class="head"><div><h3>Dépenses</h3><p class="muted">Total du mois : <b>${money(sum(D.dep.filter(d=>(d.date||'').startsWith(m)),'montant'))}</b></p></div><div class="row">${btnIf(true,'export','📥 Excel','line','dep')}${btnIf(isAdmin(),'new-dep','＋ Ajouter une dépense')}</div></div>${table(['Date','Libellé','Catégorie','Montant',''],rows)||'<p class="empty">Aucune dépense enregistrée.</p>'}</div>`;
 }
 function pUsers(){
+ const posts=`<div class="bloc"><h3>Postes du personnel</h3><p class="muted">Un seul titulaire par poste. Les clients et les stagiaires peuvent être plusieurs.</p><div class="stats">${UNIQUE.map(r=>{const h=D.users.find(u=>u.role===r&&u.status==='active');return stat(ROLES[r],h?esc(h.nom):'Libre',h?'':'j');}).join('')}</div></div>`;
  const f=[['all','Tous'],['pending','En attente'],['active','Actifs'],['banned','Suspendus']];
  const list=D.users.filter(u=>uFilter==='all'||u.status===uFilter).sort((a,b)=>(a.status==='pending'?0:1)-(b.status==='pending'?0:1)||String(a.nom).localeCompare(String(b.nom),'fr'));
  const rows=list.map(u=>{
@@ -615,9 +822,37 @@ function pUsers(){
   const dem=u.roleDemande&&u.roleDemande!==u.role?` · rôle demandé : <b>${esc(ROLES[u.roleDemande]||u.roleDemande)}</b>`:'';
   return `<div class="urow"><div><b>${esc(u.nom)}</b> ${badge(sl,sc)}${self?' '+badge('Vous','blue'):''}<small>Rôle actuel : ${esc(ROLES[u.role]||u.role)}${dem}</small><small>${esc(u.email)} · ${esc(u.telephone||'')} ${u.adresse?'· '+esc(u.adresse):''}</small></div>${self?'':`<div class="row">${btnIf(true,'user-role',u.status==='pending'?'Valider':'Changer le rôle','primary',u.id)}${u.status==='banned'?btnIf(true,'user-unban','Réactiver','line',u.id):btnIf(true,'user-ban','Suspendre','danger',u.id)}</div>`}</div>`;
  });
- return `<div class="bloc"><h3>Gestion des inscrits</h3><div class="chips" style="margin-top:12px">${f.map(([k,l])=>`<button class="tab ${uFilter===k?'on':''}" data-act="ufilter" data-id="${k}">${l}</button>`).join('')}</div>${rows.join('')||'<p class="empty">Aucun inscrit dans cette catégorie.</p>'}</div>`;
+ return `${posts}<div class="bloc"><div class="head"><h3>Gestion des inscrits</h3><div class="row">${btnIf(true,'add-person','➕ Ajouter une personne')}${btnIf(true,'export','📥 Excel','line','users')}</div></div><div class="chips" style="margin-top:12px">${f.map(([k,l])=>`<button class="tab ${uFilter===k?'on':''}" data-act="ufilter" data-id="${k}">${l}</button>`).join('')}</div>${rows.join('')||'<p class="empty">Aucun inscrit dans cette catégorie.</p>'}</div>`;
 }
-function renderAll(){renderAuth();renderHome();renderAnimaux();renderHisto();renderContact();renderEspace();}
+const CMD_ST={nouvelle:['Nouvelle','amber'],confirmee:['Confirmée','blue'],livree:['Livrée','green'],annulee:['Annulée','red']};
+function pCmd(){
+ const staff=ORDER_STAFF.includes(me.role);
+ const rows=D.cmd.map(c=>{
+  const [sl,sc]=CMD_ST[c.status]||[c.status,''];let act='';
+  const wa=staff&&c.telephone?`<a class="btn sm line" target="_blank" rel="noopener" href="https://wa.me/${esc(waNumber(c.telephone))}">WhatsApp</a>`:'';
+  if(staff){if(c.status==='nouvelle')act=btnIf(true,'cmd-ok','Confirmer','primary',c.id)+btnIf(true,'cmd-no','Refuser','danger',c.id);else if(c.status==='confirmee')act=btnIf(can(CAN.vente),'cmd-sell','Livrer et vendre','primary',c.id)+btnIf(true,'cmd-no','Annuler','danger',c.id);}
+  else if(c.status==='nouvelle')act=btnIf(true,'cmd-no','Annuler','danger',c.id);
+  return `<tr><td>${tsDate(c.createdAt)}</td><td>${esc(c.nom||'')}${staff&&c.telephone?`<small>${esc(c.telephone)}</small>`:''}</td><td><b>${fmt(c.quantite)}</b></td><td>${money((c.quantite||0)*(c.prix||cfg.prixOeuf))}</td><td>${esc(c.mode||'')}</td><td>${dateFr(c.dateSouhaitee)}</td><td>${esc(c.note||'')}${c.numeroRecu?`<small>Reçu ${esc(c.numeroRecu)}</small>`:''}</td><td>${badge(sl,sc)}</td><td><div class="row">${act}${wa}</div></td></tr>`;
+ });
+ return `<div class="bloc"><div class="head"><div><h3>${staff?'Commandes des clients':'Mes commandes'}</h3><p class="muted">${staff?'Confirmez la commande, puis cliquez sur « Livrer et vendre » : le stock et le reçu sont gérés automatiquement.':'Prix actuel : '+money(cfg.prixOeuf)+" l'œuf. La ferme confirme chaque commande."}</p></div><div class="row">${staff?btnIf(true,'export','📥 Excel','line','cmd'):''}${staff?'':btnIf(true,'new-cmd','🛒 Passer une commande')}</div></div>${table(['Date','Client','Œufs','Montant estimé','Mode','Souhaitée le','Précisions','Statut',''],rows)||'<p class="empty">Aucune commande.</p>'}</div>`;
+}
+function pJournal(){
+ const rows=D.journal.map(j=>`<tr><td>${tsTime(j.createdAt)}</td><td>${esc(j.nom||'')}</td><td>${esc(ROLES[j.role]||j.role||'')}</td><td><b>${esc(j.action)}</b></td><td>${esc(j.detail||'')}</td></tr>`);
+ return `<div class="bloc"><div class="head"><div><h3>Journal d'activité</h3><p class="muted">Qui a fait quoi, et quand (200 dernières actions).</p></div>${btnIf(true,'export','📥 Excel','line','journal')}</div>${table(['Date et heure','Personne','Rôle','Action','Détail'],rows)||'<p class="empty">Aucune activité enregistrée.</p>'}</div>`;
+}
+function pAvisAdm(){
+ const ST={pending:['À valider','amber'],approved:['Publié','green'],hidden:['Masqué','red']};
+ const L=[...D.avisAll].sort((a,b)=>(a.status==='pending'?0:1)-(b.status==='pending'?0:1));
+ const rows=L.map(a=>{const [l,c]=ST[a.status]||[a.status,''];return `<div class="urow"><div><b>${esc(a.nom)}</b> ${badge(l,c)}<div class="stars">${stars(a.note)}</div><p style="font-style:italic">« ${esc(a.texte)} »</p></div><div class="row">${a.status!=='approved'?btnIf(true,'avis-ok','Publier','primary',a.id):''}${a.status!=='hidden'?btnIf(true,'avis-hide','Masquer','line',a.id):''}${btnIf(true,'avis-del','Supprimer','danger',a.id)}</div></div>`;});
+ return `<div class="bloc"><h3>Avis des clients</h3><p class="muted" style="margin-bottom:14px">Les avis publiés s'affichent sur la page d'accueil.</p>${rows.join('')||'<p class="empty">Aucun avis reçu.</p>'}</div>`;
+}
+function pProfil(){
+ const av=D.mesAvis[0],ST={pending:['En attente de validation','amber'],approved:['Publié','green'],hidden:['Non publié','red']};
+ const info=[['Nom',me.nom],['Email',me.email],['Téléphone',me.telephone||'—'],['Adresse',me.adresse||'—'],['Rôle',ROLES[me.role]||me.role]].map(([k,v])=>`<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('');
+ return `<div class="bloc"><div class="head"><h3>Mes informations</h3><div class="row"><button class="btn sm primary" data-act="edit-profil">✏️ Modifier</button><button class="btn sm line" data-act="chg-pwd">🔑 Changer mon mot de passe</button></div></div><div class="tw"><table>${info}</table></div></div>
+ <div class="bloc"><h3>Mon avis sur la ferme</h3>${av?`<div class="stars" style="margin-top:8px">${stars(av.note)}</div><p style="font-style:italic;margin:8px 0">« ${esc(av.texte)} »</p>${badge(...(ST[av.status]||[av.status,'']))}`:'<p class="muted" style="margin:8px 0">Vous n\'avez pas encore donné votre avis.</p>'}<div style="margin-top:14px"><button class="btn sm primary" data-act="avis-form">${av?'Modifier mon avis':'Laisser un avis'}</button></div><p class="muted" style="margin-top:10px;font-size:13px">Votre avis est publié sur la page d'accueil après validation par la direction.</p></div>`;
+}
+function renderAll(){renderAuth();renderHome();renderUne();renderAnimaux();renderGalerie();renderHisto();renderAvisPub();renderContact();renderEspace();}
 
 /* ============ Actions (modification du site) ============ */
 const saveCfg=p=>setDoc(doc(db,'site','config'),p,{merge:true});
@@ -627,15 +862,19 @@ function editHome(){
   {name:'heroTitre',label:'Titre principal',required:true,value:cfg.heroTitre},
   {name:'heroSoustitre',label:'Sous-titre',type:'textarea',value:cfg.heroSoustitre},
   {name:'apropos',label:'Présentation de la ferme',type:'textarea',value:cfg.apropos}],
-  onSubmit:async v=>{await saveCfg(v);closeModal();toast('Accueil mis à jour');}});
+  onSubmit:async v=>{await saveCfg(v);logAct('Accueil modifié');closeModal();toast('Accueil mis à jour');}});
 }
 function editContact(){
- openForm({title:'Modifier les coordonnées',fields:[
+ openForm({title:'Coordonnées et réseaux sociaux',fields:[
   {name:'telephone',label:'Téléphone (avec indicatif)',type:'tel',value:cfg.telephone,placeholder:'+229 …'},
+  {name:'whatsapp',label:'Numéro WhatsApp (si différent)',type:'tel',value:cfg.whatsapp,placeholder:'+229 …'},
+  {name:'facebook',label:'Lien de la page Facebook',type:'url',value:cfg.facebook,placeholder:'https://www.facebook.com/…'},
   {name:'email',label:'Email',type:'email',value:cfg.email},
   {name:'adresse',label:'Adresse',value:cfg.adresse},
   {name:'horaires',label:'Horaires',value:cfg.horaires,placeholder:'Lundi – Samedi : 7h – 18h'}],
-  onSubmit:async v=>{await saveCfg(v);closeModal();toast('Coordonnées mises à jour');}});
+  onSubmit:async v=>{
+   if(v.facebook&&!safeUrl(v.facebook))throw new Error('Le lien Facebook doit commencer par https://');
+   await saveCfg(v);logAct('Coordonnées modifiées');closeModal();toast('Coordonnées mises à jour');}});
 }
 function animalForm(id){
  const a=id?animaux.find(x=>x.id===id):null;
@@ -646,7 +885,7 @@ function animalForm(id){
   {name:'description',label:'Description',type:'textarea',value:a?.description}],
   onSubmit:async v=>{const d={icone:v.icone||'🐔',nom:v.nom,quantite:v.quantite,description:v.description};
    if(a)await updateDoc(doc(db,'animaux',id),d);else await addDoc(collection(db,'animaux'),{...d,createdAt:serverTimestamp()});
-   closeModal();toast('Animal enregistré');}});
+   logAct('Animal enregistré',v.nom);closeModal();toast('Animal enregistré');}});
 }
 function histoForm(id){
  const h=id?histo.find(x=>x.id===id):null;
@@ -657,14 +896,14 @@ function histoForm(id){
   {name:'ordre',label:"Ordre d'affichage (1 = en premier)",type:'number',required:true,value:h?.ordre??histo.length+1}],
   onSubmit:async v=>{const d={annee:v.annee,titre:v.titre,texte:v.texte,ordre:v.ordre};
    if(h)await updateDoc(doc(db,'historique',id),d);else await addDoc(collection(db,'historique'),{...d,createdAt:serverTimestamp()});
-   closeModal();toast('Étape enregistrée');}});
+   logAct('Historique modifié',v.titre);closeModal();toast('Étape enregistrée');}});
 }
 async function removeDoc(col,id,label){
  if(!await askConfirm(`Supprimer ${label} ? Cette action est définitive.`,'Supprimer',true))return;
- try{await deleteDoc(doc(db,col,id));toast('Supprimé');}catch(e){toast(errMsg(e),'err');}
+ try{await deleteDoc(doc(db,col,id));logAct('Suppression',`${label} (${col})`);toast('Supprimé');}catch(e){toast(errMsg(e),'err');}
 }
 async function seed(which){
- try{const b=writeBatch(db);(which==='animaux'?DEF_ANIMAUX:DEF_HISTO).forEach(x=>b.set(doc(collection(db,which)),{...x,createdAt:serverTimestamp()}));await b.commit();toast('Exemples enregistrés. Vous pouvez maintenant les modifier.');}
+ try{const b=writeBatch(db);(which==='animaux'?DEF_ANIMAUX:DEF_HISTO).forEach(x=>b.set(doc(collection(db,which)),{...x,createdAt:serverTimestamp()}));await b.commit();logAct('Exemples enregistrés',which);toast('Exemples enregistrés. Vous pouvez maintenant les modifier.');}
  catch(e){toast(errMsg(e),'err');}
 }
 
@@ -681,7 +920,7 @@ function newProd(){
    if(v.casses>v.ramasses)throw new Error('Les œufs cassés dépassent les œufs ramassés.');
    await addDoc(collection(db,'production_journaliere'),{date:v.date,effectif:v.effectif,oeufsRamasses:v.ramasses,casses:v.casses,bons:v.ramasses-v.casses,observations:v.observations,status:'a_receptionner',superviseurId:user.uid,superviseurNom:me.nom,createdAt:serverTimestamp()});
    await setDoc(doc(db,'stats','public'),{effectif:v.effectif,updatedAt:serverTimestamp()},{merge:true});
-   closeModal();toast('Production enregistrée');}});
+   logAct('Production',`${v.date} : ${v.ramasses} ramassés, ${v.casses} cassés`);closeModal();toast('Production enregistrée');}});
 }
 function recep(id){
  const lot=D.prod.find(p=>p.id===id);if(!lot)return;
@@ -699,7 +938,7 @@ function recep(id){
     tx.set(doc(collection(db,'transfert_reception')),{date:today(),productionId:id,datePonte:s.data().date,attendus:s.data().bons,oeufsRecus:v.recus,cassesReception:v.casses,bons:v.recus-v.casses,observations:v.observations,status:'a_vendre',receptionnisteId:user.uid,receptionnisteNom:me.nom,createdAt:serverTimestamp()});
     tx.update(pr,{status:'receptionne'});
    });
-   closeModal();toast('Lot réceptionné et transféré au magasin');}});
+   logAct('Réception',`Lot du ${lot.date} : ${v.recus} reçus, ${v.casses} cassés`);closeModal();toast('Lot réceptionné et transféré au magasin');}});
 }
 async function stockIn(id){
  const t=D.trans.find(x=>x.id===id);if(!t)return;
@@ -714,27 +953,34 @@ async function stockIn(id){
    tx.update(tr,{status:'en_stock',dateStock:today(),magasiniereId:user.uid,magasiniereNom:me.nom});
    tx.set(doc(collection(db,'ventes')),{type:'entree',quantite:q,stockAvant:cur,stockApres:cur+q,transfertId:id,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
   });
-  toast('Lot ajouté au stock');
+  logAct('Mise en stock',`${t.bons} œufs`);toast('Lot ajouté au stock');
  }catch(e){toast(errMsg(e),'err');}
 }
 async function moveStock(delta,entry){
+ const ref=doc(collection(db,'ventes'));let rec=null;
  await runTransaction(db,async tx=>{
-  const st=doc(db,'stats','public'),s=await tx.get(st),cur=s.exists()?s.data().stock||0:0,nv=cur+delta;
+  const st=doc(db,'stats','public'),sn=await tx.get(st),cur=sn.exists()?sn.data().stock||0:0,nv=cur+delta;
   if(nv<0)throw new Error(`Stock insuffisant : ${fmt(cur)} œufs disponibles.`);
+  const d=today();
+  rec={...entry,stockAvant:cur,stockApres:nv,date:d,operateurId:user.uid,operateurNom:me.nom,...(entry.type==='vente'?{numero:`R${d.replace(/-/g,'')}-${ref.id.slice(0,4).toUpperCase()}`}:{})};
   tx.set(st,{stock:nv,updatedAt:serverTimestamp()},{merge:true});
-  tx.set(doc(collection(db,'ventes')),{...entry,stockAvant:cur,stockApres:nv,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
+  tx.set(ref,{...rec,createdAt:serverTimestamp()});
  });
+ return {id:ref.id,...rec};
 }
-function sell(){
+function sell(prefill){
+ prefill=prefill&&typeof prefill==='object'?prefill:{};
  openForm({title:'Enregistrer une vente',intro:`Stock disponible : <b>${fmt(stock())}</b> œufs.`,submit:'Valider la vente',fields:[
-  {name:'quantite',label:"Nombre d'œufs vendus",type:'number',required:true},
-  {name:'prix',label:"Prix unitaire (FCFA)",type:'number',required:true,value:cfg.prixOeuf},
-  {name:'clientNom',label:'Nom du client / destination',required:true},
-  {name:'clientTel',label:'Téléphone du client',type:'tel'}],
+  {name:'quantite',label:"Nombre d'œufs vendus",type:'number',required:true,value:prefill.quantite},
+  {name:'prix',label:'Prix unitaire (FCFA)',type:'number',required:true,value:cfg.prixOeuf},
+  {name:'clientNom',label:'Nom du client / destination',required:true,value:prefill.clientNom},
+  {name:'clientTel',label:'Téléphone du client',type:'tel',value:prefill.clientTel}],
   onSubmit:async v=>{
    if(v.quantite<=0)throw new Error('Indiquez une quantité supérieure à 0.');
-   await moveStock(-v.quantite,{type:'vente',quantite:v.quantite,prix:v.prix,montant:v.quantite*v.prix,clientNom:v.clientNom,clientTel:v.clientTel});
-   closeModal();toast(`Vente enregistrée : ${money(v.quantite*v.prix)}`);}});
+   const rec=await moveStock(-v.quantite,{type:'vente',quantite:v.quantite,prix:v.prix,montant:v.quantite*v.prix,clientNom:v.clientNom,clientTel:v.clientTel});
+   if(prefill.orderId){try{await updateDoc(doc(db,'commandes',prefill.orderId),{status:'livree',numeroRecu:rec.numero,updatedAt:serverTimestamp()});}catch(e){console.warn(e);}}
+   logAct('Vente',`${rec.numero} · ${fmt(v.quantite)} œufs · ${fmt(rec.montant)} FCFA · ${v.clientNom}`);
+   closeModal();toast(`Vente enregistrée : ${money(rec.montant)}`);showReceipt(rec);}});
 }
 function loss(){
  openForm({title:'Œufs cassés au magasin',intro:`Stock disponible : <b>${fmt(stock())}</b> œufs.`,fields:[
@@ -743,7 +989,7 @@ function loss(){
   onSubmit:async v=>{
    if(v.quantite<=0)throw new Error('Indiquez une quantité supérieure à 0.');
    await moveStock(-v.quantite,{type:'perte',quantite:v.quantite,motif:v.motif||'Casse au magasin'});
-   closeModal();toast('Casse enregistrée');}});
+   logAct('Casse au magasin',`${v.quantite} œufs`);closeModal();toast('Casse enregistrée');}});
 }
 function adjust(){
  openForm({title:'Ajuster le stock',intro:`Stock actuel : <b>${fmt(stock())}</b> œufs. À utiliser après un comptage physique.`,fields:[
@@ -755,23 +1001,23 @@ function adjust(){
     tx.set(st,{stock:v.nouveau,updatedAt:serverTimestamp()},{merge:true});
     tx.set(doc(collection(db,'ventes')),{type:'ajustement',quantite:v.nouveau-cur,stockAvant:cur,stockApres:v.nouveau,motif:v.motif,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
    });
-   closeModal();toast('Stock ajusté');}});
+   logAct('Ajustement du stock',`Nouveau stock : ${v.nouveau} (${v.motif})`);closeModal();toast('Stock ajusté');}});
 }
 async function visa(fiche){
  if(!await askConfirm(`Apposer votre visa sur la fiche « ${fiche} » du mois ${curMonth} ? Il ne pourra plus être modifié.`,'Apposer le visa'))return;
- try{await setDoc(doc(db,'visas',`${fiche}_${curMonth}`),{fiche,mois:curMonth,nom:me.nom,role:me.role,date:today(),createdAt:serverTimestamp()});toast('Visa enregistré');}
+ try{await setDoc(doc(db,'visas',`${fiche}_${curMonth}`),{fiche,mois:curMonth,nom:me.nom,role:me.role,date:today(),createdAt:serverTimestamp()});logAct('Visa',`${fiche} ${curMonth}`);toast('Visa enregistré');}
  catch(e){toast(errMsg(e),'err');}
 }
 function price(){
  openForm({title:"Prix de l'œuf",fields:[{name:'prix',label:'Prix par défaut (FCFA)',type:'number',required:true,value:cfg.prixOeuf}],
-  onSubmit:async v=>{await saveCfg({prixOeuf:v.prix});closeModal();toast('Prix mis à jour');}});
+  onSubmit:async v=>{await saveCfg({prixOeuf:v.prix});logAct('Prix de l\'œuf',`${v.prix} FCFA`);closeModal();toast('Prix mis à jour');}});
 }
 function newSante(){
  openForm({title:'Suivi vétérinaire',fields:[
   {name:'date',label:'Date',type:'date',required:true,value:today()},
   {name:'mortalite',label:'Nombre de morts',type:'number',value:0},
   {name:'notes',label:'Observations, soins, vaccins',type:'textarea'}],
-  onSubmit:async v=>{await addDoc(collection(db,'sante'),{date:v.date,mortalite:num(v.mortalite),notes:v.notes,veterinaireId:user.uid,veterinaireNom:me.nom,createdAt:serverTimestamp()});closeModal();toast('Suivi enregistré');}});
+  onSubmit:async v=>{await addDoc(collection(db,'sante'),{date:v.date,mortalite:num(v.mortalite),notes:v.notes,veterinaireId:user.uid,veterinaireNom:me.nom,createdAt:serverTimestamp()});logAct('Suivi vétérinaire',`${v.date} : ${v.mortalite||0} mort(s)`);closeModal();toast('Suivi enregistré');}});
 }
 function newDep(){
  openForm({title:'Ajouter une dépense',fields:[
@@ -779,19 +1025,179 @@ function newDep(){
   {name:'libelle',label:'Libellé',required:true,placeholder:'Sacs d\'aliment'},
   {name:'categorie',label:'Catégorie',type:'select',value:'Aliment',options:['Aliment','Médicaments et vaccins','Salaires','Entretien','Transport','Autre'].map(x=>[x,x])},
   {name:'montant',label:'Montant (FCFA)',type:'number',required:true}],
-  onSubmit:async v=>{await addDoc(collection(db,'depenses'),{...v,createdBy:user.uid,createdAt:serverTimestamp()});closeModal();toast('Dépense enregistrée');}});
+  onSubmit:async v=>{await addDoc(collection(db,'depenses'),{...v,createdBy:user.uid,createdAt:serverTimestamp()});logAct('Dépense',`${v.libelle} : ${v.montant} FCFA`);closeModal();toast('Dépense enregistrée');}});
+}
+async function assignRole(u,role,status){
+ if(UNIQUE.includes(role)&&status==='active'){
+  const other=D.users.find(x=>x.id!==u.id&&x.role===role&&x.status==='active');
+  if(other)throw new Error(`Le poste « ${ROLES[role]} » est déjà occupé par ${other.nom}.`);
+ }
+ await runTransaction(db,async tx=>{
+  const oldRef=UNIQUE.includes(u.role)?doc(db,'roleSlots',u.role):null;
+  const newRef=UNIQUE.includes(role)&&status==='active'?doc(db,'roleSlots',role):null;
+  const same=!!(oldRef&&newRef&&oldRef.path===newRef.path);
+  const oldS=oldRef?await tx.get(oldRef):null;
+  const newS=newRef?(same?oldS:await tx.get(newRef)):null;
+  if(newS&&newS.exists()&&newS.data().uid!==u.id)throw new Error(`Le poste « ${ROLES[role]} » est déjà attribué.`);
+  if(oldS&&oldS.exists()&&oldS.data().uid===u.id&&!same)tx.delete(oldRef);
+  if(newRef&&!newS.exists())tx.set(newRef,{uid:u.id,createdAt:serverTimestamp()});
+  tx.update(doc(db,'users',u.id),{role,status,validatedBy:user.uid,validatedAt:serverTimestamp()});
+ });
 }
 function userRole(id){
  const u=D.users.find(x=>x.id===id);if(!u)return;
+ const taken=r=>UNIQUE.includes(r)&&(D.users.some(x=>x.id!==u.id&&x.role===r&&x.status==='active')||(slots[r]&&slots[r]!==u.id));
+ const def=u.status==='pending'&&u.roleDemande&&!taken(u.roleDemande)?u.roleDemande:(taken(u.role)?'client':u.role);
  openForm({title:u.status==='pending'?'Valider le compte':'Changer le rôle',intro:`<b>${esc(u.nom)}</b> (${esc(u.email)})${u.roleDemande?`<br>Rôle demandé : ${esc(ROLES[u.roleDemande]||u.roleDemande)}`:''}`,submit:'Enregistrer et activer',fields:[
-  {name:'role',label:'Rôle accordé',type:'select',value:u.status==='pending'&&u.roleDemande?u.roleDemande:u.role,options:Object.entries(ROLES)}],
-  onSubmit:async v=>{await updateDoc(doc(db,'users',id),{role:v.role,status:'active',validatedBy:user.uid,validatedAt:serverTimestamp()});closeModal();toast('Compte activé');}});
+  {name:'role',label:'Rôle accordé',type:'select',value:def,options:Object.entries(ROLES).map(([k,l])=>[k,taken(k)?l+' (déjà attribué)':l,!!taken(k)]),help:'Un seul titulaire par poste du personnel.'}],
+  onSubmit:async v=>{await assignRole(u,v.role,'active');logAct('Compte activé',`${u.nom} → ${ROLES[v.role]}`);closeModal();toast('Compte activé');}});
 }
 async function userStatus(id,status){
  const u=D.users.find(x=>x.id===id);if(!u)return;
- const msg=status==='banned'?`Suspendre ${u.nom} ? Cette personne ne pourra plus accéder à son espace.`:`Réactiver le compte de ${u.nom} ?`;
+ const msg=status==='banned'?`Suspendre ${u.nom} ? Cette personne ne pourra plus accéder à son espace${UNIQUE.includes(u.role)?' et son poste sera libéré':''}.`:`Réactiver le compte de ${u.nom} ?`;
  if(!await askConfirm(msg,status==='banned'?'Suspendre':'Réactiver',status==='banned'))return;
- try{await updateDoc(doc(db,'users',id),{status,validatedBy:user.uid,validatedAt:serverTimestamp()});toast(status==='banned'?'Compte suspendu':'Compte réactivé');}catch(e){toast(errMsg(e),'err');}
+ try{await assignRole(u,u.role,status);logAct(status==='banned'?'Compte suspendu':'Compte réactivé',u.nom);toast(status==='banned'?'Compte suspendu':'Compte réactivé');}catch(e){toast(errMsg(e),'err');}
+}
+
+/* ============ Galerie, commandes, profil, avis, administration ============ */
+function galForm(id){
+ const g=id?galerie.find(x=>x.id===id):null;
+ openForm({title:g?'Modifier la publication':'Ajouter une publication',intro:"Ajoutez une photo, un texte, ou les deux. La publication apparaît sur la page d'accueil et dans la galerie.",fields:[
+  {name:'titre',label:'Titre',value:g?.titre},
+  {name:'texte',label:'Texte',type:'textarea',value:g?.texte},
+  {name:'photo',label:g?'Nouvelle photo (facultatif)':'Photo',type:'file'}],
+  onSubmit:async v=>{
+   if(!v.titre&&!v.texte&&!v.photo&&!g?.image)throw new Error('Ajoutez au moins une photo ou un texte.');
+   const d={titre:v.titre,texte:v.texte};
+   if(v.photo)d.image=await imgToData(v.photo);
+   if(g)await updateDoc(doc(db,'galerie',id),d);else await addDoc(collection(db,'galerie'),{image:'',...d,createdAt:serverTimestamp()});
+   logAct('Publication',v.titre||v.texte.slice(0,40)||'photo');closeModal();toast('Publication enregistrée');}});
+}
+function newCmd(){
+ openForm({title:'Passer une commande',intro:`Prix actuel : <b>${money(cfg.prixOeuf)}</b> l'œuf. La ferme confirmera votre commande.`,submit:'Envoyer la commande',fields:[
+  {name:'quantite',label:"Nombre d'œufs",type:'number',required:true,help:'Exemple : 30 = une plaquette, 90 = trois plaquettes.'},
+  {name:'mode',label:'Mode de remise',type:'select',value:'Retrait à la ferme',options:[['Retrait à la ferme','Retrait à la ferme'],['Livraison','Livraison']]},
+  {name:'date',label:'Date souhaitée',type:'date',required:true,value:today(),min:today()},
+  {name:'note',label:'Précisions (adresse de livraison, remarque)',type:'textarea'}],
+  onSubmit:async v=>{
+   if(v.quantite<=0)throw new Error('Indiquez une quantité supérieure à 0.');
+   if(v.date<today())throw new Error("Choisissez une date à partir d'aujourd'hui.");
+   await addDoc(collection(db,'commandes'),{uid:user.uid,nom:me.nom,telephone:me.telephone||'',quantite:v.quantite,mode:v.mode,dateSouhaitee:v.date,note:v.note,prix:cfg.prixOeuf,status:'nouvelle',createdAt:serverTimestamp()});
+   closeModal();toast('Commande envoyée. La ferme vous contactera.');}});
+}
+async function setCmd(id,status){
+ const c=D.cmd.find(x=>x.id===id);if(!c)return;
+ if(status==='annulee'&&!await askConfirm(`Annuler la commande de ${fmt(c.quantite)} œufs ?`,'Annuler la commande',true))return;
+ try{await updateDoc(doc(db,'commandes',id),{status,updatedAt:serverTimestamp()});logAct('Commande',`${status} · ${c.nom} · ${c.quantite} œufs`);toast('Commande mise à jour');}
+ catch(e){toast(errMsg(e),'err');}
+}
+function cmdSell(id){const c=D.cmd.find(x=>x.id===id);if(c)sell({orderId:id,clientNom:c.nom,clientTel:c.telephone,quantite:c.quantite});}
+function editProfil(){
+ openForm({title:'Mes informations',fields:[
+  {name:'nom',label:'Nom complet',required:true,value:me.nom,auto:'name'},
+  {name:'telephone',label:'Téléphone',type:'tel',value:me.telephone,auto:'tel'},
+  {name:'adresse',label:'Adresse',value:me.adresse,auto:'street-address'}],
+  onSubmit:async v=>{await updateDoc(doc(db,'users',user.uid),{nom:v.nom,telephone:v.telephone,adresse:v.adresse});closeModal();toast('Profil mis à jour');}});
+}
+function chgPwd(){
+ openForm({title:'Changer mon mot de passe',submit:'Modifier le mot de passe',fields:[
+  {name:'old',label:'Mot de passe actuel',type:'password',required:true,auto:'current-password'},
+  {name:'nw',label:'Nouveau mot de passe',type:'password',required:true,auto:'new-password',help:'6 caractères minimum.'},
+  {name:'nw2',label:'Confirmer le nouveau mot de passe',type:'password',required:true,auto:'new-password'}],
+  onSubmit:async v=>{
+   if(v.nw.length<6)throw new Error('Mot de passe trop court (6 caractères minimum).');
+   if(v.nw!==v.nw2)throw new Error('Les deux mots de passe ne sont pas identiques.');
+   await reauthenticateWithCredential(user,EmailAuthProvider.credential(user.email,v.old));
+   await updatePassword(user,v.nw);closeModal();toast('Mot de passe modifié');}});
+}
+function avisForm(){
+ const av=D.mesAvis[0];
+ openForm({title:av?'Modifier mon avis':'Laisser un avis',submit:'Envoyer mon avis',fields:[
+  {name:'note',label:'Ma note',type:'select',value:String(av?.note||5),options:[['5','★★★★★  Excellent'],['4','★★★★☆  Très bien'],['3','★★★☆☆  Bien'],['2','★★☆☆☆  Moyen'],['1','★☆☆☆☆  Décevant']]},
+  {name:'texte',label:'Mon commentaire',type:'textarea',required:true,value:av?.texte,help:'500 caractères maximum.'}],
+  onSubmit:async v=>{
+   if(v.texte.length>500)throw new Error('Commentaire trop long (500 caractères maximum).');
+   await setDoc(doc(db,'avis',user.uid),{uid:user.uid,nom:me.nom,note:Number(v.note),texte:v.texte,status:'pending',createdAt:serverTimestamp()});
+   closeModal();toast('Merci ! Votre avis sera publié après validation.');}});
+}
+async function setAvis(id,status){
+ try{await updateDoc(doc(db,'avis',id),{status});logAct('Avis client',status==='approved'?'publié':'masqué');toast(status==='approved'?'Avis publié':'Avis masqué');}
+ catch(e){toast(errMsg(e),'err');}
+}
+function seuils(){
+ openForm({title:"Seuils d'alerte",intro:'Le résumé affiche une alerte quand un seuil est atteint.',fields:[
+  {name:'seuilStock',label:'Alerte quand le stock est inférieur ou égal à (œufs)',type:'number',required:true,value:cfg.seuilStock},
+  {name:'seuilMortalite',label:'Alerte mortalité : morts sur 7 jours (0 = désactivée)',type:'number',required:true,value:cfg.seuilMortalite},
+  {name:'seuilCasse',label:'Alerte casse au poulailler (% des œufs ramassés)',type:'number',required:true,value:cfg.seuilCasse}],
+  onSubmit:async v=>{await saveCfg(v);logAct("Seuils d'alerte modifiés");closeModal();toast("Seuils d'alerte enregistrés");}});
+}
+const byDate=(a,b)=>String(a.date).localeCompare(String(b.date));
+const inMonth=a=>a.filter(x=>(x.date||'').startsWith(curMonth));
+const EXP={
+ prod:()=>['production_'+curMonth,['Date','Poules présentes','Œufs ramassés','Cassés au poulailler','Bons disponibles','Superviseur','Statut','Observations'],inMonth(D.prod).sort(byDate).map(p=>[p.date,p.effectif,p.oeufsRamasses,p.casses,p.bons,p.superviseurNom,p.status==='a_receptionner'?'À réceptionner':'Réceptionné',p.observations])],
+ trans:()=>['transferts_'+curMonth,['Date','Lot du','Œufs reçus','Cassés à la réception','Bons transférés','Magasinière','Réceptionniste','Statut','Observations'],inMonth(D.trans).sort(byDate).map(t=>[t.date,t.datePonte,t.oeufsRecus,t.cassesReception,t.bons,t.magasiniereNom,t.receptionnisteNom,t.status==='a_vendre'?'À mettre en stock':'En stock',t.observations])],
+ mag:()=>['stock_et_ventes_'+curMonth,['Date','Stock veille','Entrée du jour','Stock total','Œufs vendus','Cassés au magasin','Ajustement','Reste du jour','Prix unitaire','Montant vendu','Client / destination','Magasinière'],dayRows().map(d=>[d.date,d.veille,d.entree,d.veille+d.entree,d.vendus,d.casses,d.ajust,d.reste,d.prix.join(' / '),d.montant,d.clients.join(', '),d.ops.join(', ')])],
+ sante:()=>['sante',['Date','Mortalité','Observations','Vétérinaire'],D.sante.map(x=>[x.date,x.mortalite,x.notes,x.veterinaireNom])],
+ dep:()=>['depenses',['Date','Libellé','Catégorie','Montant (FCFA)'],D.dep.map(d=>[d.date,d.libelle,d.categorie,d.montant])],
+ cmd:()=>['commandes',['Date','Client','Téléphone','Œufs','Mode','Souhaitée le','Précisions','Statut'],D.cmd.map(c=>[tsDate(c.createdAt),c.nom,c.telephone,c.quantite,c.mode,c.dateSouhaitee,c.note,(CMD_ST[c.status]||[c.status])[0]])],
+ journal:()=>['journal',['Date et heure','Personne','Rôle','Action','Détail'],D.journal.map(j=>[tsTime(j.createdAt),j.nom,ROLES[j.role]||j.role,j.action,j.detail])],
+ users:()=>['inscrits',['Nom','Email','Téléphone','Adresse','Rôle','Rôle demandé','Statut'],D.users.map(u=>[u.nom,u.email,u.telephone,u.adresse,ROLES[u.role]||u.role,ROLES[u.roleDemande]||u.roleDemande,(STATUS[u.status]||[u.status])[0]])]
+};
+function expo(id){const f=EXP[id];if(!f)return;const [n,h,r]=f();exportCSV(n,h,r);logAct('Export',n);toast('Fichier téléchargé');}
+function backup(){
+ const data={exporteLe:new Date().toISOString(),site:cfg,animaux,historique:histo,galerie,production:D.prod,transferts:D.trans,mouvements_stock:D.ventes,sante:D.sante,depenses:D.dep,commandes:D.cmd,utilisateurs:D.users,avis:D.avisAll,journal:D.journal};
+ downloadFile('sauvegarde_'+today()+'.json',JSON.stringify(data,null,1),'application/json');logAct('Sauvegarde complète');toast('Sauvegarde téléchargée');
+}
+function receiptHTML(v){
+ return `<div class="rc"><h2>${esc(cfg.heroTitre)}</h2><p class="sub">${esc(cfg.adresse||'')}${cfg.telephone?' · '+esc(cfg.telephone):''}</p><p><b>REÇU N° ${esc(v.numero||'')}</b><br>Date : ${dateFr(v.date)}</p><table><tr><td>Client</td><td style="text-align:right">${esc(v.clientNom||'—')}</td></tr>${v.clientTel?`<tr><td>Téléphone</td><td style="text-align:right">${esc(v.clientTel)}</td></tr>`:''}<tr><td>Quantité</td><td style="text-align:right">${fmt(v.quantite)} œufs</td></tr><tr><td>Prix unitaire</td><td style="text-align:right">${money(v.prix)}</td></tr></table><div class="tot"><span>TOTAL</span><span>${money(v.montant)}</span></div><p class="foot">Servi par ${esc(v.operateurNom||'')}<br>Merci pour votre confiance !</p></div>`;
+}
+function showReceipt(v){
+ if(modalDone){modalDone(false);modalDone=null;}
+ lastReceipt=v;
+ const txt=`Reçu ${v.numero}\n${cfg.heroTitre}\nDate : ${(v.date||'').split('-').reverse().join('/')}\n${fmt(v.quantite)} œufs × ${fmt(v.prix)} FCFA = ${fmt(v.montant)} FCFA\nMerci pour votre confiance !`;
+ $('#mbox').className='mbox';
+ $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><h3>Reçu de vente</h3>${receiptHTML(v)}<div class="row" style="margin-top:18px;justify-content:center"><button class="btn primary" data-act="print-receipt">🖨️ Imprimer</button><a class="btn line" target="_blank" rel="noopener" href="https://wa.me/${esc(waNumber(v.clientTel))}?text=${encodeURIComponent(txt)}">Envoyer par WhatsApp</a></div>`;
+ showModal();
+}
+function printReceipt(){if(!lastReceipt)return;$('#printArea').innerHTML=receiptHTML(lastReceipt);document.body.classList.add('print-receipt');setTimeout(()=>window.print(),60);}
+function pwdGen(){const c='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789',a=new Uint32Array(10);crypto.getRandomValues(a);return Array.from(a,x=>c[x%c.length]).join('');}
+function showCredentials(c){
+ if(modalDone){modalDone(false);modalDone=null;}
+ const txt=`Bonjour ${c.nom},\nVotre compte ${cfg.heroTitre} est créé.\nSite : ${location.href.split('#')[0]}\nEmail : ${c.email}\nMot de passe temporaire : ${c.pwd}\nPensez à le changer dans « Mon profil ».`;
+ $('#mbox').className='mbox';
+ $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><h3>Compte créé ✅</h3><p class="intro">${esc(c.nom)} peut se connecter (rôle : ${esc(ROLES[c.role])}) sans s'inscrire. Transmettez-lui ces identifiants : ils ne seront plus affichés après la fermeture de cette fenêtre.</p><b>Email</b><span class="mono">${esc(c.email)}</span><b>Mot de passe temporaire</b><span class="mono">${esc(c.pwd)}</span><p class="muted" style="font-size:13px;margin-bottom:14px">Un email l'invitant à choisir son propre mot de passe lui a aussi été envoyé.</p><div class="row"><button class="btn primary" data-act="copy" data-text="${esc(txt)}">📋 Copier le message</button><a class="btn line" target="_blank" rel="noopener" href="https://wa.me/${esc(waNumber(c.tel))}?text=${encodeURIComponent(txt)}">Envoyer par WhatsApp</a></div>`;
+ showModal();
+}
+function addPerson(){
+ const taken=r=>UNIQUE.includes(r)&&(D.users.some(x=>x.role===r&&x.status==='active')||!!slots[r]);
+ openForm({title:'Ajouter une personne',intro:"Le compte est créé directement et activé. La personne se connecte sans s'inscrire, avec le mot de passe temporaire que vous lui transmettrez.",submit:'Créer le compte',fields:[
+  {name:'nom',label:'Nom complet',required:true},
+  {name:'tel',label:'Téléphone',type:'tel'},
+  {name:'email',label:'Adresse Gmail',type:'email',required:true},
+  {name:'role',label:'Rôle',type:'select',value:'stagiaire',options:Object.entries(ROLES).map(([k,l])=>[k,taken(k)?l+' (déjà attribué)':l,!!taken(k)])}],
+  onSubmit:async v=>{
+   if(taken(v.role))throw new Error(`Le poste « ${ROLES[v.role]} » est déjà attribué.`);
+   const pwd=pwdGen(),email=v.email.toLowerCase();
+   const sec=initializeApp(firebaseConfig,'sec'+Date.now()),sAuth=getAuth(sec);let cred;
+   try{
+    cred=await createUserWithEmailAndPassword(sAuth,email,pwd);
+    const uid=cred.user.uid;
+    await withTimeout(runTransaction(db,async tx=>{
+     let sref=null;
+     if(UNIQUE.includes(v.role)){sref=doc(db,'roleSlots',v.role);const ss=await tx.get(sref);if(ss.exists())throw new Error(`Le poste « ${ROLES[v.role]} » est déjà attribué.`);}
+     tx.set(doc(db,'users',uid),{uid,email,nom:v.nom,telephone:v.tel,adresse:'',role:v.role,roleDemande:v.role,status:'active',addedBy:user.uid,createdAt:serverTimestamp()});
+     if(sref)tx.set(sref,{uid,createdAt:serverTimestamp()});
+    }));
+    try{await sendPasswordResetEmail(sAuth,email);}catch(_){}
+   }catch(e){
+    if(cred){try{await deleteUser(cred.user);}catch(_){}}
+    throw e;
+   }finally{
+    try{await signOut(sAuth);}catch(_){}
+    try{await deleteApp(sec);}catch(_){}
+   }
+   logAct('Ajout de personne',`${v.nom} (${ROLES[v.role]})`);
+   showCredentials({nom:v.nom,tel:v.tel,email,pwd,role:v.role});}});
 }
 
 /* ============ Gestion des clics ============ */
@@ -809,18 +1215,30 @@ const ACT={
  'new-sante':newSante,'del-sante':id=>removeDoc('sante',id,'ce suivi'),
  'new-dep':newDep,'del-dep':id=>removeDoc('depenses',id,'cette dépense'),
  ufilter:id=>{uFilter=id;renderEspace();},
- 'user-role':userRole,'user-ban':id=>userStatus(id,'banned'),'user-unban':id=>userStatus(id,'active')
+ 'user-role':userRole,'user-ban':id=>userStatus(id,'banned'),'user-unban':id=>userStatus(id,'active'),
+ 'add-gal':()=>galForm(),'edit-gal':galForm,'del-gal':id=>removeDoc('galerie',id,'cette publication'),'view-img':viewImg,
+ 'slide-prev':()=>goSlide(slideIdx-1),'slide-next':()=>goSlide(slideIdx+1),'slide-go':id=>goSlide(Number(id)),
+ 'go-avis':()=>{if(!user){openLogin();return;}curTab='profil';if(location.hash==='#espace')renderEspace();else location.hash='espace';},
+ 'new-cmd':newCmd,'cmd-ok':id=>setCmd(id,'confirmee'),'cmd-no':id=>setCmd(id,'annulee'),'cmd-sell':cmdSell,
+ 'edit-profil':editProfil,'chg-pwd':chgPwd,'avis-form':avisForm,'avis-ok':id=>setAvis(id,'approved'),'avis-hide':id=>setAvis(id,'hidden'),'avis-del':id=>removeDoc('avis',id,'cet avis'),
+ export:expo,backup,seuils,'add-person':addPerson,
+ receipt:id=>{const v=D.ventes.find(x=>x.id===id);if(v)showReceipt(v);},'print-receipt':printReceipt,
+ copy:async(id,t)=>{try{await navigator.clipboard.writeText(t.dataset.text);toast('Message copié');}catch(_){toast('Copie impossible : sélectionnez le texte à la main.','err');}}
 };
 document.addEventListener('click',e=>{
  if(e.target.id==='modal'||e.target.closest('[data-close]')){closeModal();return;}
  const t=e.target.closest('[data-act]');if(!t)return;
  e.preventDefault();
  const f=ACT[t.dataset.act];
- if(f)Promise.resolve(f(t.dataset.id)).catch(x=>{console.error(x);toast(errMsg(x),'err');});
+ if(f)Promise.resolve(f(t.dataset.id,t)).catch(x=>{console.error(x);toast(errMsg(x),'err');});
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').classList.contains('hidden'))closeModal();});
 
 document.addEventListener('change',e=>{if(e.target.id==='mSel'&&e.target.value){curMonth=e.target.value;renderEspace();}});
+window.addEventListener('afterprint',()=>document.body.classList.remove('print-receipt'));
+$('#h-une').addEventListener('mouseenter',()=>{sliderPaused=true;});
+$('#h-une').addEventListener('mouseleave',()=>{sliderPaused=false;});
+setInterval(()=>{if(galerie.length>1&&!sliderPaused&&!document.hidden&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&$('#v-accueil').classList.contains('active'))goSlide(slideIdx+1);},6000);
 renderAll();route();
 </script>
 </body>
