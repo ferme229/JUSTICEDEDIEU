@@ -192,6 +192,24 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
 .rc .foot{text-align:center;font-size:12px;margin-top:14px}
 @media print{.wafloat{display:none!important}body.print-receipt>*:not(#printArea){display:none!important}body.print-receipt #printArea{display:block}}
 @media(max-width:700px){.slide.on{grid-template-columns:1fr}.slide .ph{min-height:210px}}
+#loadbar{position:fixed;top:0;left:0;height:3px;width:100%;background:linear-gradient(90deg,transparent,var(--jaune),transparent) no-repeat;background-size:40% 100%;animation:lb 1.1s linear infinite;z-index:300}
+@keyframes lb{from{background-position:-40% 0}to{background-position:140% 0}}
+.bar2{height:12px;background:#e3e9de;border-radius:99px;overflow:hidden;margin:6px 0 14px}
+.bar2>i{display:block;height:100%;background:var(--vert);border-radius:99px}
+.bar2>i.j{background:var(--jaune)}
+.promo{border:2px dashed var(--jaune);background:#fffaf0}
+.promo .px{font-size:1.7rem;font-weight:800;color:var(--vert-d)}
+.task{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--ligne);border-radius:12px;margin-bottom:10px;background:#fbfdfb}
+.task.done{opacity:.6}
+.task.done b{text-decoration:line-through}
+.ann{border-left:5px solid var(--vert);background:#fff;padding:12px 16px;border-radius:12px;margin-bottom:10px;box-shadow:var(--sh)}
+.ann p{white-space:pre-line;margin-top:4px}
+.rapport{color:#000;max-width:780px;margin:0 auto;font-size:14px}
+.rapport h1{font-size:24px}
+.rapport h2{font-size:16px;margin:16px 0 6px;border-bottom:2px solid #0a7a42;padding-bottom:3px}
+.rapport table{font-size:13px}
+.rapport .kv{display:grid;grid-template-columns:repeat(2,1fr);gap:2px 24px}
+.rapport .chart text{font-size:12px}
 @media(max-width:860px){
  .burger{display:block}
  #menu{display:none;position:absolute;left:0;right:0;top:68px;background:var(--vert-d);flex-direction:column;align-items:stretch;padding:14px 20px 22px;gap:14px}
@@ -206,6 +224,7 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
 </style>
 </head>
 <body>
+<div id="loadbar"></div>
 <header class="top">
  <div class="wrap bar">
   <a class="brand" href="#accueil"><span class="logo">🥚</span><span><b>LA JUSTICE DE DIEU</b><small>Ferme d'élevage à Dogbo</small></span></a>
@@ -218,6 +237,7 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
     <a href="#galerie">Galerie</a>
     <a href="#contact">Contact</a>
    </nav>
+   <button class="btn ghost sm" id="langBtn" data-act="lang" title="Language / Langue">EN</button>
    <div id="authArea"></div>
   </div>
  </div>
@@ -236,12 +256,16 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
    </div>
    <div class="egg-wrap" aria-live="polite">
     <div class="egg e2" aria-hidden="true"></div><div class="egg e3" aria-hidden="true"></div>
-    <div class="egg"><span class="n" id="s-stock">–</span><span class="l">œufs frais disponibles</span></div>
+    <div class="egg"><span class="n" id="s-stock">–</span><span class="l">plateaux d'œufs frais disponibles</span></div>
    </div>
   </div></div>
   <div class="sec alt" id="sec-une" style="display:none"><div class="wrap">
    <div class="head"><div><h2>À la une</h2></div><button class="btn primary adm" data-act="add-gal">＋ Ajouter une photo ou un texte</button></div>
    <div id="h-une"></div>
+  </div></div>
+  <div class="sec" id="sec-promo" style="display:none"><div class="wrap">
+   <div class="head"><div><h2>Promotions</h2></div></div>
+   <div class="grid" id="h-promo"></div>
   </div></div>
   <div class="sec"><div class="wrap two">
    <div><h2>La ferme</h2><p id="h-about"></p></div>
@@ -311,7 +335,7 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
 <script type="module">
 import {initializeApp,deleteApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,sendPasswordResetEmail,deleteUser,EmailAuthProvider,reauthenticateWithCredential,updatePassword} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {initializeFirestore,collection,doc,addDoc,setDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,limit,serverTimestamp,runTransaction,writeBatch,where} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {initializeFirestore,getFirestore,getDocs,persistentLocalCache,persistentMultipleTabManager,increment,collection,doc,addDoc,setDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,limit,serverTimestamp,runTransaction,writeBatch,where} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 /* ============ Firebase ============ */
 const firebaseConfig={
@@ -325,7 +349,9 @@ const firebaseConfig={
 };
 const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
-const db=initializeFirestore(app,{experimentalAutoDetectLongPolling:true},'default');
+let db;
+try{db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()}),experimentalAutoDetectLongPolling:true},'default');}
+catch(e){console.warn('cache local indisponible',e);db=getFirestore(app,'default');}
 
 /* ============ Constantes ============ */
 const ROLES={pdg:'PDG',superviseur:'Superviseur général',secretaire_general:'Secrétaire général',veterinaire:'Vétérinaire',receptionniste:'Réceptionniste',magasiniere:'Magasinière',stagiaire:'Stagiaire',client:'Client'};
@@ -344,7 +370,7 @@ const CAN={prod:ADMINS,recep:[...ADMINS,'receptionniste'],vente:[...ADMINS,'maga
 const ORDER_STAFF=[...ADMINS,'magasiniere'];
 const STATUS={pending:['En attente','amber'],active:['Actif','green'],banned:['Suspendu','red']};
 const VIEWS=['accueil','historique','animaux','galerie','contact','espace'];
-const DEF_CFG={heroTitre:'LA JUSTICE DE DIEU',heroSoustitre:"Ferme d'élevage à Dogbo. Des œufs frais, un élevage suivi au quotidien.",apropos:"La Justice de Dieu est une ferme d'élevage située à Dogbo. Nous élevons des volailles avec soin et fournissons des œufs frais à nos clients.\nChaque jour, notre équipe enregistre la production, la réception, le stock et la santé des animaux.",telephone:'',email:'',adresse:'Dogbo, Bénin',horaires:'',prixOeuf:120,facebook:'',whatsapp:'',seuilStock:200,seuilMortalite:5,seuilCasse:5};
+const DEF_CFG={heroTitre:'LA JUSTICE DE DIEU',heroSoustitre:"Ferme d'élevage à Dogbo. Des œufs frais, un élevage suivi au quotidien.",apropos:"La Justice de Dieu est une ferme d'élevage située à Dogbo. Nous élevons des volailles avec soin et fournissons des œufs frais à nos clients.\nChaque jour, notre équipe enregistre la production, la réception, le stock et la santé des animaux.",telephone:'',email:'',adresse:'Dogbo, Bénin',horaires:'',prixOeuf:120,prixPlateau:3600,facebook:'',whatsapp:'',seuilStock:150,seuilMortalite:5,seuilCasse:5,seuilPonte:60};
 const DEF_ANIMAUX=[
  {icone:'🐔',nom:'Poules pondeuses',quantite:null,description:"Notre élevage principal : des poules pondeuses suivies chaque jour pour fournir des œufs frais."},
  {icone:'🍗',nom:'Poulets de chair',quantite:null,description:"Des poulets élevés pour la consommation de viande."},
@@ -363,8 +389,21 @@ const AUTH_ERR={
 /* ============ Outils ============ */
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt=n=>Number(n||0).toLocaleString('fr-FR');
+let lang='fr';try{lang=localStorage.getItem('lang')==='en'?'en':'fr';}catch(_){}
+const LOC=()=>lang==='en'?'en-GB':'fr-FR';
+const fmt=n=>Number(n||0).toLocaleString(LOC());
 const money=n=>fmt(n)+' FCFA';
+const PLAT=30;
+const splitOeufs=n=>{n=Math.round(Number(n)||0);return{neg:n<0,p:Math.floor(Math.abs(n)/PLAT),u:Math.abs(n)%PLAT};};
+const oeufs=n=>{const{neg,p,u}=splitOeufs(n),a=`${fmt(p)} plateau${p>1?'x':''}`,b=`${u} unité${u>1?'s':''}`;return (neg?'−':'')+(p&&u?`${a} + ${b}`:p?a:u?b:'0 plateau');};
+const plX=n=>`${fmt(n)} plateau${n>1?'x':''}`;
+const eggFields=(name,label,total)=>{const x=splitOeufs(total||0);return[{name:name+'P',label:`${label} : plateaux`,type:'number',value:x.p},{name:name+'U',label:`${label} : unités en plus`,type:'number',value:x.u,help:'Un plateau = 30 unités.'}];};
+const eggsOf=(v,k)=>(Number(v[k+'P'])||0)*PLAT+(Number(v[k+'U'])||0);
+const prixPl=()=>Number(cfg.prixPlateau)||Number(cfg.prixOeuf)*PLAT||0;
+const pl1=n=>Math.round(n/PLAT*10)/10;
+const fmtLong=d=>{try{return new Date(d+'T12:00:00').toLocaleDateString(LOC(),{day:'numeric',month:'long',year:'numeric'});}catch(_){return d;}};
+const histoLabel=h=>h.date?fmtLong(h.date)+(h.dateFin?' – '+fmtLong(h.dateFin):''):(h.annee||'');
+const cmdPrix=c=>c.prixPlateau??(c.prix?c.prix*PLAT:prixPl());
 const today=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);};
 const dateFr=d=>{if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d))return esc(d||'');const[y,m,j]=d.split('-');return `${j}/${m}/${y}`;};
 const sum=(a,k)=>a.reduce((s,x)=>s+(Number(x[k])||0),0);
@@ -383,8 +422,8 @@ const waNumber=t=>{let d=String(t||'').replace(/\D/g,'');if(d.length===8)d='2290
 const stars=n=>{n=Math.min(5,Math.max(1,parseInt(n)||5));return '★'.repeat(n)+'☆'.repeat(5-n);};
 const safeUrl=u=>/^https?:\/\/[^\s"'<>]+$/i.test(u||'')?u:'';
 const safeImg=u=>typeof u==='string'&&u.startsWith('data:image/jpeg;base64,')&&!/[^A-Za-z0-9+/=]/.test(u.slice(23))?u:'';
-const tsDate=t=>{const d=t&&t.toDate?t.toDate():null;return d?d.toLocaleDateString('fr-FR'):'';};
-const tsTime=t=>{const d=t&&t.toDate?t.toDate():null;return d?d.toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}):'';};
+const tsDate=t=>{const d=t&&t.toDate?t.toDate():null;return d?d.toLocaleDateString(LOC()):'';};
+const tsTime=t=>{const d=t&&t.toDate?t.toDate():null;return d?d.toLocaleString(LOC(),{dateStyle:'short',timeStyle:'short'}):'';};
 function downloadFile(name,text,mime){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:mime}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);}
 function exportCSV(name,heads,rows){
  const q=v=>{if(typeof v==='string'&&/^[=+\-@]/.test(v))v="'"+v;return `"${String(v??'').replace(/"/g,'""')}"`;};
@@ -415,9 +454,11 @@ function imgToData(file,max=900,limit=700000){
 /* ============ État ============ */
 let user=null,me=null,prof='loading',authReady=false,registering=false;
 let cfg={...DEF_CFG},animaux=[],histo=[],stats={};
-const D={prod:[],trans:[],ventes:[],sante:[],dep:[],users:[],visas:[],cmd:[],journal:[],avisAll:[],mesAvis:[]};
+const D={prod:[],trans:[],ventes:[],sante:[],dep:[],users:[],visas:[],cmd:[],journal:[],avisAll:[],mesAvis:[],lots:[],aliment:[],vaccins:[],taches:[],annonces:[],objectifs:[],presences:[],paies:[],myPres:[],myPaies:[],ventesAll:[],paiements:[]};
+let promos=[],galUnsub=null,galN=6,loadFrom='',eq=false,rq=false,clientsLoaded=false,clientsReady=false,notifCfg={};
 let galerie=[],avisPub=[],slideIdx=0,sliderPaused=false,lastReceipt=null;
 let curTab='resume',uFilter='all',unsubMe=null,privUnsubs=[],privKey='',warned=false,creatingProfile=false,fixingAdmin=false,slots={},slotsReady=false,claimTried='',curMonth=today().slice(0,7);
+const isSup=()=>!!me&&me.status==='active'&&me.role==='superviseur';
 const isAdmin=()=>!!me&&me.status==='active'&&ADMINS.includes(me.role);
 const can=l=>!!me&&me.status==='active'&&l.includes(me.role);
 const animList=()=>animaux.length?animaux:DEF_ANIMAUX.map(a=>({...a}));
@@ -554,37 +595,78 @@ onAuthStateChanged(auth,u=>{if(registering)return;handleUser(u);});
 
 /* ============ Données publiques ============ */
 const pubErr=e=>{console.error(e);if(!warned){warned=true;toast("Impossible de charger le contenu du site. Vérifiez les règles Firestore.",'err');}};
-onSnapshot(doc(db,'site','config'),s=>{cfg={...DEF_CFG,...(s.exists()?s.data():{})};renderAll();},pubErr);
+onSnapshot(doc(db,'site','config'),s=>{cfg={...DEF_CFG,...(s.exists()?s.data():{})};$('#loadbar')?.remove();renderAll();},pubErr);
 onSnapshot(collection(db,'animaux'),s=>{animaux=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.nom).localeCompare(String(b.nom),'fr'));renderAll();},pubErr);
-onSnapshot(collection(db,'historique'),s=>{histo=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.ordre??99)-(b.ordre??99));renderAll();},pubErr);
-onSnapshot(query(collection(db,'galerie'),orderBy('createdAt','desc'),limit(24)),s=>{galerie=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();},pubErr);
+onSnapshot(collection(db,'historique'),s=>{histo=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date&&b.date?a.date.localeCompare(b.date):a.date?1:b.date?-1:(a.ordre??99)-(b.ordre??99));renderAll();},pubErr);
+function startGalerie(n){galUnsub&&galUnsub();galN=n;galUnsub=onSnapshot(query(collection(db,'galerie'),orderBy('createdAt','desc'),limit(n)),s=>{galerie=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();},pubErr);}
+startGalerie(6);
+onSnapshot(query(collection(db,'promos'),limit(30)),s=>{promos=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();},pubErr);
+setTimeout(()=>$('#loadbar')?.remove(),8000);
 onSnapshot(query(collection(db,'avis'),where('status','==','approved'),limit(30)),s=>{avisPub=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();},pubErr);
 onSnapshot(collection(db,'roleSlots'),s=>{slots={};s.docs.forEach(d=>{slots[d.id]=d.data().uid;});slotsReady=true;maybeClaim();renderAll();},pubErr);
 onSnapshot(doc(db,'stats','public'),s=>{stats=s.exists()?s.data():{};renderAll();},pubErr);
 
 /* ============ Données privées (équipe) ============ */
-function stopPrivate(){privUnsubs.forEach(f=>f());privUnsubs=[];privKey='';Object.keys(D).forEach(k=>D[k]=[]);}
+const dayStr=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const addDays=(iso,n)=>{const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return dayStr(d);};
+const baseFrom=()=>addDays(today(),-190);
+const setHTML=(el,sig,html)=>{if(el.dataset.sig===sig)return;el.dataset.sig=sig;el.innerHTML=html;};
+function schedEspace(){if(eq)return;eq=true;requestAnimationFrame(()=>{eq=false;renderEspace();renderAuth();});}
+function stopPrivate(){privUnsubs.forEach(f=>f());privUnsubs=[];privKey='';clientsLoaded=false;clientsReady=false;notifCfg={};Object.keys(D).forEach(k=>D[k]=[]);}
+function reloadPrivate(){if(!me||me.status!=='active')return;const k=privKey;stopPrivate();privKey=k;startPrivate();}
+function loadClients(){
+ clientsLoaded=true;
+ privUnsubs.push(onSnapshot(query(collection(db,'ventes'),where('type','==','vente'),limit(5000)),s=>{D.ventesAll=s.docs.map(d=>({id:d.id,...d.data()}));clientsReady=true;schedEspace();},e=>console.warn('ventesAll',e)));
+ privUnsubs.push(onSnapshot(query(collection(db,'paiements'),limit(5000)),s=>{D.paiements=s.docs.map(d=>({id:d.id,...d.data()}));schedEspace();},e=>console.warn('paiements',e)));
+}
+function notify(title,body=''){
+ toast(body?`${title} — ${body}`:title);
+ try{if('Notification' in window&&Notification.permission==='granted'&&document.hidden)new Notification(title,{body});}catch(_){}
+}
+async function enableNotif(){
+ if(!('Notification' in window)){toast('Ce navigateur ne gère pas les notifications.','err');return;}
+ const r=await Notification.requestPermission();
+ toast(r==='granted'?'Notifications activées : vous serez alerté tant que le site est ouvert.':'Notifications refusées dans le navigateur.',r==='granted'?'ok':'err');
+}
 function startPrivate(){
- const w=(q,k)=>privUnsubs.push(onSnapshot(q,s=>{D[k]=s.docs.map(d=>({id:d.id,...d.data()}));renderEspace();renderAuth();},e=>console.warn(k,e)));
- const r=me.role;
+ if(!loadFrom)loadFrom=baseFrom();
+ const w=(q,k,onAdd)=>{let first=true;privUnsubs.push(onSnapshot(q,s=>{
+  if(!first&&onAdd)s.docChanges().forEach(c=>{if(c.type==='added')onAdd({id:c.doc.id,...c.doc.data()});});
+  first=false;D[k]=s.docs.map(d=>({id:d.id,...d.data()}));schedEspace();},e=>console.warn(k,e)));};
+ const r=me.role,from=where('date','>=',loadFrom),C=n=>collection(db,n);
  if(STAFF.includes(r)){
-  w(query(collection(db,'production_journaliere'),orderBy('date','desc'),limit(400)),'prod');
-  w(query(collection(db,'transfert_reception'),orderBy('date','desc'),limit(400)),'trans');
-  w(query(collection(db,'ventes'),orderBy('date','desc'),limit(1500)),'ventes');
-  w(query(collection(db,'sante'),orderBy('date','desc'),limit(40)),'sante');
-  w(query(collection(db,'visas'),limit(200)),'visas');
+  w(query(C('production_journaliere'),from,orderBy('date','desc'),limit(2000)),'prod');
+  w(query(C('transfert_reception'),from,orderBy('date','desc'),limit(2000)),'trans');
+  w(query(C('ventes'),from,orderBy('date','desc'),limit(3000)),'ventes');
+  w(query(C('sante'),from,orderBy('date','desc'),limit(1000)),'sante');
+  w(query(C('visas'),limit(200)),'visas');
+  w(query(C('lots'),limit(100)),'lots');
+  w(query(C('aliment'),from,orderBy('date','desc'),limit(1000)),'aliment');
+  w(query(C('vaccins'),from,orderBy('date','desc'),limit(500)),'vaccins');
+  w(query(C('taches'),orderBy('createdAt','desc'),limit(150)),'taches',t=>{if(t.par!==user.uid&&(!t.assigneUid||t.assigneUid===user.uid))notify('Nouvelle tâche',t.titre);});
+  w(query(C('annonces'),orderBy('createdAt','desc'),limit(10)),'annonces',a=>{if(a.uid!==user.uid)notify('Annonce : '+a.titre,a.texte);});
+  w(query(C('objectifs'),limit(24)),'objectifs');
+  w(query(C('presences'),where('uid','==',user.uid),limit(200)),'myPres');
+  w(query(C('paies'),where('uid','==',user.uid),limit(60)),'myPaies');
  }
- if(FIN.includes(r))w(query(collection(db,'depenses'),orderBy('date','desc'),limit(200)),'dep');
- if(ADMINS.includes(r))w(query(collection(db,'users'),limit(300)),'users');
- if(ORDER_STAFF.includes(r))w(query(collection(db,'commandes'),orderBy('createdAt','desc'),limit(200)),'cmd');
- else w(query(collection(db,'commandes'),where('uid','==',user.uid),limit(100)),'cmd');
- w(query(collection(db,'avis'),where('uid','==',user.uid),limit(1)),'mesAvis');
- if(ADMINS.includes(r)){w(query(collection(db,'journal'),orderBy('createdAt','desc'),limit(200)),'journal');w(query(collection(db,'avis'),limit(200)),'avisAll');}
+ if(FIN.includes(r))w(query(C('depenses'),from,orderBy('date','desc'),limit(1000)),'dep');
+ if(ADMINS.includes(r)){
+  w(query(C('users'),limit(300)),'users',u=>{if(u.status==='pending')notify('Nouvelle inscription',`${u.nom} demande le rôle ${ROLES[u.roleDemande]||u.roleDemande}`);});
+  w(query(C('presences'),from,orderBy('date','desc'),limit(3000)),'presences');
+  w(query(C('paies'),limit(600)),'paies');
+  w(query(C('journal'),orderBy('createdAt','desc'),limit(200)),'journal');
+  w(query(C('avis'),limit(200)),'avisAll',a=>{if(a.status==='pending')notify('Nouvel avis client',a.nom);});
+  privUnsubs.push(onSnapshot(doc(db,'reglages','notif'),sn=>{notifCfg=sn.exists()?sn.data():{};},e=>console.warn('notif',e)));
+ }
+ if(ORDER_STAFF.includes(r))w(query(C('commandes'),orderBy('createdAt','desc'),limit(200)),'cmd',c=>{if(c.status==='nouvelle')notify('Nouvelle commande',`${c.nom} · ${oeufs(c.quantite)}`);});
+ else w(query(C('commandes'),where('uid','==',user.uid),limit(100)),'cmd');
+ w(query(C('avis'),where('uid','==',user.uid),limit(1)),'mesAvis');
 }
 
 /* ============ Navigation ============ */
 function route(){
  let h=location.hash.replace('#','')||'accueil';if(!VIEWS.includes(h))h='accueil';
+ if(h==='galerie'&&galN<24)startGalerie(24);
  VIEWS.forEach(v=>$('#v-'+v).classList.toggle('active',v===h));
  document.querySelectorAll('#menu nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+h));
  $('#menu').classList.remove('open');window.scrollTo({top:0});
@@ -611,28 +693,36 @@ function renderHome(){
  $('#h-sub').textContent=cfg.heroSoustitre;
  $('#h-about').textContent=cfg.apropos;
  $('#h-cta').innerHTML=(user?`<a class="btn jaune" href="#espace">Accéder à mon espace</a>`:`<button class="btn jaune" data-act="login">Connexion</button><button class="btn ghost" data-act="register">Créer mon profil</button>`)+`<a class="btn ghost" href="#historique">Notre historique</a><a class="btn ghost" href="#animaux">Animaux élevés</a>`;
- $('#s-stock').textContent=stats.stock!=null?fmt(stats.stock):'–';
+ $('#s-stock').textContent=stats.stock!=null?fmt(Math.floor(stats.stock/PLAT)):'–';
  const bits=[];if(stats.effectif)bits.push(`${fmt(stats.effectif)} poules actuellement en élevage`);bits.push(`${animList().length} types d'animaux élevés`);
  $('#h-facts').textContent=bits.join(' · ');
- $('#h-animaux').innerHTML=animList().slice(0,3).map(animalCard).join('');
+ setHTML($('#h-animaux'),animSig('h'),animList().slice(0,3).map(animalCard).join(''));
 }
+const une=()=>galerie.slice(0,6);
 function renderUne(){
- const sec=$('#sec-une'),box=$('#h-une');
- sec.style.display=(galerie.length||isAdmin())?'':'none';
- if(!galerie.length){box.innerHTML='<div class="note adm-block">Aucune publication pour l\'instant. Ajoutez des photos et des textes : ils défileront ici, sur la page d\'accueil.</div>';return;}
- if(slideIdx>=galerie.length)slideIdx=0;
- box.innerHTML=`<div class="slider" role="region" aria-roledescription="carrousel" aria-label="À la une">${galerie.map((g,i)=>{const im=safeImg(g.image);return `<article class="slide ${i===slideIdx?'on':''}${im?'':' noimg'}">${im?`<div class="ph" role="img" aria-label="${esc(g.titre||'Photo de la ferme')}" style="background-image:url('${im}')"></div>`:''}<div class="tx"><h3>${esc(g.titre||'')}</h3><p>${esc(g.texte||'')}</p></div></article>`;}).join('')}${galerie.length>1?'<div class="sl-nav"><button data-act="slide-prev" aria-label="Précédent">‹</button><button data-act="slide-next" aria-label="Suivant">›</button></div>':''}</div>${galerie.length>1?`<div class="dots">${galerie.map((_,i)=>`<button class="${i===slideIdx?'on':''}" data-act="slide-go" data-id="${i}" aria-label="Diapositive ${i+1}"></button>`).join('')}</div>`:''}`;
+ const sec=$('#sec-une'),box=$('#h-une'),L=une();
+ sec.style.display=(L.length||isAdmin())?'':'none';
+ const sig=L.length+'|'+isAdmin()+L.map(g=>[g.id,g.titre,g.texte,(g.image||'').length].join(',')).join('|');
+ if(!L.length){setHTML(box,sig,'<div class="note adm-block">Aucune publication pour l\'instant. Ajoutez des photos et des textes : ils défileront ici, sur la page d\'accueil.</div>');return;}
+ if(slideIdx>=L.length)slideIdx=0;
+ setHTML(box,sig,`<div class="slider" role="region" aria-roledescription="carrousel" aria-label="À la une">${L.map((g,i)=>{const im=safeImg(g.image);return `<article class="slide ${i===slideIdx?'on':''}${im?'':' noimg'}">${im?`<div class="ph" role="img" aria-label="${esc(g.titre||'Photo de la ferme')}" style="background-image:url('${im}')"></div>`:''}<div class="tx"><h3>${esc(g.titre||'')}</h3><p>${esc(g.texte||'')}</p></div></article>`;}).join('')}${L.length>1?'<div class="sl-nav"><button data-act="slide-prev" aria-label="Précédent">‹</button><button data-act="slide-next" aria-label="Suivant">›</button></div>':''}</div>${L.length>1?`<div class="dots">${L.map((_,i)=>`<button class="${i===slideIdx?'on':''}" data-act="slide-go" data-id="${i}" aria-label="Diapositive ${i+1}"></button>`).join('')}</div>`:''}`);
 }
 function goSlide(i){
- const n=galerie.length;if(!n)return;slideIdx=(i%n+n)%n;
+ const n=une().length;if(!n)return;slideIdx=(i%n+n)%n;
  document.querySelectorAll('#h-une .slide').forEach((el,k)=>el.classList.toggle('on',k===slideIdx));
  document.querySelectorAll('#h-une .dots button').forEach((el,k)=>el.classList.toggle('on',k===slideIdx));
+}
+function renderPromos(){
+ const sec=$('#sec-promo'),P=activePromos();
+ sec.style.display=P.length?'':'none';
+ setHTML($('#h-promo'),P.map(p=>[p.id,p.titre,p.prix,p.qteMin,p.fin,p.description].join(',')).join('|'),P.map(p=>`<article class="card promo"><span class="badge amber">Promotion</span><h3 style="margin-top:8px">${esc(p.titre)}</h3><p><span class="px">${money(p.prix)}</span> le plateau</p><p class="muted">${p.qteMin>1?`À partir de ${plX(p.qteMin)}. `:''}${p.fin?`Jusqu'au ${dateFr(p.fin)}.`:''}</p>${p.description?`<p>${esc(p.description)}</p>`:''}</article>`).join(''));
 }
 function galItem(g){
  const im=safeImg(g.image);
  return `<article class="card">${im?`<img loading="lazy" src="${im}" alt="${esc(g.titre||'Photo de la ferme')}" data-act="view-img" data-id="${esc(g.id)}">`:''}<div class="cap">${g.titre?`<h3>${esc(g.titre)}</h3>`:''}${g.texte?`<p>${esc(g.texte)}</p>`:''}<div class="adm row" style="margin-top:12px"><button class="btn sm line" data-act="edit-gal" data-id="${esc(g.id)}">✏️ Modifier</button><button class="btn sm danger" data-act="del-gal" data-id="${esc(g.id)}">Supprimer</button></div></div></article>`;
 }
-function renderGalerie(){$('#l-galerie').innerHTML=galerie.length?`<div class="gal">${galerie.map(galItem).join('')}</div>`:'<p class="empty">Aucune publication pour l\'instant.</p>';}
+const galSig=()=>galerie.length+'|'+isAdmin()+galerie.map(g=>[g.id,g.titre,g.texte,(g.image||'').length].join(',')).join('|');
+function renderGalerie(){setHTML($('#l-galerie'),galSig(),galerie.length?`<div class="gal">${galerie.map(galItem).join('')}</div>`:'<p class="empty">Aucune publication pour l\'instant.</p>');}
 function renderAvisPub(){
  $('#h-avis').innerHTML=avisPub.length?avisPub.map(a=>`<article class="card avis"><div class="stars" role="img" aria-label="${parseInt(a.note)||5} sur 5">${stars(a.note)}</div><p>« ${esc(a.texte)} »</p><b>${esc(a.nom)}</b></article>`).join(''):'<p class="empty" style="grid-column:1/-1">Aucun avis pour le moment. Soyez le premier à partager votre expérience.</p>';
 }
@@ -643,9 +733,10 @@ function viewImg(id){
  $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><img src="${safeImg(g.image)}" alt="${esc(g.titre||'Photo')}" style="width:100%;border-radius:12px;display:block">${g.titre?`<h3 style="margin-top:12px">${esc(g.titre)}</h3>`:''}${g.texte?`<p class="muted" style="white-space:pre-line">${esc(g.texte)}</p>`:''}`;
  showModal();
 }
-function renderAnimaux(){$('#l-animaux').innerHTML=seedNote('animaux')+`<div class="grid">${animList().map(animalCard).join('')}</div>`;}
+const animSig=k=>k+animaux.length+isAdmin()+animList().map(a=>[a.id,a.nom,a.quantite,a.description,a.icone,(a.image||'').length].join(',')).join('|');
+function renderAnimaux(){setHTML($('#l-animaux'),animSig('l'),seedNote('animaux')+`<div class="grid">${animList().map(animalCard).join('')}</div>`);}
 function renderHisto(){
- $('#l-histo').innerHTML=seedNote('historique')+`<div class="tl">${histoList().map(h=>`<div class="it"><span class="yr">${esc(h.annee)}</span><h3>${esc(h.titre)}</h3><p>${esc(h.texte||'')}</p>${h.id?`<div class="adm row"><button class="btn sm line" data-act="edit-histo" data-id="${esc(h.id)}">✏️ Modifier</button><button class="btn sm danger" data-act="del-histo" data-id="${esc(h.id)}">Supprimer</button></div>`:''}</div>`).join('')}</div>`;
+ $('#l-histo').innerHTML=seedNote('historique')+`<div class="tl">${histoList().map(h=>`<div class="it"><span class="yr">${esc(histoLabel(h))}</span><h3>${esc(h.titre)}</h3><p>${esc(h.texte||'')}</p>${h.id?`<div class="adm row"><button class="btn sm line" data-act="edit-histo" data-id="${esc(h.id)}">✏️ Modifier</button><button class="btn sm danger" data-act="del-histo" data-id="${esc(h.id)}">Supprimer</button></div>`:''}</div>`).join('')}</div>`;
 }
 function renderContact(){
  const tel=(cfg.telephone||'').trim(),ph=tel.replace(/[^\d+]/g,''),wa=waNumber(cfg.whatsapp||cfg.telephone),fb=safeUrl(cfg.facebook);
@@ -667,15 +758,53 @@ const stat=(l,v,c='')=>`<div class="stat ${c}"><small>${esc(l)}</small><b>${v}</
 const btnIf=(ok,act,label,cls='primary',id='')=>ok?`<button class="btn sm ${cls}" data-act="${act}"${id?` data-id="${esc(id)}"`:''}>${label}</button>`:'';
 const stock=()=>stats.stock||0;
 
+/* ============ Aides de calcul ============ */
+const SALAIRE_DEFAUT={pdg:0,superviseur:36000,secretaire_general:30000,veterinaire:30000,receptionniste:30000,magasiniere:30000,stagiaire:30000,client:0};
+const salaireDe=u=>Number.isFinite(u&&u.salaire)?u.salaire:(SALAIRE_DEFAUT[u&&u.role]??0);
+const JOURS_OUVRES=26;
+const PRES={present:['Présent','green'],retard:['Retard','amber'],absent:['Absent','red'],absent_justifie:['Absent justifié','blue'],conge:['Congé','blue']};
+function paieCalc(u,pres){
+ const base=salaireDe(u),c=k=>pres.filter(p=>p.statut===k).length,absents=c('absent');
+ const retenue=Math.min(base,Math.round(base*absents/JOURS_OUVRES));
+ return{base,presents:c('present'),retards:c('retard'),absents,justifies:c('absent_justifie')+c('conge'),retenue,net:Math.max(0,base-retenue)};
+}
+const activePromos=()=>promos.filter(p=>p.actif!==false&&(!p.debut||p.debut<=today())&&(!p.fin||p.fin>=today()));
+function bestPrice(q){let b={prix:prixPl(),promo:null};activePromos().forEach(p=>{if(q>=(p.qteMin||1)&&Number(p.prix)<b.prix)b={prix:Number(p.prix),promo:p};});return b;}
+const lotEffectif=l=>l.statut==='reforme'?0:Math.max(0,(l.effectifInitial||0)-(l.morts||0));
+const effectifTotal=()=>D.lots.filter(l=>l.statut!=='reforme').reduce((a,l)=>a+lotEffectif(l),0);
+const ageSem=l=>l.dateArrivee?Math.max(0,Math.floor((Date.now()-new Date(l.dateArrivee+'T12:00:00').getTime())/6048e5)):null;
+const lotOptions=()=>[['','Tous / non précisé'],...D.lots.filter(l=>l.statut!=='reforme').map(l=>[l.id,l.nom])];
+function tauxJour(date){const L=D.prod.filter(p=>p.date===date);if(!L.length)return null;const eff=Math.max(...L.map(p=>p.effectif||0));return eff>0?sum(L,'oeufsRamasses')*100/eff:null;}
+function alimStats(m){
+ const A=D.aliment.filter(a=>(a.date||'').startsWith(m)),P=D.prod.filter(p=>(p.date||'').startsWith(m));
+ const kg=sum(A,'kg'),cout=sum(A,'cout'),bons=sum(P,'bons'),jours=new Set(A.map(a=>a.date)).size,effs=P.map(p=>p.effectif||0);
+ const eff=effs.length?effs.reduce((a,b)=>a+b,0)/effs.length:0;
+ return{kg,cout,bons,gParPoule:eff&&jours?kg*1000/(eff*jours):null,coutOeuf:bons?cout/bons:null};
+}
+const ckey=v=>String(v.clientTel||'').replace(/\D/g,'')||String(v.clientNom||'').trim().toLowerCase()||'?';
+function clientsAgg(){
+ const M=new Map();
+ D.ventesAll.forEach(v=>{
+  const k=ckey(v);let c=M.get(k);
+  if(!c){c={key:k,nom:v.clientNom||'—',tel:v.clientTel||'',nb:0,oeufs:0,total:0,paye:0,dernier:'',ventes:[],paiements:[]};M.set(k,c);}
+  c.nb++;c.oeufs+=v.quantite||0;c.total+=v.montant||0;c.paye+=(v.paye??v.montant)||0;
+  if((v.date||'')>c.dernier)c.dernier=v.date;if(v.clientTel&&!c.tel)c.tel=v.clientTel;c.ventes.push(v);
+ });
+ D.paiements.forEach(p=>{const c=M.get(p.clientKey);if(c){c.paye+=p.montant||0;c.paiements.push(p);}});
+ return [...M.values()].map(c=>({...c,reste:Math.max(0,c.total-c.paye)})).sort((a,b)=>b.reste-a.reste||b.total-a.total);
+}
+const daysOfMonth=m=>{const[y,mo]=m.split('-').map(Number),n=new Date(y,mo,0).getDate();return Array.from({length:n},(_,i)=>`${m}-${String(i+1).padStart(2,'0')}`);};
 function tabsFor(){
  const r=me.role,staff=STAFF.includes(r),na=staff?computeAlerts().length:0,t=[['resume','📊 Résumé'+(na?` (${na})`:'')]];
- if(staff)t.push(['production','🥚 Production'],['reception','📦 Réception'],['magasin','🏪 Magasin et ventes'],['sante','🩺 Santé']);
+ if(staff)t.push(['production','🥚 Production'],['reception','📦 Réception'],['magasin','🏪 Magasin et ventes'],['sante','🩺 Santé'],['elevage','🐔 Élevage']);
  if(FIN.includes(r))t.push(['depenses','💸 Dépenses']);
+ if([...ORDER_STAFF,'secretaire_general'].includes(r))t.push(['clients','🤝 Clients et crédits']);
  if(ORDER_STAFF.includes(r)){const n=D.cmd.filter(c=>c.status==='nouvelle').length;t.push(['commandes','🛒 Commandes'+(n?` (${n})`:'')]);}
  else t.push(['commandes','🛒 Mes commandes']);
+ if(staff){const n=D.taches.filter(x=>x.statut!=='fait'&&(isAdmin()||!x.assigneUid||x.assigneUid===user.uid)).length;t.push(['taches','✅ Tâches'+(n?` (${n})`:'')]);}
  if(isAdmin()){
   const n=D.users.filter(u=>u.status==='pending').length,a=D.avisAll.filter(x=>x.status==='pending').length;
-  t.push(['inscrits','👥 Inscrits'+(n?` (${n})`:'')],['avisadm','⭐ Avis'+(a?` (${a})`:'')],['journal','📜 Journal']);
+  t.push(['equipe','👷 Équipe et salaires'],['inscrits','👥 Inscrits'+(n?` (${n})`:'')],['avisadm','⭐ Avis'+(a?` (${a})`:'')],['journal','📜 Journal']);
  }
  t.push(['profil','👤 Mon profil']);
  return t;
@@ -688,7 +817,7 @@ function renderEspace(){
  if(prof==='missing'||!me){box.innerHTML=`<div class="card center"><h2>Profil introuvable</h2><p>Votre compte existe mais son profil n'a pas été trouvé (ou l'accès est refusé par les règles Firestore). Déconnectez-vous puis recréez votre profil, ou contactez la direction.</p><button class="btn primary" data-act="logout">Se déconnecter</button></div>`;return;}
  if(me.status==='pending'){box.innerHTML=`<div class="card center"><h2>Compte en attente de validation</h2><p>Bonjour ${esc(me.nom)}. Vous avez demandé le rôle <b>${esc(ROLES[me.roleDemande]||me.roleDemande)}</b>. Le PDG ou le superviseur doit le valider. Cette page se met à jour automatiquement.</p><button class="btn line" data-act="logout">Se déconnecter</button></div>`;return;}
  const tabs=tabsFor();if(!tabs.some(t=>t[0]===curTab))curTab='resume';
- const panel={resume:pResume,production:pProd,reception:pRecep,magasin:pMag,sante:pSante,depenses:pDep,inscrits:pUsers,commandes:pCmd,profil:pProfil,journal:pJournal,avisadm:pAvisAdm}[curTab]();
+ const panel={resume:pResume,production:pProd,reception:pRecep,magasin:pMag,sante:pSante,depenses:pDep,inscrits:pUsers,commandes:pCmd,profil:pProfil,journal:pJournal,avisadm:pAvisAdm,elevage:pElevage,clients:pClients,taches:pTaches,equipe:pEquipe}[curTab]();
  box.innerHTML=`<div class="head"><div><h2>Bonjour ${esc(me.nom)}</h2><p>${badge(ROLES[me.role]||me.role,'green')}</p></div></div><div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab ${k===curTab?'on':''}" role="tab" data-act="tab" data-id="${k}">${l}</button>`).join('')}</div>${panel}`;
 }
 const lastDays=n=>{const r=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);r.push(new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10));}return r;};
@@ -712,45 +841,64 @@ function computeAlerts(){
  const t=today(),A=[],m=t.slice(0,7),hr=new Date().getHours();
  const nr=D.prod.filter(p=>p.status==='a_receptionner'),vieux=nr.filter(p=>p.date<t);
  if(stock()<=0)A.push(['r','Le stock est vide.']);
- else if(stock()<=cfg.seuilStock)A.push(['a',`Stock bas : ${fmt(stock())} œufs (seuil d'alerte : ${fmt(cfg.seuilStock)}).`]);
+ else if(stock()<=cfg.seuilStock)A.push(['a',`Stock bas : ${oeufs(stock())} (seuil d'alerte : ${oeufs(cfg.seuilStock)}).`]);
  const morts=sum(D.sante.filter(x=>x.date>=lastDays(7)[0]),'mortalite');
  if(cfg.seuilMortalite>0&&morts>=cfg.seuilMortalite)A.push(['r',`Mortalité élevée : ${fmt(morts)} poules mortes sur les 7 derniers jours (seuil : ${fmt(cfg.seuilMortalite)}).`]);
  const pj=D.prod.filter(p=>p.date===t),ram=sum(pj,'oeufsRamasses'),cas=sum(pj,'casses');
  if(ram>0&&cas*100/ram>cfg.seuilCasse)A.push(['a',`Casse élevée au poulailler aujourd'hui : ${(cas*100/ram).toFixed(1)} % (seuil : ${cfg.seuilCasse} %).`]);
+ const tj=tauxJour(t);
+ if(tj!=null&&cfg.seuilPonte>0&&tj<cfg.seuilPonte)A.push(['a',`Taux de ponte bas aujourd'hui : ${tj.toFixed(1)} % (seuil : ${cfg.seuilPonte} %).`]);
  if(vieux.length)A.push(['r',`${vieux.length} lot(s) de production non réceptionné(s) depuis plus d'un jour.`]);
  else if(nr.length)A.push(['i',`${nr.length} lot(s) à réceptionner aujourd'hui.`]);
  const ns=D.trans.filter(x=>x.status==='a_vendre').length;
  if(ns)A.push(['i',`${ns} lot(s) réceptionné(s) à mettre en stock.`]);
  const ec=D.trans.filter(x=>(x.date||'').startsWith(m)&&x.attendus!=null&&x.attendus!==x.oeufsRecus).length;
  if(ec)A.push(['a',`${ec} réception(s) avec écart ce mois-ci (voir l'onglet Réception).`]);
+ const vac=D.vaccins.filter(v=>v.statut!=='fait'),late=vac.filter(v=>v.date<t),soon=vac.filter(v=>v.date>=t&&v.date<=addDays(t,3));
+ if(late.length)A.push(['r',`${late.length} vaccin(s) ou traitement(s) en retard.`]);
+ if(soon.length)A.push(['a',`${soon.length} vaccin(s) ou traitement(s) à faire dans les 3 jours.`]);
+ const myT=D.taches.filter(x=>x.statut!=='fait'&&x.echeance&&x.echeance<t&&(isAdmin()||!x.assigneUid||x.assigneUid===user.uid));
+ if(myT.length)A.push(['a',`${myT.length} tâche(s) en retard.`]);
  if(hr>=12&&!pj.length&&can(CAN.prod))A.push(['a',"Aucune production n'a encore été enregistrée aujourd'hui."]);
  const nc=D.cmd.filter(c=>c.status==='nouvelle').length;
  if(nc&&ORDER_STAFF.includes(me.role))A.push(['i',`${nc} nouvelle(s) commande(s) à traiter.`]);
  if(isAdmin()){const np=D.users.filter(u=>u.status==='pending').length;if(np)A.push(['i',`${np} compte(s) en attente de validation.`]);const na=D.avisAll.filter(x=>x.status==='pending').length;if(na)A.push(['i',`${na} avis client à valider.`]);}
  return A;
 }
+function annoncesBloc(){
+ const L=D.annonces.slice(0,5);
+ if(!L.length&&!isAdmin())return '';
+ return `<div class="bloc"><div class="head"><h3>📢 Annonces de la direction</h3>${btnIf(isAdmin(),'annonce-add','＋ Nouvelle annonce')}</div>${L.map(a=>`<div class="ann"><b>${esc(a.titre)}</b> <small>${tsDate(a.createdAt)} · ${esc(a.par||'')}</small><p>${esc(a.texte)}</p>${isAdmin()?`<div style="margin-top:8px">${btnIf(true,'annonce-del','Supprimer','danger',a.id)}</div>`:''}</div>`).join('')||'<p class="empty">Aucune annonce.</p>'}</div>`;
+}
+function objectifsBloc(m){
+ const o=D.objectifs.find(x=>x.id===m);
+ const rp=sum(D.prod.filter(p=>(p.date||'').startsWith(m)),'bons'),rv=sum(D.ventes.filter(v=>v.type==='vente'&&(v.date||'').startsWith(m)),'montant');
+ const bar=(l,real,obj,f)=>{const pct=obj>0?Math.round(real*100/obj):0;return `<div><b>${esc(l)}</b> <span class="muted">${f(real)} / ${f(obj)} (${pct} %)</span><div class="bar2"><i class="${pct>=100?'':'j'}" style="width:${Math.min(100,pct)}%"></i></div></div>`;};
+ return `<div class="bloc"><div class="head"><h3>🎯 Objectifs du mois</h3>${btnIf(isAdmin(),'objectif','Définir les objectifs','line')}</div>${o?bar('Production (bons œufs)',rp,o.prod||0,oeufs)+bar('Ventes',rv,o.ventes||0,money):'<p class="empty">Aucun objectif défini pour ce mois.</p>'}</div>`;
+}
 function pResume(){
  if(!STAFF.includes(me.role)){
-  const enCours=D.cmd.filter(c=>c.status==='nouvelle'||c.status==='confirmee').length;
-  return `<div class="bloc"><h3>Œufs disponibles aujourd'hui</h3><div class="bigstock">${fmt(stock())}</div><p class="muted" style="margin-top:10px">Prix : ${money(cfg.prixOeuf)} l'œuf.</p></div>
+  const enCours=D.cmd.filter(c=>c.status==='nouvelle'||c.status==='confirmee').length,P=activePromos();
+  return `<div class="bloc"><h3>Plateaux disponibles aujourd'hui</h3><div class="bigstock">${fmt(Math.floor(stock()/PLAT))}</div><p class="muted" style="margin-top:10px">Prix : ${money(prixPl())} le plateau (1 plateau = 30 œufs).</p>${P.map(p=>`<p style="margin-top:8px">🏷️ <b>${esc(p.titre)}</b> : ${money(p.prix)} le plateau${p.qteMin>1?` à partir de ${plX(p.qteMin)}`:''}</p>`).join('')}</div>
   <div class="bloc"><h3>Mes commandes</h3><p class="muted">${enCours?`${enCours} commande(s) en cours.`:'Aucune commande en cours.'}</p><div class="row" style="margin-top:14px"><button class="btn primary" data-act="new-cmd">🛒 Passer une commande</button><button class="btn line" data-act="tab" data-id="commandes">Voir mes commandes</button><a class="btn line" href="#contact">Nos coordonnées</a></div></div>`;
  }
- const t=today(),m=t.slice(0,7),vj=D.ventes.filter(v=>v.type==='vente'&&v.date===t),poules=D.prod[0]?.effectif??stats.effectif,A=computeAlerts();
- let h=`<div class="alerts">${A.length?A.map(([c,x])=>`<div class="alert ${c}" role="status">${esc(x)}</div>`).join(''):'<div class="alert ok">Aucune alerte : tout est en ordre.</div>'}</div>`;
- h+=`<div class="stats">${stat('Poules',poules!=null?fmt(poules):'–')}${stat("Bons œufs produits aujourd'hui",fmt(sum(D.prod.filter(p=>p.date===t),'bons')),'j')}${stat('Stock disponible',fmt(stock()),'b')}${stat("Ventes d'aujourd'hui",money(sum(vj,'montant')))}`;
+ const t=today(),m=t.slice(0,7),vj=D.ventes.filter(v=>v.type==='vente'&&v.date===t),poules=D.lots.length?effectifTotal():(D.prod[0]?.effectif??stats.effectif),A=computeAlerts(),tj=tauxJour(t);
+ let h=annoncesBloc();
+ h+=`<div class="alerts">${A.length?A.map(([c,x])=>`<div class="alert ${c}" role="status">${esc(x)}</div>`).join(''):'<div class="alert ok">Aucune alerte : tout est en ordre.</div>'}</div>`;
+ h+=`<div class="stats">${stat('Poules',poules!=null?fmt(poules):'–')}${stat("Bons œufs produits aujourd'hui",oeufs(sum(D.prod.filter(p=>p.date===t),'bons')),'j')}${stat("Taux de ponte aujourd'hui",tj==null?'–':tj.toFixed(1)+' %','j')}${stat('Stock disponible',oeufs(stock()),'b')}${stat("Ventes d'aujourd'hui",money(sum(vj,'montant')))}`;
  if(FIN.includes(me.role)){
   const ca=sum(D.ventes.filter(v=>v.type==='vente'&&(v.date||'').startsWith(m)),'montant'),dp=sum(D.dep.filter(d=>(d.date||'').startsWith(m)),'montant');
   h+=stat('Ventes du mois',money(ca))+stat('Dépenses du mois',money(dp),'r')+stat('Résultat du mois (ventes − dépenses)',money(ca-dp),ca-dp<0?'r':'');
  }
- h+='</div>';
- const days=lastDays(30);
- h+=`<div class="bloc">${chart({title:'Production et ventes sur 30 jours (en œufs)',labels:days.map(d=>d.slice(8)+'/'+d.slice(5,7)),series:[{name:'Bons œufs produits',color:'#0a7a42',values:days.map(d=>sum(D.prod.filter(p=>p.date===d),'bons'))},{name:'Œufs vendus',color:'#f5b82e',values:days.map(d=>sum(D.ventes.filter(v=>v.type==='vente'&&v.date===d),'quantite'))}]})}`;
+ h+='</div>'+objectifsBloc(m);
+ const days=lastDays(30),lab=days.map(d=>d.slice(8)+'/'+d.slice(5,7));
+ h+=`<div class="bloc">${chart({title:'Production et ventes sur 30 jours (en plateaux)',labels:lab,series:[{name:'Bons œufs produits',color:'#0a7a42',values:days.map(d=>pl1(sum(D.prod.filter(p=>p.date===d),'bons')))},{name:'Plateaux vendus',color:'#f5b82e',values:days.map(d=>pl1(sum(D.ventes.filter(v=>v.type==='vente'&&v.date===d),'quantite')))}]})}${chart({title:'Taux de ponte sur 30 jours (en %)',type:'bar',labels:lab,series:[{name:'Taux de ponte',color:'#3b82c4',values:days.map(d=>Math.round(tauxJour(d)||0))}]})}`;
  if(FIN.includes(me.role)){
   const ms=lastMonths(6);
   h+=chart({title:'Ventes et dépenses sur 6 mois (en FCFA)',type:'bar',labels:ms.map(x=>x.slice(5)+'/'+x.slice(2,4)),series:[{name:'Ventes',color:'#0a7a42',values:ms.map(x=>sum(D.ventes.filter(v=>v.type==='vente'&&(v.date||'').startsWith(x)),'montant'))},{name:'Dépenses',color:'#c0392b',values:ms.map(x=>sum(D.dep.filter(d=>(d.date||'').startsWith(x)),'montant'))}]});
  }
  h+='</div>';
- if(isAdmin())h+=`<div class="bloc"><h3>Administration</h3><div class="row" style="margin-top:12px"><button class="btn sm line" data-act="seuils">⚙️ Seuils d'alerte</button><button class="btn sm line" data-act="backup">💾 Sauvegarde complète (JSON)</button></div></div>`;
+ h+=`<div class="bloc"><h3>Outils</h3><div class="row" style="margin-top:12px">${btnIf(isAdmin(),'seuils',"⚙️ Seuils d'alerte",'line')}${btnIf(isAdmin(),'backup','💾 Sauvegarde complète','line')}${btnIf(FIN.includes(me.role),'rapport','📄 Rapport mensuel (PDF)','line')}${btnIf(isAdmin(),'resume-send','📤 Envoyer le résumé du jour','line')}${btnIf(isAdmin(),'notif-cfg','📨 Destinataires des alertes','line')}${btnIf(true,'notif-on','🔔 Activer les notifications','line')}${btnIf(isSup(),'reset','🧹 Remettre à zéro (supprimer les essais)','danger')}</div></div>`;
  return h;
 }
 const monthBar=k=>`<div class="row" style="margin-bottom:16px"><label for="mSel" style="font-weight:600">Mois :</label><input type="month" id="mSel" value="${esc(curMonth)}" style="border:1.5px solid #c9d3c6;border-radius:10px;padding:8px 10px;font:inherit"><button class="btn sm line" data-act="export" data-id="${k}">📥 Excel</button><button class="btn sm line" data-act="print">🖨️ Imprimer</button></div>`;
@@ -762,17 +910,17 @@ function visaRow(fiche){
 }
 function pProd(){
  const L=D.prod.filter(p=>(p.date||'').startsWith(curMonth)).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
- const rows=L.map(p=>`<tr><td>${dateFr(p.date)}</td><td>${fmt(p.effectif)}</td><td>${fmt(p.oeufsRamasses)}</td><td>${fmt(p.casses)}</td><td><b>${fmt(p.bons)}</b></td><td>${esc(p.superviseurNom||'')}</td><td>${p.status==='a_receptionner'?badge('À réceptionner','amber'):badge('Réceptionné','green')}</td><td>${esc(p.observations||'')}</td><td>${p.status==='a_receptionner'&&isAdmin()?btnIf(true,'del-prod','Supprimer','danger',p.id):''}</td></tr>`);
- const tot=`<div class="stats">${stat('Total œufs ramassés du mois',fmt(sum(L,'oeufsRamasses')))}${stat('Total œufs cassés',fmt(sum(L,'casses')),'r')}${stat('Total œufs bons du mois',fmt(sum(L,'bons')),'j')}</div>`;
+ const rows=L.map(p=>`<tr><td>${dateFr(p.date)}</td><td>${fmt(p.effectif)}</td><td>${oeufs(p.oeufsRamasses)}</td><td>${oeufs(p.casses)}</td><td><b>${oeufs(p.bons)}</b></td><td>${esc(p.superviseurNom||'')}</td><td>${p.status==='a_receptionner'?badge('À réceptionner','amber'):badge('Réceptionné','green')}</td><td>${esc(p.observations||'')}</td><td>${p.status==='a_receptionner'&&isSup()?btnIf(true,'del-prod','Supprimer','danger',p.id):''}</td></tr>`);
+ const tot=`<div class="stats">${stat('Total œufs ramassés du mois',oeufs(sum(L,'oeufsRamasses')))}${stat('Total œufs cassés',oeufs(sum(L,'casses')),'r')}${stat('Total œufs bons du mois',oeufs(sum(L,'bons')),'j')}</div>`;
  return `<div class="bloc"><div class="head"><div><h3>Fiche journalière de production</h3><p class="muted">Poulailler → Réception. Rempli par le Superviseur Général.</p></div>${btnIf(can(CAN.prod),'new-prod','＋ Enregistrer la production')}</div>${monthBar('prod')}${table(['Date','Poules présentes','Œufs ramassés','Cassés au poulailler','Bons disponibles (ramassés − cassés)','Superviseur','Statut','Observations (mortalité, aliment)',''],rows)||'<p class="empty">Aucune production ce mois-ci.</p>'}<h3 style="margin-top:22px">Calcul du mois</h3>${tot}${visaRow('production')}</div>`;
 }
 function pRecep(){
  const wait=D.prod.filter(p=>p.status==='a_receptionner');
- const lots=wait.map(p=>`<div class="lot"><span><b>${dateFr(p.date)}</b> · ${fmt(p.bons)} bons œufs envoyés par ${esc(p.superviseurNom||'le poulailler')}</span>${btnIf(can(CAN.recep),'recep','Réceptionner','primary',p.id)}</div>`).join('')||'<p class="empty">Aucun lot en attente.</p>';
+ const lots=wait.map(p=>`<div class="lot"><span><b>${dateFr(p.date)}</b> · ${oeufs(p.bons)} bons œufs envoyés par ${esc(p.superviseurNom||'le poulailler')}</span>${btnIf(can(CAN.recep),'recep','Réceptionner','primary',p.id)}</div>`).join('')||'<p class="empty">Aucun lot en attente.</p>';
  const L=D.trans.filter(t=>(t.date||'').startsWith(curMonth)).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
- const rows=L.map(t=>{const ec=t.attendus!=null&&t.oeufsRecus!==t.attendus?` ${badge('Écart '+(t.oeufsRecus-t.attendus>0?'+':'')+fmt(t.oeufsRecus-t.attendus),'red')}`:'';
-  return `<tr><td>${dateFr(t.date)}</td><td>${dateFr(t.datePonte)}</td><td>${fmt(t.oeufsRecus)}${ec}</td><td>${fmt(t.cassesReception)}</td><td><b>${fmt(t.bons)}</b></td><td>${esc(t.magasiniereNom||'')}</td><td>${esc(t.receptionnisteNom||'')}</td><td>${t.status==='a_vendre'?badge('À mettre en stock','amber'):badge('En stock','green')}</td><td>${esc(t.observations||'')}</td></tr>`;});
- const tot=`<div class="stats">${stat('Total reçus du mois',fmt(sum(L,'oeufsRecus')))}${stat('Total cassés',fmt(sum(L,'cassesReception')),'r')}${stat('Total transférés au magasin',fmt(sum(L,'bons')),'j')}</div>`;
+ const rows=L.map(t=>{const ec=t.attendus!=null&&t.oeufsRecus!==t.attendus?` ${badge('Écart '+(t.oeufsRecus-t.attendus>0?'+':'')+oeufs(t.oeufsRecus-t.attendus),'red')}`:'';
+  return `<tr><td>${dateFr(t.date)}</td><td>${dateFr(t.datePonte)}</td><td>${oeufs(t.oeufsRecus)}${ec}</td><td>${oeufs(t.cassesReception)}</td><td><b>${oeufs(t.bons)}</b></td><td>${esc(t.magasiniereNom||'')}</td><td>${esc(t.receptionnisteNom||'')}</td><td>${t.status==='a_vendre'?badge('À mettre en stock','amber'):badge('En stock','green')}</td><td>${esc(t.observations||'')}</td></tr>`;});
+ const tot=`<div class="stats">${stat('Total reçus du mois',oeufs(sum(L,'oeufsRecus')))}${stat('Total cassés',oeufs(sum(L,'cassesReception')),'r')}${stat('Total transférés au magasin',oeufs(sum(L,'bons')),'j')}</div>`;
  return `<div class="bloc"><div class="head"><div><h3>Lots à réceptionner</h3><p class="muted">Contrôle : œufs reçus − œufs cassés = œufs transférés. Le nombre « reçus » doit être identique aux « bons disponibles » de la fiche de production.</p></div></div>${lots}</div>
  <div class="bloc"><div class="head"><div><h3>Fiche de transfert</h3><p class="muted">Réception → Magasin. Rempli par la Réceptionniste.</p></div></div>${monthBar('trans')}${table(['Date','Lot du','Œufs reçus du poulailler','Cassés à la réception','Bons transférés (reçus − cassés)','Magasinière','Réceptionniste','Statut','Observations'],rows)||'<p class="empty">Aucune réception ce mois-ci.</p>'}<h3 style="margin-top:22px">Calcul du mois</h3>${tot}${visaRow('reception')}</div>`;
 }
@@ -783,7 +931,7 @@ function dayRows(){
   if(!cur||cur.date!==v.date){cur={date:v.date,veille:v.stockAvant??0,entree:0,vendus:0,casses:0,ajust:0,reste:null,prix:[],montant:0,clients:[],ops:[]};days.push(cur);}
   const q=Number(v.quantite)||0;
   if(v.type==='entree')cur.entree+=q;
-  else if(v.type==='vente'){cur.vendus+=q;cur.montant+=Number(v.montant)||0;if(!cur.prix.includes(v.prix))cur.prix.push(v.prix);if(v.clientNom&&!cur.clients.includes(v.clientNom))cur.clients.push(v.clientNom);}
+  else if(v.type==='vente'){cur.vendus+=q;cur.montant+=Number(v.montant)||0;{const pp=v.prixPlateau??v.prix*PLAT;if(!cur.prix.includes(pp))cur.prix.push(pp);}if(v.clientNom&&!cur.clients.includes(v.clientNom))cur.clients.push(v.clientNom);}
   else if(v.type==='perte')cur.casses+=q;
   else if(v.type==='ajustement')cur.ajust+=q;
   if(v.operateurNom&&!cur.ops.includes(v.operateurNom))cur.ops.push(v.operateurNom);
@@ -794,24 +942,25 @@ function dayRows(){
 }
 function pMag(){
  const wait=D.trans.filter(t=>t.status==='a_vendre');
- const lots=wait.map(t=>`<div class="lot"><span><b>${dateFr(t.date)}</b> · ${fmt(t.bons)} bons œufs</span>${btnIf(can(CAN.vente),'stock-in','Mettre en stock','primary',t.id)}</div>`).join('')||'<p class="empty">Aucun lot à mettre en stock.</p>';
+ const lots=wait.map(t=>`<div class="lot"><span><b>${dateFr(t.date)}</b> · ${oeufs(t.bons)}</span>${btnIf(can(CAN.vente),'stock-in','Mettre en stock','primary',t.id)}</div>`).join('')||'<p class="empty">Aucun lot à mettre en stock.</p>';
  const days=dayRows();
- const rows=days.map(d=>`<tr><td>${dateFr(d.date)}</td><td>${fmt(d.veille)}</td><td>${fmt(d.entree)}</td><td>${fmt(d.veille+d.entree)}</td><td>${fmt(d.vendus)}</td><td>${fmt(d.casses)}</td><td>${d.ajust?(d.ajust>0?'+':'')+fmt(d.ajust):''}</td><td><b>${fmt(d.reste)}</b></td><td>${d.prix.map(x=>fmt(x)).join(' / ')}</td><td>${money(d.montant)}</td><td>${esc(d.clients.join(', '))}</td><td>${esc(d.ops.join(', '))}</td></tr>`);
- const tot=`<div class="stats">${stat('Total entrées du mois',fmt(sum(days,'entree')))}${stat('Total œufs vendus',fmt(sum(days,'vendus')),'j')}${stat('Total cassés au magasin',fmt(sum(days,'casses')),'r')}${stat('Montant total vendu',money(sum(days,'montant')))}</div>`;
+ const rows=days.map(d=>`<tr><td>${dateFr(d.date)}</td><td>${oeufs(d.veille)}</td><td>${oeufs(d.entree)}</td><td>${oeufs(d.veille+d.entree)}</td><td>${oeufs(d.vendus)}</td><td>${oeufs(d.casses)}</td><td>${d.ajust?(d.ajust>0?'+':'')+oeufs(d.ajust):''}</td><td><b>${oeufs(d.reste)}</b></td><td>${d.prix.map(x=>fmt(x)).join(' / ')}</td><td>${money(d.montant)}</td><td>${esc(d.clients.join(', '))}</td><td>${esc(d.ops.join(', '))}</td></tr>`);
+ const tot=`<div class="stats">${stat('Total entrées du mois',oeufs(sum(days,'entree')))}${stat('Total vendu',oeufs(sum(days,'vendus')),'j')}${stat('Total cassés au magasin',oeufs(sum(days,'casses')),'r')}${stat('Montant total vendu',money(sum(days,'montant')))}</div>`;
  const TL={vente:['Vente','green'],perte:['Cassés','red'],ajustement:['Ajustement','blue'],entree:['Entrée','amber']};
- const det=D.ventes.filter(v=>(v.date||'').startsWith(curMonth)).map(v=>{const [l,c]=TL[v.type]||['',''];return `<tr><td>${dateFr(v.date)}</td><td>${badge(l,c)}</td><td>${fmt(v.quantite)}</td><td>${v.type==='vente'?fmt(v.prix):''}</td><td>${v.type==='vente'?money(v.montant):''}</td><td>${esc(v.clientNom||v.motif||'')}</td><td>${esc(v.clientTel||'')}</td><td>${esc(v.operateurNom||'')}</td><td>${v.type==='vente'?btnIf(true,'receipt','🧾 Reçu','line',v.id):''}</td></tr>`;});
- return `<div class="bloc"><div class="head"><div><h3>Stock disponible</h3><div class="bigstock">${fmt(stock())}</div><p class="muted">Prix actuel : ${money(cfg.prixOeuf)} l'œuf</p></div><div class="row">${btnIf(can(CAN.vente),'sell','Vendre','primary')}${btnIf(can(CAN.vente),'loss','Œufs cassés au magasin','line')}${btnIf(isAdmin(),'adjust','Ajuster le stock','line')}${btnIf(isAdmin(),'price',"Prix de l'œuf",'line')}</div></div></div>
+ const det=D.ventes.filter(v=>(v.date||'').startsWith(curMonth)).map(v=>{const [l,c]=TL[v.type]||['',''];return `<tr><td>${dateFr(v.date)}</td><td>${badge(l,c)}</td><td>${oeufs(v.quantite)}</td><td>${v.type==='vente'?fmt(v.prixPlateau??v.prix*PLAT):''}</td><td>${v.type==='vente'?money(v.montant):''}</td><td>${esc(v.clientNom||v.motif||'')}</td><td>${esc(v.clientTel||'')}</td><td>${esc(v.operateurNom||'')}</td><td>${v.type==='vente'?btnIf(true,'receipt','🧾 Reçu','line',v.id):''}</td></tr>`;});
+ return `<div class="bloc"><div class="head"><div><h3>Stock disponible</h3><div class="bigstock" style="font-size:2rem">${oeufs(stock())}</div><p class="muted">Prix actuel : ${money(prixPl())} le plateau. On vend par plateau entier.</p></div><div class="row">${btnIf(can(CAN.vente),'sell','Vendre','primary')}${btnIf(can(CAN.vente),'loss','Œufs cassés au magasin','line')}${btnIf(isAdmin(),'adjust','Ajuster le stock','line')}${btnIf(isAdmin(),'price','Prix du plateau','line')}</div></div></div>
  <div class="bloc"><h3>Lots à mettre en stock</h3>${lots}</div>
- <div class="bloc"><div class="head"><div><h3>Fiche de stock et vente journalière</h3><p class="muted">Stock total = veille + entrée du jour. Reste du jour = stock total − vendus − cassés. Le reste du jour devient le stock veille du lendemain.</p></div></div>${monthBar('mag')}${table(['Date','Stock veille','Entrée du jour','Stock total disponible','Œufs vendus','Cassés au magasin','Ajust.','Reste du jour','Prix unitaire (FCFA)','Montant total vendu','Client / destination','Magasinière'],rows)||'<p class="empty">Aucun mouvement ce mois-ci.</p>'}<h3 style="margin-top:22px">Total du mois</h3>${tot}${visaRow('magasin')}</div>
- <div class="bloc"><h3>Détail des mouvements du mois</h3>${table(['Date','Type','Quantité','Prix','Montant','Client / motif','Téléphone','Par',''],det)||'<p class="empty">Aucun mouvement.</p>'}</div>`;
+ <div class="bloc"><div class="head"><div><h3>Fiche de stock et vente journalière</h3><p class="muted">Stock total = veille + entrée du jour. Reste du jour = stock total − vendus − cassés. Le reste du jour devient le stock veille du lendemain.</p></div></div>${monthBar('mag')}${table(['Date','Stock veille','Entrée du jour','Stock total disponible','Vendus','Cassés au magasin','Ajust.','Reste du jour','Prix du plateau (FCFA)','Montant total vendu','Client / destination','Magasinière'],rows)||'<p class="empty">Aucun mouvement ce mois-ci.</p>'}<h3 style="margin-top:22px">Total du mois</h3>${tot}${visaRow('magasin')}</div>
+ <div class="bloc"><h3>Détail des mouvements du mois</h3>${table(['Date','Type','Quantité','Prix du plateau','Montant','Client / motif','Téléphone','Par',''],det)||'<p class="empty">Aucun mouvement.</p>'}</div>
+ ${promoBloc()}`;
 }
 function pSante(){
- const rows=D.sante.map(s=>`<tr><td>${dateFr(s.date)}</td><td>${fmt(s.mortalite)}</td><td>${esc(s.notes||'')}</td><td>${esc(s.veterinaireNom||'')}</td><td>${isAdmin()?btnIf(true,'del-sante','Supprimer','danger',s.id):''}</td></tr>`);
+ const rows=D.sante.map(s=>`<tr><td>${dateFr(s.date)}</td><td>${fmt(s.mortalite)}</td><td>${esc(s.notes||'')}</td><td>${esc(s.veterinaireNom||'')}</td><td>${isSup()?btnIf(true,'del-sante','Supprimer','danger',s.id):''}</td></tr>`);
  return `<div class="bloc"><div class="head"><div><h3>Suivi vétérinaire</h3><p class="muted">Mortalité et observations.</p></div><div class="row">${btnIf(true,'export','📥 Excel','line','sante')}${btnIf(can(CAN.veto),'new-sante','＋ Nouveau suivi')}</div></div>${table(['Date','Mortalité','Observations','Par',''],rows)||'<p class="empty">Aucun suivi enregistré.</p>'}</div>`;
 }
 function pDep(){
  const m=today().slice(0,7);
- const rows=D.dep.map(d=>`<tr><td>${dateFr(d.date)}</td><td>${esc(d.libelle)}</td><td>${esc(d.categorie||'')}</td><td>${money(d.montant)}</td><td>${isAdmin()?btnIf(true,'del-dep','Supprimer','danger',d.id):''}</td></tr>`);
+ const rows=D.dep.map(d=>`<tr><td>${dateFr(d.date)}</td><td>${esc(d.libelle)}</td><td>${esc(d.categorie||'')}</td><td>${money(d.montant)}</td><td>${isSup()?btnIf(true,'del-dep','Supprimer','danger',d.id):''}</td></tr>`);
  return `<div class="bloc"><div class="head"><div><h3>Dépenses</h3><p class="muted">Total du mois : <b>${money(sum(D.dep.filter(d=>(d.date||'').startsWith(m)),'montant'))}</b></p></div><div class="row">${btnIf(true,'export','📥 Excel','line','dep')}${btnIf(isAdmin(),'new-dep','＋ Ajouter une dépense')}</div></div>${table(['Date','Libellé','Catégorie','Montant',''],rows)||'<p class="empty">Aucune dépense enregistrée.</p>'}</div>`;
 }
 function pUsers(){
@@ -825,6 +974,50 @@ function pUsers(){
  });
  return `${posts}<div class="bloc"><div class="head"><h3>Gestion des inscrits</h3><div class="row">${btnIf(true,'add-person','➕ Ajouter une personne')}${btnIf(true,'export','📥 Excel','line','users')}</div></div><div class="chips" style="margin-top:12px">${f.map(([k,l])=>`<button class="tab ${uFilter===k?'on':''}" data-act="ufilter" data-id="${k}">${l}</button>`).join('')}</div>${rows.join('')||'<p class="empty">Aucun inscrit dans cette catégorie.</p>'}</div>`;
 }
+function pElevage(){
+ const fin=FIN.includes(me.role),st=alimStats(curMonth);
+ const lots=D.lots.slice().sort((a,b)=>String(b.dateArrivee).localeCompare(String(a.dateArrivee))).map(l=>`<tr><td><b>${esc(l.nom)}</b>${l.race?`<small>${esc(l.race)}</small>`:''}</td><td>${dateFr(l.dateArrivee)}</td><td>${ageSem(l)!=null?ageSem(l)+' sem.':''}</td><td>${fmt(l.effectifInitial)}</td><td>${fmt(l.morts||0)}</td><td><b>${fmt(lotEffectif(l))}</b></td><td>${l.statut==='reforme'?badge('Réformé','red'):badge('Actif','green')}</td><td>${isAdmin()?`<div class="row">${btnIf(true,'lot-edit','Modifier','line',l.id)}${btnIf(true,'lot-stat',l.statut==='reforme'?'Réactiver':'Réformer','line',l.id)}${isSup()?btnIf(true,'lot-del','Supprimer','danger',l.id):''}</div>`:''}</td></tr>`);
+ const al=D.aliment.filter(a=>(a.date||'').startsWith(curMonth)).sort(byDate).map(a=>`<tr><td>${dateFr(a.date)}</td><td>${esc(a.type||'')}</td><td>${fmt(a.kg)}</td>${fin?`<td>${money(a.cout)}</td>`:''}<td>${esc(a.lotNom||'')}</td><td>${esc(a.note||'')}</td><td>${esc(a.parNom||'')}</td><td>${isSup()?btnIf(true,'alim-del','Supprimer','danger',a.id):''}</td></tr>`);
+ const t=today(),vs=D.vaccins.slice().sort(byDate).map(v=>{
+  let b=badge('Planifié','blue');
+  if(v.statut==='fait')b=badge('Fait le '+(v.dateFait||'').split('-').reverse().join('/'),'green');
+  else if(v.date<t)b=badge('En retard','red');else if(v.date<=addDays(t,3))b=badge('Bientôt','amber');
+  return `<tr><td>${dateFr(v.date)}</td><td>${esc(v.type||'')}</td><td><b>${esc(v.produit||'')}</b></td><td>${esc(v.lotNom||'Tous')}</td><td>${b}</td><td>${esc(v.notes||'')}</td><td><div class="row">${v.statut!=='fait'?btnIf(can(CAN.veto),'vac-done','✅ Fait','primary',v.id):''}${isSup()?btnIf(true,'vac-del','Supprimer','danger',v.id):''}</div></td></tr>`;});
+ const stats=`<div class="stats">${stat('Aliment du mois (kg)',fmt(Math.round(st.kg)))}${stat('Grammes par poule et par jour',st.gParPoule!=null?fmt(Math.round(st.gParPoule)):'–','j')}${fin?stat("Coût d'aliment du mois",money(st.cout))+stat("Coût d'aliment par plateau",st.coutOeuf!=null?money(Math.round(st.coutOeuf*PLAT)):'–','r'):''}</div>`;
+ return `<div class="bloc"><div class="head"><div><h3>Lots de poules</h3><p class="muted">Chaque bande est suivie séparément : arrivée, âge, mortalité, effectif actuel.</p></div>${btnIf(isAdmin(),'lot-add','＋ Nouveau lot')}</div>${table(['Lot','Arrivée','Âge','Effectif à l\'arrivée','Morts','Effectif actuel','Statut',''],lots)||'<p class="empty">Aucun lot enregistré. Ajoutez vos bandes de poules pour suivre leur effectif.</p>'}</div>
+ <div class="bloc"><div class="head"><div><h3>Alimentation</h3><p class="muted">Aliment donné chaque jour, avec le coût par œuf produit.</p></div>${btnIf(isAdmin(),'alim-add',"＋ Enregistrer l'aliment")}</div>${monthBar('aliment')}${stats}${table(['Date','Aliment','Quantité (kg)',...(fin?['Coût']:[]),'Lot','Remarque','Saisi par',''],al)||'<p class="empty">Aucun aliment enregistré ce mois-ci.</p>'}</div>
+ <div class="bloc"><div class="head"><div><h3>Vaccins et traitements</h3><p class="muted">Calendrier géré par le vétérinaire. Une alerte apparaît avant chaque échéance.</p></div><div class="row">${btnIf(true,'export','📥 Excel','line','vaccins')}${btnIf(can(CAN.veto),'vac-add','＋ Programmer')}</div></div>${table(['Date prévue','Type','Produit','Lot','État','Notes',''],vs)||'<p class="empty">Aucun vaccin ou traitement programmé.</p>'}</div>`;
+}
+function pClients(){
+ if(!clientsLoaded)loadClients();
+ if(!clientsReady)return '<p class="empty">Chargement des clients…</p>';
+ const L=clientsAgg(),dette=sum(L,'reste'),deb=L.filter(c=>c.reste>0).length,best=L.slice().sort((a,b)=>b.total-a.total)[0];
+ const rows=L.map(c=>`<tr><td><b>${esc(c.nom)}</b>${c.tel?`<small>${esc(c.tel)}</small>`:''}</td><td>${c.nb}</td><td>${oeufs(c.oeufs)}</td><td>${money(c.total)}</td><td>${money(c.paye)}</td><td>${c.reste>0?badge(money(c.reste),'red'):badge('Soldé','green')}</td><td>${dateFr(c.dernier)}</td><td><div class="row">${btnIf(true,'cli-detail','Détails','line',c.key)}${c.reste>0&&can(CAN.vente)?btnIf(true,'cli-pay','Encaisser','primary',c.key):''}${c.reste>0&&c.tel?`<a class="btn sm line" target="_blank" rel="noopener" href="https://wa.me/${esc(waNumber(c.tel))}?text=${encodeURIComponent(`Bonjour ${c.nom}, il vous reste ${money(c.reste)} à régler à ${cfg.heroTitre}. Merci.`)}">Rappel WhatsApp</a>`:''}</div></td></tr>`);
+ return `<div class="stats">${stat('Clients',fmt(L.length))}${stat('Créances en cours',money(dette),dette>0?'r':'')}${stat('Clients débiteurs',fmt(deb),deb?'r':'')}${stat('Meilleur client',best?esc(best.nom):'–','j')}</div>
+ <div class="bloc"><div class="head"><div><h3>Fiches clients</h3><p class="muted">Construites à partir des ventes. Une vente payée en partie crée un crédit à encaisser ici.</p></div>${btnIf(true,'export','📥 Excel','line','clients')}</div>${table(['Client','Achats','Quantité','Total acheté','Payé','Reste dû','Dernier achat',''],rows)||'<p class="empty">Aucune vente enregistrée.</p>'}</div>`;
+}
+function pTaches(){
+ const t=today(),mine=x=>isAdmin()||!x.assigneUid||x.assigneUid===user.uid;
+ const L=D.taches.filter(mine).sort((a,b)=>(a.statut==='fait')-(b.statut==='fait')||String(a.echeance||'9999').localeCompare(String(b.echeance||'9999')));
+ const rows=L.map(x=>{const fait=x.statut==='fait',late=!fait&&x.echeance&&x.echeance<t;
+  return `<div class="task ${fait?'done':''}"><div><b>${esc(x.titre)}</b>${x.description?`<p class="muted">${esc(x.description)}</p>`:''}<small>Pour : ${esc(x.assigneNom||"toute l'équipe")}${x.echeance?` · avant le ${dateFr(x.echeance)}`:''}${late?' · ⚠️ en retard':''}${fait?` · fait par ${esc(x.faitNom||'')} le ${tsDate(x.faitLe)}`:''}</small></div><div class="row">${!fait?btnIf(true,'tache-done','✅ Terminée','primary',x.id):''}${isAdmin()?btnIf(true,'tache-del','Supprimer','danger',x.id):''}</div></div>`;});
+ return `<div class="bloc"><div class="head"><div><h3>Tâches</h3><p class="muted">${isAdmin()?"Donnez des tâches à l'équipe. Chacun les coche quand elles sont faites.":'Vos tâches et celles de toute l\'équipe.'}</p></div>${btnIf(isAdmin(),'tache-add','＋ Nouvelle tâche')}</div>${rows.join('')||'<p class="empty">Aucune tâche.</p>'}</div>`;
+}
+function pEquipe(){
+ const staff=D.users.filter(u=>u.status==='active'&&STAFF.includes(u.role)&&(u.role!=='pdg'||salaireDe(u)>0));
+ let masse=0;
+ const rows=staff.map(u=>{
+  const pres=D.presences.filter(p=>p.uid===u.id&&(p.date||'').startsWith(curMonth)),c=paieCalc(u,pres),paid=D.paies.find(x=>x.id===`${curMonth}_${u.id}`);
+  masse+=c.net;
+  return `<tr><td><b>${esc(u.nom)}</b><small>${esc(ROLES[u.role]||u.role)}</small></td><td>${money(c.base)}</td><td>${c.presents}</td><td>${c.retards}</td><td>${c.absents}</td><td>${c.justifies}</td><td>${money(c.retenue)}</td><td><b>${money(c.net)}</b></td><td>${paid?badge('Payé le '+(paid.payeLe||'').split('-').reverse().join('/'),'green'):badge('À payer','amber')}</td><td><div class="row">${btnIf(true,'pres-detail','Détail','line',u.id)}${u.id!==user.uid?btnIf(true,'salaire','Salaire','line',u.id):''}${!paid&&c.base>0?btnIf(true,'payer','Payer','primary',u.id):''}</div></td></tr>`;});
+ return `<div class="bloc"><div class="head"><div><h3>Présences et salaires</h3><p class="muted">Salaire par défaut : 36 000 FCFA pour le superviseur, 30 000 FCFA pour les autres employés. Retenue = salaire ÷ ${JOURS_OUVRES} jours × absences non justifiées.</p></div>${btnIf(true,'pointage','📝 Pointage du jour')}</div>${monthBar('equipe')}<div class="stats">${stat('Masse salariale du mois',money(masse))}${stat('Employés',fmt(staff.length),'j')}</div>${table(['Employé','Salaire de base','Présent','Retards','Absences','Justifiées / congés','Retenue','Net à payer','Paiement',''],rows)||'<p class="empty">Aucun employé actif.</p>'}</div>`;
+}
+function monSalaireBloc(){
+ if(!STAFF.includes(me.role))return '';
+ const pres=D.myPres.filter(p=>(p.date||'').startsWith(curMonth)),c=paieCalc(me,pres),paid=D.myPaies.find(x=>x.mois===curMonth);
+ if(c.base<=0&&!pres.length)return '';
+ return `<div class="bloc"><div class="head"><h3>Ma présence et mon salaire</h3><div class="row"><label for="mSel" style="font-weight:600">Mois :</label><input type="month" id="mSel" value="${esc(curMonth)}" style="border:1.5px solid #c9d3c6;border-radius:10px;padding:8px 10px;font:inherit"></div></div><div class="stats">${stat('Salaire de base',money(c.base))}${stat('Jours présents',c.presents)}${stat('Retards',c.retards,'j')}${stat('Absences non justifiées',c.absents,c.absents?'r':'')}${stat('Retenue',money(c.retenue),c.retenue?'r':'')}${stat('Net à percevoir',money(c.net),'b')}</div><p>${paid?badge('Payé le '+(paid.payeLe||'').split('-').reverse().join('/'),'green'):badge('Paiement du mois : en attente','amber')}</p></div>`;
+}
 const CMD_ST={nouvelle:['Nouvelle','amber'],confirmee:['Confirmée','blue'],livree:['Livrée','green'],annulee:['Annulée','red']};
 function pCmd(){
  const staff=ORDER_STAFF.includes(me.role);
@@ -833,9 +1026,9 @@ function pCmd(){
   const wa=staff&&c.telephone?`<a class="btn sm line" target="_blank" rel="noopener" href="https://wa.me/${esc(waNumber(c.telephone))}">WhatsApp</a>`:'';
   if(staff){if(c.status==='nouvelle')act=btnIf(true,'cmd-ok','Confirmer','primary',c.id)+btnIf(true,'cmd-no','Refuser','danger',c.id);else if(c.status==='confirmee')act=btnIf(can(CAN.vente),'cmd-sell','Livrer et vendre','primary',c.id)+btnIf(true,'cmd-no','Annuler','danger',c.id);}
   else if(c.status==='nouvelle')act=btnIf(true,'cmd-no','Annuler','danger',c.id);
-  return `<tr><td>${tsDate(c.createdAt)}</td><td>${esc(c.nom||'')}${staff&&c.telephone?`<small>${esc(c.telephone)}</small>`:''}</td><td><b>${fmt(c.quantite)}</b></td><td>${money((c.quantite||0)*(c.prix||cfg.prixOeuf))}</td><td>${esc(c.mode||'')}</td><td>${dateFr(c.dateSouhaitee)}</td><td>${esc(c.note||'')}${c.numeroRecu?`<small>Reçu ${esc(c.numeroRecu)}</small>`:''}</td><td>${badge(sl,sc)}</td><td><div class="row">${act}${wa}</div></td></tr>`;
+  return `<tr><td>${tsDate(c.createdAt)}</td><td>${esc(c.nom||'')}${staff&&c.telephone?`<small>${esc(c.telephone)}</small>`:''}</td><td><b>${oeufs(c.quantite)}</b></td><td>${money((c.quantite||0)/PLAT*cmdPrix(c))}</td><td>${esc(c.mode||'')}</td><td>${dateFr(c.dateSouhaitee)}</td><td>${esc(c.note||'')}${c.numeroRecu?`<small>Reçu ${esc(c.numeroRecu)}</small>`:''}</td><td>${badge(sl,sc)}</td><td><div class="row">${act}${wa}</div></td></tr>`;
  });
- return `<div class="bloc"><div class="head"><div><h3>${staff?'Commandes des clients':'Mes commandes'}</h3><p class="muted">${staff?'Confirmez la commande, puis cliquez sur « Livrer et vendre » : le stock et le reçu sont gérés automatiquement.':'Prix actuel : '+money(cfg.prixOeuf)+" l'œuf. La ferme confirme chaque commande."}</p></div><div class="row">${staff?btnIf(true,'export','📥 Excel','line','cmd'):''}${staff?'':btnIf(true,'new-cmd','🛒 Passer une commande')}</div></div>${table(['Date','Client','Œufs','Montant estimé','Mode','Souhaitée le','Précisions','Statut',''],rows)||'<p class="empty">Aucune commande.</p>'}</div>`;
+ return `<div class="bloc"><div class="head"><div><h3>${staff?'Commandes des clients':'Mes commandes'}</h3><p class="muted">${staff?'Confirmez la commande, puis cliquez sur « Livrer et vendre » : le stock et le reçu sont gérés automatiquement.':'Prix actuel : '+money(prixPl())+' le plateau. La ferme confirme chaque commande.'}</p></div><div class="row">${staff?btnIf(true,'export','📥 Excel','line','cmd'):''}${staff?'':btnIf(true,'new-cmd','🛒 Passer une commande')}</div></div>${table(['Date','Client','Quantité','Montant estimé','Mode','Souhaitée le','Précisions','Statut',''],rows)||'<p class="empty">Aucune commande.</p>'}</div>`;
 }
 function pJournal(){
  const rows=D.journal.map(j=>`<tr><td>${tsTime(j.createdAt)}</td><td>${esc(j.nom||'')}</td><td>${esc(ROLES[j.role]||j.role||'')}</td><td><b>${esc(j.action)}</b></td><td>${esc(j.detail||'')}</td></tr>`);
@@ -851,9 +1044,10 @@ function pProfil(){
  const av=D.mesAvis[0],ST={pending:['En attente de validation','amber'],approved:['Publié','green'],hidden:['Non publié','red']};
  const info=[['Nom',me.nom],['Email',me.email],['Téléphone',me.telephone||'—'],['Adresse',me.adresse||'—'],['Rôle',ROLES[me.role]||me.role]].map(([k,v])=>`<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('');
  return `<div class="bloc"><div class="head"><h3>Mes informations</h3><div class="row"><button class="btn sm primary" data-act="edit-profil">✏️ Modifier</button><button class="btn sm line" data-act="chg-pwd">🔑 Changer mon mot de passe</button></div></div><div class="tw"><table>${info}</table></div></div>
- <div class="bloc"><h3>Mon avis sur la ferme</h3>${av?`<div class="stars" style="margin-top:8px">${stars(av.note)}</div><p style="font-style:italic;margin:8px 0">« ${esc(av.texte)} »</p>${badge(...(ST[av.status]||[av.status,'']))}`:'<p class="muted" style="margin:8px 0">Vous n\'avez pas encore donné votre avis.</p>'}<div style="margin-top:14px"><button class="btn sm primary" data-act="avis-form">${av?'Modifier mon avis':'Laisser un avis'}</button></div><p class="muted" style="margin-top:10px;font-size:13px">Votre avis est publié sur la page d'accueil après validation par la direction.</p></div>`;
+ ${monSalaireBloc()}<div class="bloc"><h3>Mon avis sur la ferme</h3>${av?`<div class="stars" style="margin-top:8px">${stars(av.note)}</div><p style="font-style:italic;margin:8px 0">« ${esc(av.texte)} »</p>${badge(...(ST[av.status]||[av.status,'']))}`:'<p class="muted" style="margin:8px 0">Vous n\'avez pas encore donné votre avis.</p>'}<div style="margin-top:14px"><button class="btn sm primary" data-act="avis-form">${av?'Modifier mon avis':'Laisser un avis'}</button></div><p class="muted" style="margin-top:10px;font-size:13px">Votre avis est publié sur la page d'accueil après validation par la direction.</p></div>`;
 }
-function renderAll(){renderAuth();renderHome();renderUne();renderAnimaux();renderGalerie();renderHisto();renderAvisPub();renderContact();renderEspace();}
+function renderAllNow(){renderAuth();renderHome();renderUne();renderPromos();renderAnimaux();renderGalerie();renderHisto();renderAvisPub();renderContact();renderEspace();}
+function renderAll(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;renderAllNow();});}
 
 /* ============ Actions (modification du site) ============ */
 const saveCfg=p=>setDoc(doc(db,'site','config'),p,{merge:true});
@@ -896,12 +1090,14 @@ function animalForm(id){
 }
 function histoForm(id){
  const h=id?histo.find(x=>x.id===id):null;
- openForm({title:h?"Modifier l'étape":'Ajouter une étape',fields:[
-  {name:'annee',label:'Année ou période',required:true,value:h?.annee,placeholder:'2021'},
+ openForm({title:h?"Modifier l'étape":'Ajouter une étape',intro:"Choisissez la date de l'événement. Pour une période, ajoutez aussi une date de fin.",fields:[
+  {name:'date',label:'Date (ou début)',type:'date',required:true,value:h?.date},
+  {name:'dateFin',label:'Date de fin (facultatif)',type:'date',value:h?.dateFin},
   {name:'titre',label:'Titre',required:true,value:h?.titre},
-  {name:'texte',label:'Texte',type:'textarea',value:h?.texte},
-  {name:'ordre',label:"Ordre d'affichage (1 = en premier)",type:'number',required:true,value:h?.ordre??histo.length+1}],
-  onSubmit:async v=>{const d={annee:v.annee,titre:v.titre,texte:v.texte,ordre:v.ordre};
+  {name:'texte',label:'Texte',type:'textarea',value:h?.texte}],
+  onSubmit:async v=>{
+   if(v.dateFin&&v.dateFin<v.date)throw new Error('La date de fin doit être après la date de début.');
+   const d={date:v.date,dateFin:v.dateFin,annee:v.date.slice(0,4),titre:v.titre,texte:v.texte};
    if(h)await updateDoc(doc(db,'historique',id),d);else await addDoc(collection(db,'historique'),{...d,createdAt:serverTimestamp()});
    logAct('Historique modifié',v.titre);closeModal();toast('Étape enregistrée');}});
 }
@@ -916,40 +1112,41 @@ async function seed(which){
 
 /* ============ Actions (activité de la ferme) ============ */
 function newProd(){
- openForm({title:'Production du jour',intro:'Les œufs ramassés au poulailler. Ils seront envoyés à la réception.',fields:[
+ openForm({title:'Production du jour',intro:'Notez les œufs ramassés en plateaux et en unités (1 plateau = 30 unités). Ils seront envoyés à la réception.',fields:[
   {name:'date',label:'Date',type:'date',required:true,value:today()},
-  {name:'effectif',label:'Nombre de poules',type:'number',required:true,value:D.prod[0]?.effectif??stats.effectif},
-  {name:'ramasses',label:'Œufs ramassés',type:'number',required:true},
-  {name:'casses',label:'Œufs cassés',type:'number',value:0},
+  {name:'effectif',label:'Nombre de poules',type:'number',required:true,value:D.lots.length?effectifTotal():(D.prod[0]?.effectif??stats.effectif)},
+  ...eggFields('ram','Œufs ramassés',0),
+  ...eggFields('cas','Œufs cassés',0),
   {name:'observations',label:'Observations (mortalité, aliment)',type:'textarea'}],
   onSubmit:async v=>{
-   v.casses=num(v.casses);
-   if(v.casses>v.ramasses)throw new Error('Les œufs cassés dépassent les œufs ramassés.');
-   await addDoc(collection(db,'production_journaliere'),{date:v.date,effectif:v.effectif,oeufsRamasses:v.ramasses,casses:v.casses,bons:v.ramasses-v.casses,observations:v.observations,status:'a_receptionner',superviseurId:user.uid,superviseurNom:me.nom,createdAt:serverTimestamp()});
+   const ram=eggsOf(v,'ram'),cas=eggsOf(v,'cas');
+   if(ram<=0)throw new Error('Indiquez les œufs ramassés (plateaux et/ou unités).');
+   if(cas>ram)throw new Error('Les œufs cassés dépassent les œufs ramassés.');
+   await addDoc(collection(db,'production_journaliere'),{date:v.date,effectif:v.effectif,oeufsRamasses:ram,casses:cas,bons:ram-cas,observations:v.observations,status:'a_receptionner',superviseurId:user.uid,superviseurNom:me.nom,createdAt:serverTimestamp()});
    await setDoc(doc(db,'stats','public'),{effectif:v.effectif,updatedAt:serverTimestamp()},{merge:true});
-   logAct('Production',`${v.date} : ${v.ramasses} ramassés, ${v.casses} cassés`);closeModal();toast('Production enregistrée');}});
+   logAct('Production',`${v.date} : ${oeufs(ram)} ramassés, ${oeufs(cas)} cassés`);closeModal();toast('Production enregistrée');}});
 }
 function recep(id){
  const lot=D.prod.find(p=>p.id===id);if(!lot)return;
- openForm({title:'Réceptionner le lot du '+(lot.date||'').split('-').reverse().join('/'),intro:`Le poulailler annonce <b>${fmt(lot.bons)}</b> bons œufs. Le nombre reçu doit être identique ; sinon expliquez l'écart.`,fields:[
-  {name:'recus',label:'Œufs reçus du poulailler',type:'number',required:true,value:lot.bons},
-  {name:'casses',label:'Œufs cassés à la réception',type:'number',value:0},
+ openForm({title:'Réceptionner le lot du '+(lot.date||'').split('-').reverse().join('/'),intro:`Le poulailler annonce <b>${oeufs(lot.bons)}</b>. Le nombre reçu doit être identique ; sinon expliquez l'écart.`,fields:[
+  ...eggFields('rec','Œufs reçus du poulailler',lot.bons),
+  ...eggFields('cas','Œufs cassés à la réception',0),
   {name:'observations',label:'Observations',type:'textarea'}],
   onSubmit:async v=>{
-   v.casses=num(v.casses);
-   if(v.casses>v.recus)throw new Error('Les œufs cassés dépassent les œufs reçus.');
-   if(v.recus!==lot.bons&&!v.observations)throw new Error(`Le nombre reçu (${fmt(v.recus)}) diffère du lot annoncé (${fmt(lot.bons)}). Expliquez l'écart dans les observations.`);
+   const rec=eggsOf(v,'rec'),cas=eggsOf(v,'cas');
+   if(cas>rec)throw new Error('Les œufs cassés dépassent les œufs reçus.');
+   if(rec!==lot.bons&&!v.observations)throw new Error(`Le nombre reçu (${oeufs(rec)}) diffère du lot annoncé (${oeufs(lot.bons)}). Expliquez l'écart dans les observations.`);
    await runTransaction(db,async tx=>{
     const pr=doc(db,'production_journaliere',id),s=await tx.get(pr);
     if(!s.exists()||s.data().status!=='a_receptionner')throw new Error('Ce lot a déjà été réceptionné.');
-    tx.set(doc(collection(db,'transfert_reception')),{date:today(),productionId:id,datePonte:s.data().date,attendus:s.data().bons,oeufsRecus:v.recus,cassesReception:v.casses,bons:v.recus-v.casses,observations:v.observations,status:'a_vendre',receptionnisteId:user.uid,receptionnisteNom:me.nom,createdAt:serverTimestamp()});
+    tx.set(doc(collection(db,'transfert_reception')),{date:today(),productionId:id,datePonte:s.data().date,attendus:s.data().bons,oeufsRecus:rec,cassesReception:cas,bons:rec-cas,observations:v.observations,status:'a_vendre',receptionnisteId:user.uid,receptionnisteNom:me.nom,createdAt:serverTimestamp()});
     tx.update(pr,{status:'receptionne'});
    });
-   logAct('Réception',`Lot du ${lot.date} : ${v.recus} reçus, ${v.casses} cassés`);closeModal();toast('Lot réceptionné et transféré au magasin');}});
+   logAct('Réception',`Lot du ${lot.date} : ${oeufs(rec)} reçus, ${oeufs(cas)} cassés`);closeModal();toast('Lot réceptionné et transféré au magasin');}});
 }
 async function stockIn(id){
  const t=D.trans.find(x=>x.id===id);if(!t)return;
- if(!await askConfirm(`Ajouter ${fmt(t.bons)} œufs au stock du magasin ?`,'Mettre en stock'))return;
+ if(!await askConfirm(`Ajouter ${oeufs(t.bons)} au stock du magasin ?`,'Mettre en stock'))return;
  try{
   await runTransaction(db,async tx=>{
    const tr=doc(db,'transfert_reception',id),st=doc(db,'stats','public');
@@ -960,14 +1157,14 @@ async function stockIn(id){
    tx.update(tr,{status:'en_stock',dateStock:today(),magasiniereId:user.uid,magasiniereNom:me.nom});
    tx.set(doc(collection(db,'ventes')),{type:'entree',quantite:q,stockAvant:cur,stockApres:cur+q,transfertId:id,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
   });
-  logAct('Mise en stock',`${t.bons} œufs`);toast('Lot ajouté au stock');
+  logAct('Mise en stock',oeufs(t.bons));toast('Lot ajouté au stock');
  }catch(e){toast(errMsg(e),'err');}
 }
 async function moveStock(delta,entry){
  const ref=doc(collection(db,'ventes'));let rec=null;
  await runTransaction(db,async tx=>{
   const st=doc(db,'stats','public'),sn=await tx.get(st),cur=sn.exists()?sn.data().stock||0:0,nv=cur+delta;
-  if(nv<0)throw new Error(`Stock insuffisant : ${fmt(cur)} œufs disponibles.`);
+  if(nv<0)throw new Error(`Stock insuffisant : ${oeufs(cur)} disponibles.`);
   const d=today();
   rec={...entry,stockAvant:cur,stockApres:nv,date:d,operateurId:user.uid,operateurNom:me.nom,...(entry.type==='vente'?{numero:`R${d.replace(/-/g,'')}-${ref.id.slice(0,4).toUpperCase()}`}:{})};
   tx.set(st,{stock:nv,updatedAt:serverTimestamp()},{merge:true});
@@ -977,38 +1174,47 @@ async function moveStock(delta,entry){
 }
 function sell(prefill){
  prefill=prefill&&typeof prefill==='object'?prefill:{};
- openForm({title:'Enregistrer une vente',intro:`Stock disponible : <b>${fmt(stock())}</b> œufs.`,submit:'Valider la vente',fields:[
-  {name:'quantite',label:"Nombre d'œufs vendus",type:'number',required:true,value:prefill.quantite},
-  {name:'prix',label:'Prix unitaire (FCFA)',type:'number',required:true,value:cfg.prixOeuf},
+ const p0=bestPrice(prefill.plateaux||0);
+ openForm({title:'Enregistrer une vente',intro:`Stock disponible : <b>${oeufs(stock())}</b>. On vend par plateau (1 plateau = 30 œufs).<span id="promoHint"></span>`,submit:'Valider la vente',fields:[
+  {name:'plateaux',label:'Nombre de plateaux vendus',type:'number',required:true,value:prefill.plateaux},
+  {name:'prix',label:'Prix du plateau (FCFA)',type:'number',required:true,value:p0.prix},
+  {name:'paye',label:'Montant payé maintenant (FCFA)',type:'number',help:'Laissez vide si le client paie la totalité. Sinon, le reste est enregistré comme crédit.'},
+  {name:'mode',label:'Mode de paiement',type:'select',value:'Espèces',options:['Espèces','Mobile Money MTN','Mobile Money Moov','Autre'].map(x=>[x,x])},
   {name:'clientNom',label:'Nom du client / destination',required:true,value:prefill.clientNom},
   {name:'clientTel',label:'Téléphone du client',type:'tel',value:prefill.clientTel}],
   onSubmit:async v=>{
-   if(v.quantite<=0)throw new Error('Indiquez une quantité supérieure à 0.');
-   const rec=await moveStock(-v.quantite,{type:'vente',quantite:v.quantite,prix:v.prix,montant:v.quantite*v.prix,clientNom:v.clientNom,clientTel:v.clientTel});
+   if(!(v.plateaux>=1)||!Number.isInteger(v.plateaux))throw new Error('Indiquez un nombre entier de plateaux (1 minimum).');
+   const q=v.plateaux*PLAT,montant=v.plateaux*v.prix,paye=v.paye===null?montant:v.paye;
+   if(paye>montant)throw new Error('Le montant payé dépasse le total de la vente.');
+   const rec=await moveStock(-q,{type:'vente',plateaux:v.plateaux,quantite:q,prixPlateau:v.prix,prix:v.prix/PLAT,montant,paye,reste:montant-paye,mode:v.mode,clientNom:v.clientNom,clientTel:v.clientTel});
    if(prefill.orderId){try{await updateDoc(doc(db,'commandes',prefill.orderId),{status:'livree',numeroRecu:rec.numero,updatedAt:serverTimestamp()});}catch(e){console.warn(e);}}
-   logAct('Vente',`${rec.numero} · ${fmt(v.quantite)} œufs · ${fmt(rec.montant)} FCFA · ${v.clientNom}`);
-   closeModal();toast(`Vente enregistrée : ${money(rec.montant)}`);showReceipt(rec);}});
+   logAct('Vente',`${rec.numero} · ${plX(v.plateaux)} · ${fmt(montant)} FCFA${montant>paye?' · crédit '+fmt(montant-paye):''} · ${v.clientNom}`);
+   closeModal();toast(`Vente enregistrée : ${money(montant)}`);showReceipt(rec);}});
+ const q=$('#f_plateaux'),pr=$('#f_prix'),hint=$('#promoHint');let touched=false;
+ const upd=()=>{const b=bestPrice(Number(q.value)||0);if(!touched)pr.value=b.prix;hint.innerHTML=b.promo?`<br>🏷️ Promotion « ${esc(b.promo.titre)} » appliquée : ${money(b.prix)} le plateau.`:'';};
+ pr.addEventListener('input',()=>{touched=true;});q.addEventListener('input',upd);upd();
 }
 function loss(){
- openForm({title:'Œufs cassés au magasin',intro:`Stock disponible : <b>${fmt(stock())}</b> œufs.`,fields:[
-  {name:'quantite',label:"Nombre d'œufs cassés",type:'number',required:true},
+ openForm({title:'Œufs cassés au magasin',intro:`Stock disponible : <b>${oeufs(stock())}</b>.`,fields:[
+  ...eggFields('q','Œufs cassés',0),
   {name:'motif',label:'Observation',value:'Casse au magasin'}],
   onSubmit:async v=>{
-   if(v.quantite<=0)throw new Error('Indiquez une quantité supérieure à 0.');
-   await moveStock(-v.quantite,{type:'perte',quantite:v.quantite,motif:v.motif||'Casse au magasin'});
-   logAct('Casse au magasin',`${v.quantite} œufs`);closeModal();toast('Casse enregistrée');}});
+   const q=eggsOf(v,'q');if(q<=0)throw new Error('Indiquez au moins une unité cassée.');
+   await moveStock(-q,{type:'perte',quantite:q,motif:v.motif||'Casse au magasin'});
+   logAct('Casse au magasin',oeufs(q));closeModal();toast('Casse enregistrée');}});
 }
 function adjust(){
- openForm({title:'Ajuster le stock',intro:`Stock actuel : <b>${fmt(stock())}</b> œufs. À utiliser après un comptage physique.`,fields:[
-  {name:'nouveau',label:'Stock réel compté',type:'number',required:true},
+ openForm({title:'Ajuster le stock',intro:`Stock actuel : <b>${oeufs(stock())}</b>. À utiliser après un comptage physique.`,fields:[
+  ...eggFields('n','Stock réel compté',stock()),
   {name:'motif',label:'Motif',required:true,placeholder:'Inventaire du …'}],
   onSubmit:async v=>{
+   const nv=eggsOf(v,'n');
    await runTransaction(db,async tx=>{
     const st=doc(db,'stats','public'),s=await tx.get(st),cur=s.exists()?s.data().stock||0:0;
-    tx.set(st,{stock:v.nouveau,updatedAt:serverTimestamp()},{merge:true});
-    tx.set(doc(collection(db,'ventes')),{type:'ajustement',quantite:v.nouveau-cur,stockAvant:cur,stockApres:v.nouveau,motif:v.motif,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
+    tx.set(st,{stock:nv,updatedAt:serverTimestamp()},{merge:true});
+    tx.set(doc(collection(db,'ventes')),{type:'ajustement',quantite:nv-cur,stockAvant:cur,stockApres:nv,motif:v.motif,date:today(),operateurId:user.uid,operateurNom:me.nom,createdAt:serverTimestamp()});
    });
-   logAct('Ajustement du stock',`Nouveau stock : ${v.nouveau} (${v.motif})`);closeModal();toast('Stock ajusté');}});
+   logAct('Ajustement du stock',`Nouveau stock : ${oeufs(nv)} (${v.motif})`);closeModal();toast('Stock ajusté');}});
 }
 async function visa(fiche){
  if(!await askConfirm(`Apposer votre visa sur la fiche « ${fiche} » du mois ${curMonth} ? Il ne pourra plus être modifié.`,'Apposer le visa'))return;
@@ -1016,15 +1222,21 @@ async function visa(fiche){
  catch(e){toast(errMsg(e),'err');}
 }
 function price(){
- openForm({title:"Prix de l'œuf",fields:[{name:'prix',label:'Prix par défaut (FCFA)',type:'number',required:true,value:cfg.prixOeuf}],
-  onSubmit:async v=>{await saveCfg({prixOeuf:v.prix});logAct('Prix de l\'œuf',`${v.prix} FCFA`);closeModal();toast('Prix mis à jour');}});
+ openForm({title:'Prix du plateau',intro:'Prix par défaut d\'un plateau de 30 œufs.',fields:[{name:'prix',label:'Prix du plateau (FCFA)',type:'number',required:true,value:prixPl()}],
+  onSubmit:async v=>{await saveCfg({prixPlateau:v.prix});logAct('Prix du plateau',`${v.prix} FCFA`);closeModal();toast('Prix mis à jour');}});
 }
 function newSante(){
  openForm({title:'Suivi vétérinaire',fields:[
   {name:'date',label:'Date',type:'date',required:true,value:today()},
+  {name:'lot',label:'Lot concerné',type:'select',value:'',options:lotOptions()},
   {name:'mortalite',label:'Nombre de morts',type:'number',value:0},
   {name:'notes',label:'Observations, soins, vaccins',type:'textarea'}],
-  onSubmit:async v=>{await addDoc(collection(db,'sante'),{date:v.date,mortalite:num(v.mortalite),notes:v.notes,veterinaireId:user.uid,veterinaireNom:me.nom,createdAt:serverTimestamp()});logAct('Suivi vétérinaire',`${v.date} : ${v.mortalite||0} mort(s)`);closeModal();toast('Suivi enregistré');}});
+  onSubmit:async v=>{
+   const n=num(v.mortalite),l=D.lots.find(x=>x.id===v.lot),b=writeBatch(db);
+   b.set(doc(collection(db,'sante')),{date:v.date,mortalite:n,notes:v.notes,lotId:v.lot,lotNom:l?.nom||'',veterinaireId:user.uid,veterinaireNom:me.nom,createdAt:serverTimestamp()});
+   if(l&&n>0)b.update(doc(db,'lots',l.id),{morts:increment(n)});
+   await b.commit();
+   logAct('Suivi vétérinaire',`${v.date} : ${n} mort(s)${l?' · '+l.nom:''}`);closeModal();toast('Suivi enregistré');}});
 }
 function newDep(){
  openForm({title:'Ajouter une dépense',fields:[
@@ -1081,24 +1293,26 @@ function galForm(id){
    logAct('Publication',v.titre||v.texte.slice(0,40)||'photo');closeModal();toast('Publication enregistrée');}});
 }
 function newCmd(){
- openForm({title:'Passer une commande',intro:`Prix actuel : <b>${money(cfg.prixOeuf)}</b> l'œuf. La ferme confirmera votre commande.`,submit:'Envoyer la commande',fields:[
-  {name:'quantite',label:"Nombre d'œufs",type:'number',required:true,help:'Exemple : 30 = une plaquette, 90 = trois plaquettes.'},
+ const P=activePromos();
+ openForm({title:'Passer une commande',intro:`Prix actuel : <b>${money(prixPl())}</b> le plateau (30 œufs).${P.map(p=>`<br>🏷️ ${esc(p.titre)} : ${money(p.prix)} le plateau${p.qteMin>1?` à partir de ${plX(p.qteMin)}`:''}`).join('')}<br>La ferme confirmera votre commande.`,submit:'Envoyer la commande',fields:[
+  {name:'plateaux',label:'Nombre de plateaux',type:'number',required:true,help:'On vend uniquement par plateau entier.'},
   {name:'mode',label:'Mode de remise',type:'select',value:'Retrait à la ferme',options:[['Retrait à la ferme','Retrait à la ferme'],['Livraison','Livraison']]},
   {name:'date',label:'Date souhaitée',type:'date',required:true,value:today(),min:today()},
   {name:'note',label:'Précisions (adresse de livraison, remarque)',type:'textarea'}],
   onSubmit:async v=>{
-   if(v.quantite<=0)throw new Error('Indiquez une quantité supérieure à 0.');
+   if(!(v.plateaux>=1)||!Number.isInteger(v.plateaux))throw new Error('Indiquez un nombre entier de plateaux (1 minimum).');
    if(v.date<today())throw new Error("Choisissez une date à partir d'aujourd'hui.");
-   await addDoc(collection(db,'commandes'),{uid:user.uid,nom:me.nom,telephone:me.telephone||'',quantite:v.quantite,mode:v.mode,dateSouhaitee:v.date,note:v.note,prix:cfg.prixOeuf,status:'nouvelle',createdAt:serverTimestamp()});
+   const pp=bestPrice(v.plateaux).prix;
+   await addDoc(collection(db,'commandes'),{uid:user.uid,nom:me.nom,telephone:me.telephone||'',plateaux:v.plateaux,quantite:v.plateaux*PLAT,mode:v.mode,dateSouhaitee:v.date,note:v.note,prixPlateau:pp,prix:pp/PLAT,status:'nouvelle',createdAt:serverTimestamp()});
    closeModal();toast('Commande envoyée. La ferme vous contactera.');}});
 }
 async function setCmd(id,status){
  const c=D.cmd.find(x=>x.id===id);if(!c)return;
- if(status==='annulee'&&!await askConfirm(`Annuler la commande de ${fmt(c.quantite)} œufs ?`,'Annuler la commande',true))return;
- try{await updateDoc(doc(db,'commandes',id),{status,updatedAt:serverTimestamp()});logAct('Commande',`${status} · ${c.nom} · ${c.quantite} œufs`);toast('Commande mise à jour');}
+ if(status==='annulee'&&!await askConfirm(`Annuler la commande de ${oeufs(c.quantite)} ?`,'Annuler la commande',true))return;
+ try{await updateDoc(doc(db,'commandes',id),{status,updatedAt:serverTimestamp()});logAct('Commande',`${status} · ${c.nom} · ${oeufs(c.quantite)}`);toast('Commande mise à jour');}
  catch(e){toast(errMsg(e),'err');}
 }
-function cmdSell(id){const c=D.cmd.find(x=>x.id===id);if(c)sell({orderId:id,clientNom:c.nom,clientTel:c.telephone,quantite:c.quantite});}
+function cmdSell(id){const c=D.cmd.find(x=>x.id===id);if(c)sell({orderId:id,clientNom:c.nom,clientTel:c.telephone,plateaux:c.plateaux||Math.max(1,Math.round(c.quantite/PLAT))});}
 function editProfil(){
  openForm({title:'Mes informations',fields:[
   {name:'nom',label:'Nom complet',required:true,value:me.nom,auto:'name'},
@@ -1133,20 +1347,21 @@ async function setAvis(id,status){
 }
 function seuils(){
  openForm({title:"Seuils d'alerte",intro:'Le résumé affiche une alerte quand un seuil est atteint.',fields:[
-  {name:'seuilStock',label:'Alerte quand le stock est inférieur ou égal à (œufs)',type:'number',required:true,value:cfg.seuilStock},
+  {name:'seuilStock',label:'Alerte quand le stock est inférieur ou égal à (plateaux)',type:'number',required:true,value:Math.round(cfg.seuilStock/PLAT)},
   {name:'seuilMortalite',label:'Alerte mortalité : morts sur 7 jours (0 = désactivée)',type:'number',required:true,value:cfg.seuilMortalite},
-  {name:'seuilCasse',label:'Alerte casse au poulailler (% des œufs ramassés)',type:'number',required:true,value:cfg.seuilCasse}],
-  onSubmit:async v=>{await saveCfg(v);logAct("Seuils d'alerte modifiés");closeModal();toast("Seuils d'alerte enregistrés");}});
+  {name:'seuilCasse',label:'Alerte casse au poulailler (% des œufs ramassés)',type:'number',required:true,value:cfg.seuilCasse},
+  {name:'seuilPonte',label:'Alerte taux de ponte inférieur à (%) (0 = désactivée)',type:'number',required:true,value:cfg.seuilPonte}],
+  onSubmit:async v=>{await saveCfg({...v,seuilStock:v.seuilStock*PLAT});logAct("Seuils d'alerte modifiés");closeModal();toast("Seuils d'alerte enregistrés");}});
 }
 const byDate=(a,b)=>String(a.date).localeCompare(String(b.date));
 const inMonth=a=>a.filter(x=>(x.date||'').startsWith(curMonth));
 const EXP={
- prod:()=>['production_'+curMonth,['Date','Poules présentes','Œufs ramassés','Cassés au poulailler','Bons disponibles','Superviseur','Statut','Observations'],inMonth(D.prod).sort(byDate).map(p=>[p.date,p.effectif,p.oeufsRamasses,p.casses,p.bons,p.superviseurNom,p.status==='a_receptionner'?'À réceptionner':'Réceptionné',p.observations])],
- trans:()=>['transferts_'+curMonth,['Date','Lot du','Œufs reçus','Cassés à la réception','Bons transférés','Magasinière','Réceptionniste','Statut','Observations'],inMonth(D.trans).sort(byDate).map(t=>[t.date,t.datePonte,t.oeufsRecus,t.cassesReception,t.bons,t.magasiniereNom,t.receptionnisteNom,t.status==='a_vendre'?'À mettre en stock':'En stock',t.observations])],
- mag:()=>['stock_et_ventes_'+curMonth,['Date','Stock veille','Entrée du jour','Stock total','Œufs vendus','Cassés au magasin','Ajustement','Reste du jour','Prix unitaire','Montant vendu','Client / destination','Magasinière'],dayRows().map(d=>[d.date,d.veille,d.entree,d.veille+d.entree,d.vendus,d.casses,d.ajust,d.reste,d.prix.join(' / '),d.montant,d.clients.join(', '),d.ops.join(', ')])],
+ prod:()=>['production_'+curMonth,['Date','Poules présentes','Œufs ramassés','Cassés au poulailler','Bons disponibles','Superviseur','Statut','Observations'],inMonth(D.prod).sort(byDate).map(p=>[p.date,p.effectif,oeufs(p.oeufsRamasses),oeufs(p.casses),oeufs(p.bons),p.superviseurNom,p.status==='a_receptionner'?'À réceptionner':'Réceptionné',p.observations])],
+ trans:()=>['transferts_'+curMonth,['Date','Lot du','Œufs reçus','Cassés à la réception','Bons transférés','Magasinière','Réceptionniste','Statut','Observations'],inMonth(D.trans).sort(byDate).map(t=>[t.date,t.datePonte,oeufs(t.oeufsRecus),oeufs(t.cassesReception),oeufs(t.bons),t.magasiniereNom,t.receptionnisteNom,t.status==='a_vendre'?'À mettre en stock':'En stock',t.observations])],
+ mag:()=>['stock_et_ventes_'+curMonth,['Date','Stock veille','Entrée du jour','Stock total','Œufs vendus','Cassés au magasin','Ajustement','Reste du jour','Prix unitaire','Montant vendu','Client / destination','Magasinière'],dayRows().map(d=>[d.date,oeufs(d.veille),oeufs(d.entree),oeufs(d.veille+d.entree),oeufs(d.vendus),oeufs(d.casses),d.ajust?oeufs(d.ajust):'',oeufs(d.reste),d.prix.join(' / '),d.montant,d.clients.join(', '),d.ops.join(', ')])],
  sante:()=>['sante',['Date','Mortalité','Observations','Vétérinaire'],D.sante.map(x=>[x.date,x.mortalite,x.notes,x.veterinaireNom])],
  dep:()=>['depenses',['Date','Libellé','Catégorie','Montant (FCFA)'],D.dep.map(d=>[d.date,d.libelle,d.categorie,d.montant])],
- cmd:()=>['commandes',['Date','Client','Téléphone','Œufs','Mode','Souhaitée le','Précisions','Statut'],D.cmd.map(c=>[tsDate(c.createdAt),c.nom,c.telephone,c.quantite,c.mode,c.dateSouhaitee,c.note,(CMD_ST[c.status]||[c.status])[0]])],
+ cmd:()=>['commandes',['Date','Client','Téléphone','Œufs','Mode','Souhaitée le','Précisions','Statut'],D.cmd.map(c=>[tsDate(c.createdAt),c.nom,c.telephone,oeufs(c.quantite),c.mode,c.dateSouhaitee,c.note,(CMD_ST[c.status]||[c.status])[0]])],
  journal:()=>['journal',['Date et heure','Personne','Rôle','Action','Détail'],D.journal.map(j=>[tsTime(j.createdAt),j.nom,ROLES[j.role]||j.role,j.action,j.detail])],
  users:()=>['inscrits',['Nom','Email','Téléphone','Adresse','Rôle','Rôle demandé','Statut'],D.users.map(u=>[u.nom,u.email,u.telephone,u.adresse,ROLES[u.role]||u.role,ROLES[u.roleDemande]||u.roleDemande,(STATUS[u.status]||[u.status])[0]])]
 };
@@ -1156,12 +1371,13 @@ function backup(){
  downloadFile('sauvegarde_'+today()+'.json',JSON.stringify(data,null,1),'application/json');logAct('Sauvegarde complète');toast('Sauvegarde téléchargée');
 }
 function receiptHTML(v){
- return `<div class="rc"><h2>${esc(cfg.heroTitre)}</h2><p class="sub">${esc(cfg.adresse||'')}${cfg.telephone?' · '+esc(cfg.telephone):''}</p><p><b>REÇU N° ${esc(v.numero||'')}</b><br>Date : ${dateFr(v.date)}</p><table><tr><td>Client</td><td style="text-align:right">${esc(v.clientNom||'—')}</td></tr>${v.clientTel?`<tr><td>Téléphone</td><td style="text-align:right">${esc(v.clientTel)}</td></tr>`:''}<tr><td>Quantité</td><td style="text-align:right">${fmt(v.quantite)} œufs</td></tr><tr><td>Prix unitaire</td><td style="text-align:right">${money(v.prix)}</td></tr></table><div class="tot"><span>TOTAL</span><span>${money(v.montant)}</span></div><p class="foot">Servi par ${esc(v.operateurNom||'')}<br>Merci pour votre confiance !</p></div>`;
+ const r=v.reste>0;
+ return `<div class="rc"><h2>${esc(cfg.heroTitre)}</h2><p class="sub">${esc(cfg.adresse||'')}${cfg.telephone?' · '+esc(cfg.telephone):''}</p><p><b>REÇU N° ${esc(v.numero||'')}</b><br>Date : ${dateFr(v.date)}</p><table><tr><td>Client</td><td style="text-align:right">${esc(v.clientNom||'—')}</td></tr>${v.clientTel?`<tr><td>Téléphone</td><td style="text-align:right">${esc(v.clientTel)}</td></tr>`:''}<tr><td>Quantité</td><td style="text-align:right">${oeufs(v.quantite)}</td></tr><tr><td>Prix du plateau</td><td style="text-align:right">${money(v.prixPlateau??v.prix*PLAT)}</td></tr>${v.mode?`<tr><td>Paiement</td><td style="text-align:right">${esc(v.mode)}</td></tr>`:''}</table><div class="tot"><span>TOTAL</span><span>${money(v.montant)}</span></div>${r?`<table><tr><td>Payé</td><td style="text-align:right">${money(v.paye)}</td></tr><tr><td><b>Reste à payer</b></td><td style="text-align:right"><b>${money(v.reste)}</b></td></tr></table>`:''}<p class="foot">Servi par ${esc(v.operateurNom||'')}<br>Merci pour votre confiance !</p></div>`;
 }
 function showReceipt(v){
  if(modalDone){modalDone(false);modalDone=null;}
  lastReceipt=v;
- const txt=`Reçu ${v.numero}\n${cfg.heroTitre}\nDate : ${(v.date||'').split('-').reverse().join('/')}\n${fmt(v.quantite)} œufs × ${fmt(v.prix)} FCFA = ${fmt(v.montant)} FCFA\nMerci pour votre confiance !`;
+ const txt=`Reçu ${v.numero}\n${cfg.heroTitre}\nDate : ${(v.date||'').split('-').reverse().join('/')}\n${oeufs(v.quantite)} × ${fmt(v.prixPlateau??v.prix*PLAT)} FCFA le plateau = ${fmt(v.montant)} FCFA\nMerci pour votre confiance !`;
  $('#mbox').className='mbox';
  $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><h3>Reçu de vente</h3>${receiptHTML(v)}<div class="row" style="margin-top:18px;justify-content:center"><button class="btn primary" data-act="print-receipt">🖨️ Imprimer</button><a class="btn line" target="_blank" rel="noopener" href="https://wa.me/${esc(waNumber(v.clientTel))}?text=${encodeURIComponent(txt)}">Envoyer par WhatsApp</a></div>`;
  showModal();
@@ -1207,6 +1423,269 @@ function addPerson(){
    showCredentials({nom:v.nom,tel:v.tel,email,pwd,role:v.role});}});
 }
 
+/* ============ Élevage, clients, équipe, direction ============ */
+let lastRapport='';
+const equipeUsers=()=>D.users.filter(u=>u.status==='active'&&STAFF.includes(u.role)&&(u.role!=='pdg'||salaireDe(u)>0));
+function lotForm(id){
+ const l=id?D.lots.find(x=>x.id===id):null;
+ openForm({title:l?'Modifier le lot':'Nouveau lot de poules',fields:[
+  {name:'nom',label:'Nom du lot',required:true,value:l?.nom,placeholder:'Bande 1'},
+  {name:'dateArrivee',label:"Date d'arrivée",type:'date',required:true,value:l?.dateArrivee||today()},
+  {name:'effectifInitial',label:"Effectif à l'arrivée",type:'number',required:true,value:l?.effectifInitial},
+  {name:'morts',label:'Morts cumulés',type:'number',value:l?.morts||0},
+  {name:'race',label:'Race ou type (facultatif)',value:l?.race}],
+  onSubmit:async v=>{
+   const d={nom:v.nom,dateArrivee:v.dateArrivee,effectifInitial:v.effectifInitial,morts:num(v.morts),race:v.race};
+   if(l)await updateDoc(doc(db,'lots',id),d);else await addDoc(collection(db,'lots'),{...d,statut:'actif',createdAt:serverTimestamp()});
+   logAct('Lot de poules',v.nom);closeModal();toast('Lot enregistré');}});
+}
+async function lotStatut(id){
+ const l=D.lots.find(x=>x.id===id);if(!l)return;const ref=l.statut==='reforme';
+ if(!await askConfirm(ref?`Réactiver le lot « ${l.nom} » ?`:`Marquer le lot « ${l.nom} » comme réformé ? Il ne sera plus compté dans l'effectif.`,ref?'Réactiver':'Réformer',!ref))return;
+ try{await updateDoc(doc(db,'lots',id),{statut:ref?'actif':'reforme',dateReforme:ref?'':today()});logAct(ref?'Lot réactivé':'Lot réformé',l.nom);toast('Lot mis à jour');}
+ catch(e){toast(errMsg(e),'err');}
+}
+function alimForm(){
+ openForm({title:"Aliment du jour",fields:[
+  {name:'date',label:'Date',type:'date',required:true,value:today()},
+  {name:'kg',label:"Quantité d'aliment donnée (kg)",type:'number',required:true},
+  {name:'cout',label:'Coût estimé (FCFA, facultatif)',type:'number'},
+  {name:'type',label:"Type d'aliment",type:'select',value:'Ponte',options:['Ponte','Démarrage','Croissance','Autre'].map(x=>[x,x])},
+  {name:'lot',label:'Lot concerné',type:'select',value:'',options:lotOptions()},
+  {name:'note',label:'Remarque'}],
+  onSubmit:async v=>{
+   if(v.kg<=0)throw new Error('Indiquez une quantité supérieure à 0.');
+   const l=D.lots.find(x=>x.id===v.lot);
+   await addDoc(collection(db,'aliment'),{date:v.date,kg:v.kg,cout:num(v.cout),type:v.type,lotId:v.lot,lotNom:l?.nom||'',note:v.note,par:user.uid,parNom:me.nom,createdAt:serverTimestamp()});
+   logAct('Aliment',`${v.date} : ${v.kg} kg`);closeModal();toast('Aliment enregistré');}});
+}
+function vaccinForm(){
+ openForm({title:'Programmer un vaccin ou un traitement',fields:[
+  {name:'date',label:'Date prévue',type:'date',required:true,value:today()},
+  {name:'type',label:'Type',type:'select',value:'Vaccin',options:['Vaccin','Traitement','Vermifuge','Autre'].map(x=>[x,x])},
+  {name:'produit',label:'Produit',required:true,placeholder:'Nom du vaccin ou du médicament'},
+  {name:'lot',label:'Lot concerné',type:'select',value:'',options:lotOptions()},
+  {name:'repeter',label:'Répéter tous les … jours (facultatif)',type:'number',help:'Une fois fait, la prochaine échéance est programmée automatiquement.'},
+  {name:'notes',label:'Notes',type:'textarea'}],
+  onSubmit:async v=>{
+   const l=D.lots.find(x=>x.id===v.lot);
+   await addDoc(collection(db,'vaccins'),{date:v.date,type:v.type,produit:v.produit,lotId:v.lot,lotNom:l?.nom||'',repeterJours:num(v.repeter),notes:v.notes,statut:'prevu',par:user.uid,parNom:me.nom,createdAt:serverTimestamp()});
+   logAct('Vaccin programmé',`${v.produit} le ${v.date}`);closeModal();toast('Programmé');}});
+}
+async function vaccinDone(id){
+ const v=D.vaccins.find(x=>x.id===id);if(!v)return;
+ if(!await askConfirm(`Marquer « ${v.produit} » comme fait aujourd'hui ?`,'Marquer comme fait'))return;
+ try{
+  const b=writeBatch(db);
+  b.update(doc(db,'vaccins',id),{statut:'fait',dateFait:today(),faitPar:me.nom});
+  if(v.repeterJours>0)b.set(doc(collection(db,'vaccins')),{date:addDays(today(),v.repeterJours),type:v.type,produit:v.produit,lotId:v.lotId||'',lotNom:v.lotNom||'',repeterJours:v.repeterJours,notes:v.notes||'',statut:'prevu',par:user.uid,parNom:me.nom,createdAt:serverTimestamp()});
+  await b.commit();logAct('Vaccin ou traitement fait',v.produit);toast(v.repeterJours>0?`Fait. Prochaine échéance dans ${v.repeterJours} jours.`:'Marqué comme fait');
+ }catch(e){toast(errMsg(e),'err');}
+}
+function clientDetail(key){
+ const c=clientsAgg().find(x=>x.key===key);if(!c)return;
+ if(modalDone){modalDone(false);modalDone=null;}
+ const vr=c.ventes.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(v=>`<tr><td>${dateFr(v.date)}</td><td>${esc(v.numero||'')}</td><td>${oeufs(v.quantite)}</td><td>${money(v.montant)}</td><td>${money(v.paye??v.montant)}</td></tr>`);
+ const pr=c.paiements.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(x=>`<tr><td>${dateFr(x.date)}</td><td>${money(x.montant)}</td><td>${esc(x.mode||'')}</td><td>${esc(x.ref||'')}</td></tr>`);
+ $('#mbox').className='mbox wide';
+ $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><h3>${esc(c.nom)}</h3><p class="muted">${esc(c.tel||'')}</p><div class="stats">${stat('Total acheté',money(c.total))}${stat('Payé',money(c.paye))}${stat('Reste dû',money(c.reste),c.reste>0?'r':'')}</div><h3 style="font-size:1rem;margin:8px 0">Achats</h3>${table(['Date','Reçu','Quantité','Montant','Payé à la vente'],vr)}<h3 style="font-size:1rem;margin:16px 0 8px">Paiements reçus après la vente</h3>${table(['Date','Montant','Mode','Référence'],pr)||'<p class="empty">Aucun paiement enregistré après la vente.</p>'}`;
+ showModal();
+}
+function encaisser(key){
+ const c=clientsAgg().find(x=>x.key===key);if(!c)return;
+ openForm({title:'Encaisser : '+c.nom,intro:`Reste dû : <b>${money(c.reste)}</b>`,submit:'Enregistrer le paiement',fields:[
+  {name:'montant',label:'Montant reçu (FCFA)',type:'number',required:true,value:c.reste},
+  {name:'mode',label:'Mode de paiement',type:'select',value:'Espèces',options:['Espèces','Mobile Money MTN','Mobile Money Moov','Autre'].map(x=>[x,x])},
+  {name:'ref',label:'Référence de la transaction (facultatif)'}],
+  onSubmit:async v=>{
+   if(v.montant<=0)throw new Error('Indiquez un montant supérieur à 0.');
+   if(v.montant>c.reste)throw new Error(`Le montant dépasse le reste dû (${money(c.reste)}).`);
+   await addDoc(collection(db,'paiements'),{clientKey:key,clientNom:c.nom,montant:v.montant,mode:v.mode,ref:v.ref,date:today(),par:user.uid,parNom:me.nom,createdAt:serverTimestamp()});
+   logAct('Paiement client',`${c.nom} : ${money(v.montant)}`);closeModal();toast('Paiement enregistré');}});
+}
+function tacheForm(){
+ const staff=D.users.filter(u=>u.status==='active'&&STAFF.includes(u.role));
+ openForm({title:'Nouvelle tâche',fields:[
+  {name:'titre',label:'Tâche',required:true,placeholder:'Nettoyer le poulailler 2'},
+  {name:'description',label:'Détails',type:'textarea'},
+  {name:'who',label:'Pour',type:'select',value:'',options:[['',"Toute l'équipe"],...staff.map(u=>[u.id,`${u.nom} (${ROLES[u.role]})`])]},
+  {name:'echeance',label:'À faire avant le (facultatif)',type:'date'}],
+  onSubmit:async v=>{
+   const u=staff.find(x=>x.id===v.who);
+   await addDoc(collection(db,'taches'),{titre:v.titre,description:v.description,assigneUid:v.who,assigneNom:u?u.nom:'',echeance:v.echeance,statut:'a_faire',par:user.uid,parNom:me.nom,createdAt:serverTimestamp()});
+   logAct('Tâche créée',v.titre);closeModal();toast('Tâche créée');}});
+}
+async function tacheDone(id){
+ try{await updateDoc(doc(db,'taches',id),{statut:'fait',faitPar:user.uid,faitNom:me.nom,faitLe:serverTimestamp()});toast('Tâche terminée');}
+ catch(e){toast(errMsg(e),'err');}
+}
+function annonceForm(){
+ openForm({title:'Nouvelle annonce',intro:"Visible dans le résumé de chaque employé.",fields:[
+  {name:'titre',label:'Titre',required:true},
+  {name:'texte',label:'Message',type:'textarea',required:true}],
+  onSubmit:async v=>{await addDoc(collection(db,'annonces'),{titre:v.titre,texte:v.texte,uid:user.uid,par:me.nom,createdAt:serverTimestamp()});logAct('Annonce',v.titre);closeModal();toast('Annonce publiée');}});
+}
+function objectifForm(){
+ const m=today().slice(0,7),o=D.objectifs.find(x=>x.id===m);
+ openForm({title:'Objectifs de '+m.slice(5)+'/'+m.slice(0,4),fields:[
+  {name:'prod',label:'Production à atteindre (plateaux)',type:'number',required:true,value:o?Math.round(o.prod/PLAT):undefined},
+  {name:'ventes',label:'Ventes : montant à atteindre (FCFA)',type:'number',required:true,value:o?.ventes}],
+  onSubmit:async v=>{await setDoc(doc(db,'objectifs',m),{prod:v.prod*PLAT,ventes:v.ventes,par:me.nom,createdAt:serverTimestamp()});logAct('Objectifs du mois',m);closeModal();toast('Objectifs enregistrés');}});
+}
+function notifForm(){
+ openForm({title:'Destinataires des alertes',intro:"Le résumé du jour peut être envoyé en un clic par WhatsApp ou par email à ces coordonnées. Visibles par le PDG et le superviseur seulement.",fields:[
+  {name:'whatsapp',label:'Numéro WhatsApp',type:'tel',value:notifCfg.whatsapp,placeholder:'+229 …'},
+  {name:'email',label:'Email',type:'email',value:notifCfg.email}],
+  onSubmit:async v=>{await setDoc(doc(db,'reglages','notif'),{whatsapp:v.whatsapp,email:v.email});closeModal();toast('Destinataires enregistrés');}});
+}
+function resumeTexte(){
+ const t=today(),vj=D.ventes.filter(v=>v.type==='vente'&&v.date===t),A=computeAlerts();
+ return `${cfg.heroTitre} - Résumé du ${t.split('-').reverse().join('/')}\n• Bons œufs produits : ${oeufs(sum(D.prod.filter(p=>p.date===t),'bons'))}\n• Vendu : ${oeufs(sum(vj,'quantite'))} (${money(sum(vj,'montant'))})\n• Stock : ${oeufs(stock())}\n${A.length?'Alertes :\n'+A.map(a=>'- '+a[1]).join('\n'):'Aucune alerte.'}`;
+}
+function sendSummary(){
+ if(modalDone){modalDone(false);modalDone=null;}
+ const txt=resumeTexte(),wa=waNumber(notifCfg.whatsapp);
+ $('#mbox').className='mbox';
+ $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><h3>Résumé du jour</h3><pre style="white-space:pre-wrap;background:var(--vert-l);padding:12px;border-radius:10px;font:inherit;margin:12px 0">${esc(txt)}</pre><div class="row"><a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/${esc(wa)}?text=${encodeURIComponent(txt)}">Envoyer par WhatsApp</a><a class="btn line" href="mailto:${esc(notifCfg.email||'')}?subject=${encodeURIComponent(cfg.heroTitre+' - Résumé du jour')}&body=${encodeURIComponent(txt)}">Envoyer par email</a><button class="btn sm line" data-act="notif-cfg">⚙️ Destinataires</button></div>`;
+ showModal();
+}
+function pointageForm(){
+ const staff=D.users.filter(u=>u.status==='active'&&STAFF.includes(u.role)&&u.role!=='pdg');
+ if(!staff.length){toast('Aucun employé actif à pointer.','err');return;}
+ const t=today(),opts=Object.entries(PRES).map(([k,v])=>[k,v[0]]);
+ openForm({title:'Pointage',intro:'Indiquez la présence de chaque employé pour la date choisie.',submit:'Enregistrer le pointage',fields:[
+  {name:'date',label:'Date',type:'date',required:true,value:t},
+  ...staff.map(u=>({name:'p_'+u.id,label:`${u.nom} (${ROLES[u.role]})`,type:'select',value:(D.presences.find(p=>p.id===`${t}_${u.id}`)||{}).statut||'present',options:opts}))],
+  onSubmit:async v=>{
+   const b=writeBatch(db);
+   staff.forEach(u=>b.set(doc(db,'presences',`${v.date}_${u.id}`),{date:v.date,uid:u.id,nom:u.nom,statut:v['p_'+u.id],par:user.uid,createdAt:serverTimestamp()}));
+   await b.commit();logAct('Pointage',`${v.date} : ${staff.length} personnes`);closeModal();toast('Pointage enregistré');}});
+}
+function salaireForm(id){
+ const u=D.users.find(x=>x.id===id);if(!u)return;
+ openForm({title:'Salaire de '+u.nom,intro:`Par défaut : ${money(SALAIRE_DEFAUT[u.role]||0)} pour ${esc(ROLES[u.role])}.`,fields:[{name:'salaire',label:'Salaire mensuel (FCFA)',type:'number',required:true,value:salaireDe(u)}],
+  onSubmit:async v=>{await updateDoc(doc(db,'users',id),{salaire:v.salaire});logAct('Salaire modifié',`${u.nom} : ${v.salaire} FCFA`);closeModal();toast('Salaire enregistré');}});
+}
+async function payer(id){
+ const u=D.users.find(x=>x.id===id);if(!u)return;
+ const c=paieCalc(u,D.presences.filter(p=>p.uid===id&&(p.date||'').startsWith(curMonth)));
+ if(!await askConfirm(`Payer ${money(c.net)} à ${u.nom} pour ${curMonth.slice(5)}/${curMonth.slice(0,4)} ? (salaire ${money(c.base)}, retenue ${money(c.retenue)}). La dépense sera ajoutée automatiquement.`,'Payer'))return;
+ try{
+  const b=writeBatch(db);
+  b.set(doc(db,'paies',`${curMonth}_${id}`),{mois:curMonth,uid:id,nom:u.nom,base:c.base,absences:c.absents,retenue:c.retenue,net:c.net,payeLe:today(),parNom:me.nom,createdAt:serverTimestamp()});
+  b.set(doc(collection(db,'depenses')),{date:today(),libelle:`Salaire ${u.nom} ${curMonth}`,categorie:'Salaires',montant:c.net,createdBy:user.uid,createdAt:serverTimestamp()});
+  await b.commit();logAct('Salaire payé',`${u.nom} : ${c.net} FCFA (${curMonth})`);toast('Salaire payé et dépense enregistrée');
+ }catch(e){toast(errMsg(e),'err');}
+}
+function presDetail(id){
+ const u=D.users.find(x=>x.id===id);if(!u)return;
+ if(modalDone){modalDone(false);modalDone=null;}
+ const L=D.presences.filter(p=>p.uid===id&&(p.date||'').startsWith(curMonth)).sort(byDate).map(p=>`<tr><td>${dateFr(p.date)}</td><td>${badge(...(PRES[p.statut]||[p.statut,'']))}</td></tr>`);
+ $('#mbox').className='mbox';
+ $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><h3>${esc(u.nom)}</h3><p class="muted">Présences de ${curMonth.slice(5)}/${curMonth.slice(0,4)}</p>${table(['Date','Statut'],L)||'<p class="empty">Aucun pointage ce mois-ci.</p>'}`;
+ showModal();
+}
+function promoForm(id){
+ const p=id?promos.find(x=>x.id===id):null;
+ openForm({title:p?'Modifier la promotion':'Nouvelle promotion',fields:[
+  {name:'titre',label:'Titre',required:true,value:p?.titre,placeholder:'Prix de gros'},
+  {name:'prix',label:'Prix du plateau pendant la promotion (FCFA)',type:'number',required:true,value:p?.prix},
+  {name:'qteMin',label:'À partir de … plateaux',type:'number',required:true,value:p?.qteMin??1},
+  {name:'debut',label:'Début (facultatif)',type:'date',value:p?.debut},
+  {name:'fin',label:'Fin (facultatif)',type:'date',value:p?.fin},
+  {name:'description',label:'Description',type:'textarea',value:p?.description},
+  {name:'actif',label:'État',type:'select',value:p?.actif===false?'non':'oui',options:[['oui','Active'],['non','Désactivée']]}],
+  onSubmit:async v=>{
+   if(v.prix>=prixPl())throw new Error(`Le prix promotionnel doit être inférieur au prix normal du plateau (${money(prixPl())}).`);
+   const d={titre:v.titre,prix:v.prix,qteMin:Math.max(1,v.qteMin),debut:v.debut,fin:v.fin,description:v.description,actif:v.actif==='oui'};
+   if(p)await updateDoc(doc(db,'promos',id),d);else await addDoc(collection(db,'promos'),{...d,createdAt:serverTimestamp()});
+   logAct('Promotion',v.titre);closeModal();toast('Promotion enregistrée');}});
+}
+function promoBloc(){
+ if(!isAdmin())return '';
+ const t=today(),rows=promos.map(p=>{const on=p.actif!==false&&(!p.debut||p.debut<=t)&&(!p.fin||p.fin>=t);return `<tr><td><b>${esc(p.titre)}</b></td><td>${money(p.prix)}</td><td>${fmt(p.qteMin||1)}</td><td>${dateFr(p.debut)}</td><td>${dateFr(p.fin)}</td><td>${on?badge('En cours','green'):badge('Inactive','red')}</td><td><div class="row">${btnIf(true,'promo-edit','Modifier','line',p.id)}${btnIf(true,'promo-del','Supprimer','danger',p.id)}</div></td></tr>`;});
+ return `<div class="bloc"><div class="head"><div><h3>🏷️ Promotions</h3><p class="muted">Prix réduit à partir d'un nombre de plateaux. Appliqué automatiquement aux ventes et aux commandes, et affiché sur l'accueil.</p></div>${btnIf(true,'promo-add','＋ Nouvelle promotion')}</div>${table(['Titre','Prix du plateau (FCFA)','À partir de (plateaux)','Début','Fin','État',''],rows)||'<p class="empty">Aucune promotion.</p>'}</div>`;
+}
+function rapportHTML(m){
+ const P=D.prod.filter(p=>(p.date||'').startsWith(m)),V=D.ventes.filter(v=>v.type==='vente'&&(v.date||'').startsWith(m)),Dp=D.dep.filter(d=>(d.date||'').startsWith(m)),S=D.sante.filter(x=>(x.date||'').startsWith(m));
+ const ram=sum(P,'oeufsRamasses'),cas=sum(P,'casses'),bons=sum(P,'bons'),qv=sum(V,'quantite'),ca=sum(V,'montant'),dep=sum(Dp,'montant'),al=alimStats(m),morts=sum(S,'mortalite');
+ const jours=daysOfMonth(m),tx=jours.map(tauxJour).filter(x=>x!=null),tm=tx.length?tx.reduce((a,b)=>a+b,0)/tx.length:null;
+ const cats={};Dp.forEach(d=>{const k=d.categorie||'Autre';cats[k]=(cats[k]||0)+(d.montant||0);});
+ const cl={};V.forEach(v=>{const k=v.clientNom||'—';cl[k]=(cl[k]||0)+(v.montant||0);});
+ const top=Object.entries(cl).sort((a,b)=>b[1]-a[1]).slice(0,5),o=D.objectifs.find(x=>x.id===m);
+ const kv=a=>`<div class="kv">${a.map(([k,v])=>`<div>${esc(k)}</div><div><b>${v}</b></div>`).join('')}</div>`;
+ const visa=f=>{const v=D.visas.find(x=>x.id===`${f}_${m}`);return v?`${esc(v.nom)} (${dateFr(v.date)})`:'non visé';};
+ const pct=(r,t)=>t>0?` (${Math.round(r*100/t)} %)`:'';
+ const eff=D.lots.length?effectifTotal():(D.prod[0]?.effectif??0);
+ return `<div class="rapport"><h1>${esc(cfg.heroTitre)}</h1><p>Rapport mensuel : <b>${m.slice(5)}/${m.slice(0,4)}</b><br>Édité le ${dateFr(today())} par ${esc(me.nom)} (${esc(ROLES[me.role]||me.role)})</p>
+ <h2>Production</h2>${kv([['Œufs ramassés',oeufs(ram)],['Œufs cassés au poulailler',oeufs(cas)+(ram?` (${(cas*100/ram).toFixed(1)} %)`:'')],['Bons œufs',oeufs(bons)],['Taux de ponte moyen',tm==null?'–':tm.toFixed(1)+' %'],['Effectif actuel',fmt(eff)],['Mortalité du mois',fmt(morts)]])}
+ <h2>Ventes</h2>${kv([['Vendu',oeufs(qv)],["Chiffre d'affaires",money(ca)],['Prix moyen du plateau',qv?money(Math.round(ca/(qv/PLAT))):'–'],['Stock actuel',oeufs(stock())]])}
+ <h2>Dépenses et résultat</h2>${table(['Catégorie','Montant'],Object.entries(cats).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${money(v)}</td></tr>`))}${kv([['Total des dépenses',money(dep)],['Résultat (ventes − dépenses)',money(ca-dep)]])}
+ <h2>Alimentation</h2>${kv([['Aliment consommé',fmt(Math.round(al.kg))+' kg'],['Grammes par poule et par jour',al.gParPoule!=null?fmt(Math.round(al.gParPoule)):'–'],["Coût d'aliment",money(al.cout)],["Coût d'aliment par plateau",al.coutOeuf!=null?money(Math.round(al.coutOeuf*PLAT)):'–']])}
+ ${o?`<h2>Objectifs</h2>${kv([['Production',`${oeufs(bons)} / ${oeufs(o.prod||0)}${pct(bons,o.prod||0)}`],['Ventes',`${money(ca)} / ${money(o.ventes||0)}${pct(ca,o.ventes||0)}`]])}`:''}
+ <h2>Meilleurs clients du mois</h2>${table(['Client','Total acheté'],top.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${money(v)}</td></tr>`))||'<p>Aucune vente.</p>'}
+ <h2>Évolution du mois</h2>${chart({title:'Production et ventes par jour (en plateaux)',labels:jours.map(d=>d.slice(8)),series:[{name:'Plateaux produits',color:'#0a7a42',values:jours.map(d=>pl1(sum(P.filter(p=>p.date===d),'bons')))},{name:'Plateaux vendus',color:'#f5b82e',values:jours.map(d=>pl1(sum(V.filter(v=>v.date===d),'quantite')))}]})}
+ <h2>Visas du mois</h2>${kv([['Production',visa('production')],['Réception',visa('reception')],['Magasin',visa('magasin')]])}</div>`;
+}
+function showRapport(m){
+ lastRapport=m;if(modalDone){modalDone(false);modalDone=null;}
+ $('#mbox').className='mbox wide';
+ $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button>${rapportHTML(m)}<div class="row" style="margin-top:18px;justify-content:center"><button class="btn primary" data-act="print-rapport">🖨️ Imprimer / Enregistrer en PDF</button></div>`;
+ showModal();
+}
+function printRapport(){$('#printArea').innerHTML=rapportHTML(lastRapport);document.body.classList.add('print-receipt');setTimeout(()=>window.print(),60);}
+function rapportForm(){
+ openForm({title:'Rapport mensuel',intro:"Rapport prêt à imprimer. Pour obtenir un PDF, choisissez « Enregistrer au format PDF » dans la fenêtre d'impression.",submit:'Générer le rapport',fields:[{name:'mois',label:'Mois',type:'month',required:true,value:today().slice(0,7)}],
+  onSubmit:async v=>{
+   if(v.mois>today().slice(0,7))throw new Error("Ce mois n'est pas encore commencé.");
+   if(loadFrom&&v.mois<loadFrom.slice(0,7))throw new Error('Choisissez un mois des 6 derniers mois.');
+   closeModal();showRapport(v.mois);}});
+}
+Object.assign(EXP,{
+ aliment:()=>['aliment_'+curMonth,['Date','Aliment','Quantité (kg)','Coût (FCFA)','Lot','Remarque'],inMonth(D.aliment).sort(byDate).map(a=>[a.date,a.type,a.kg,a.cout,a.lotNom,a.note])],
+ vaccins:()=>['vaccins_traitements',['Date prévue','Type','Produit','Lot','État','Fait le','Notes'],D.vaccins.slice().sort(byDate).map(v=>[v.date,v.type,v.produit,v.lotNom||'Tous',v.statut==='fait'?'Fait':'Prévu',v.dateFait||'',v.notes])],
+ clients:()=>['clients',['Client','Téléphone','Achats','Œufs','Total acheté','Payé','Reste dû','Dernier achat'],clientsAgg().map(c=>[c.nom,c.tel,c.nb,oeufs(c.oeufs),c.total,c.paye,c.reste,c.dernier])],
+ equipe:()=>['equipe_'+curMonth,['Employé','Rôle','Salaire de base','Présent','Retards','Absences','Justifiées / congés','Retenue','Net à payer','Paiement'],equipeUsers().map(u=>{const c=paieCalc(u,D.presences.filter(p=>p.uid===u.id&&(p.date||'').startsWith(curMonth))),paid=D.paies.find(x=>x.id===`${curMonth}_${u.id}`);return [u.nom,ROLES[u.role]||u.role,c.base,c.presents,c.retards,c.absents,c.justifies,c.retenue,c.net,paid?'Payé le '+paid.payeLe:'À payer'];})]
+});
+
+const RESET_GROUPS={
+ ops:['production_journaliere','transfert_reception','ventes','paiements','commandes','visas'],
+ elevage:['sante','vaccins','aliment','lots'],
+ compta:['depenses','paies','presences'],
+ equipe:['taches','annonces','objectifs'],
+ journal:['journal'],
+ contenu:['avis','galerie','promos']
+};
+async function purge(cols){
+ let total=0;
+ for(const c of cols){
+  const snap=await getDocs(collection(db,c)),docs=snap.docs;
+  for(let i=0;i<docs.length;i+=400){const b=writeBatch(db);docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit();total+=Math.min(400,docs.length-i);}
+ }
+ return total;
+}
+function resetForm(){
+ if(!isSup())return;
+ openForm({title:'Remettre à zéro',intro:"⚠️ Supprime définitivement les enregistrements choisis (données d'essai). Les comptes, les rôles, les animaux, l'historique et les coordonnées sont conservés. Cette action est irréversible : faites d'abord une sauvegarde complète si besoin.",submit:'Supprimer définitivement',fields:[
+  {name:'scope',label:'Que faut-il effacer ?',type:'select',value:'tout',options:[
+   ['tout',"Toutes les données d'essai (sauf le contenu du site)"],
+   ['ops','Production, réceptions, stock, ventes, paiements, commandes, visas'],
+   ['elevage','Santé, vaccins, alimentation, lots de poules'],
+   ['compta','Dépenses, salaires payés, présences'],
+   ['equipe','Tâches, annonces, objectifs'],
+   ['journal',"Journal d'activité"],
+   ['contenu','Avis clients, galerie, promotions']]},
+  {name:'confirm',label:'Tapez EFFACER pour confirmer',required:true}],
+  onSubmit:async v=>{
+   if(v.confirm!=='EFFACER')throw new Error('Tapez exactement EFFACER pour confirmer.');
+   const R=RESET_GROUPS,cols=v.scope==='tout'?[...R.ops,...R.elevage,...R.compta,...R.equipe,...R.journal]:R[v.scope];
+   const n=await purge(cols),patch={};
+   if(cols.includes('ventes'))patch.stock=0;
+   if(cols.includes('production_journaliere')||cols.includes('lots'))patch.effectif=0;
+   if(Object.keys(patch).length)await setDoc(doc(db,'stats','public'),{...patch,updatedAt:serverTimestamp()},{merge:true});
+   logAct('Remise à zéro',`${v.scope} : ${n} enregistrement(s) supprimé(s)`);
+   closeModal();toast(`${n} enregistrement(s) supprimé(s). Le site est prêt à être utilisé.`);}});
+}
 /* ============ Gestion des clics ============ */
 const ACT={
  login:openLogin,register:openRegister,forgot:openForgot,
@@ -1229,7 +1708,17 @@ const ACT={
  'new-cmd':newCmd,'cmd-ok':id=>setCmd(id,'confirmee'),'cmd-no':id=>setCmd(id,'annulee'),'cmd-sell':cmdSell,
  'edit-profil':editProfil,'chg-pwd':chgPwd,'avis-form':avisForm,'avis-ok':id=>setAvis(id,'approved'),'avis-hide':id=>setAvis(id,'hidden'),'avis-del':id=>removeDoc('avis',id,'cet avis'),
  export:expo,backup,seuils,'add-person':addPerson,
- receipt:id=>{const v=D.ventes.find(x=>x.id===id);if(v)showReceipt(v);},'print-receipt':printReceipt,
+ receipt:id=>{const v=D.ventes.find(x=>x.id===id);if(v)showReceipt(v);},'print-receipt':printReceipt,reset:()=>resetForm(),
+ 'lot-add':()=>lotForm(),'lot-edit':lotForm,'lot-stat':lotStatut,'lot-del':id=>removeDoc('lots',id,'ce lot'),
+ 'alim-add':()=>alimForm(),'alim-del':id=>removeDoc('aliment',id,'cette ligne'),
+ 'vac-add':()=>vaccinForm(),'vac-done':vaccinDone,'vac-del':id=>removeDoc('vaccins',id,'ce vaccin'),
+ 'cli-detail':clientDetail,'cli-pay':encaisser,
+ 'tache-add':()=>tacheForm(),'tache-done':tacheDone,'tache-del':id=>removeDoc('taches',id,'cette tâche'),
+ 'annonce-add':()=>annonceForm(),'annonce-del':id=>removeDoc('annonces',id,'cette annonce'),
+ objectif:()=>objectifForm(),'notif-cfg':()=>notifForm(),'notif-on':enableNotif,'resume-send':sendSummary,rapport:()=>rapportForm(),'print-rapport':printRapport,
+ pointage:()=>pointageForm(),salaire:salaireForm,payer,'pres-detail':presDetail,
+ 'promo-add':()=>promoForm(),'promo-edit':promoForm,'promo-del':id=>removeDoc('promos',id,'cette promotion'),
+ lang:()=>toggleLang(),
  copy:async(id,t)=>{try{await navigator.clipboard.writeText(t.dataset.text);toast('Message copié');}catch(_){toast('Copie impossible : sélectionnez le texte à la main.','err');}}
 };
 document.addEventListener('click',e=>{
@@ -1241,12 +1730,61 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').classList.contains('hidden'))closeModal();});
 
-document.addEventListener('change',e=>{if(e.target.id==='mSel'&&e.target.value){curMonth=e.target.value;renderEspace();}});
+document.addEventListener('change',e=>{if(e.target.id==='mSel'&&e.target.value){curMonth=e.target.value;const f1=curMonth+'-01';if(loadFrom&&f1<loadFrom){loadFrom=f1;reloadPrivate();}renderEspace();}});
+/* ============ Anglais / Français ============ */
+const EN={"Absences": "Absences", "Absences non justifiées": "Unexcused absences", "Absent": "Absent", "Absent justifié": "Excused absence", "Accueil": "Home", "Accueil mis à jour": "Home page updated", "Accueil modifié": "Home page edited", "Accéder à mon espace": "Go to my space", "Achats": "Purchases", "Actif": "Active", "Actifs": "Active", "Action": "Action", "Action refusée par les règles de sécurité Firestore. Publiez les règles fournies (Firestore Database → Règles).": "Action refused by the Firestore security rules. Publish the rules provided (Firestore Database → Rules).", "Active": "Active", "Adresse": "Address", "Adresse Gmail": "Gmail address", "Adresse email invalide.": "Invalid email address.", "Adresse email ou mot de passe incorrect.": "Incorrect email address or password.", "Ajout de personne": "Person added", "Ajouter un animal": "Add an animal", "Ajouter une dépense": "Add an expense", "Ajouter une personne": "Add a person", "Ajouter une publication": "Add a post", "Ajouter une étape": "Add a step", "Ajouter {} au stock du magasin ?": "Add {} to the shop stock?", "Ajoutez au moins une photo ou un texte.": "Add at least a photo or a text.", "Ajoutez une photo, un texte, ou les deux. La publication apparaît sur la page d'accueil et dans la galerie.": "Add a photo, a text, or both. The post appears on the home page and in the gallery.", "Ajust.": "Adj.", "Ajustement": "Adjustment", "Ajustement du stock": "Stock adjustment", "Ajuster le stock": "Adjust stock", "Alerte casse au poulailler (% des œufs ramassés)": "Alert: breakage at the henhouse (% of eggs collected)", "Alerte mortalité : morts sur 7 jours (0 = désactivée)": "Mortality alert: deaths over 7 days (0 = off)", "Alerte quand le stock est inférieur ou égal à (plateaux)": "Alert when stock is less than or equal to (trays)", "Alerte taux de ponte inférieur à (%) (0 = désactivée)": "Alert when laying rate is below (%) (0 = off)", "Alertes :": "Alerts:", "Aliment": "Feed", "Aliment consommé": "Feed consumed", "Aliment donné chaque jour, avec le coût par œuf produit.": "Feed given each day, with the cost per egg produced.", "Aliment du jour": "Feed of the day", "Aliment du mois (kg)": "Feed this month (kg)", "Aliment enregistré": "Feed recorded", "Alimentation": "Feeding", "Animal enregistré": "Animal saved", "Animaux": "Animals", "Animaux élevés": "Animals we raise", "Annonce": "Announcement", "Annonce :": "Announcement:", "Annonce publiée": "Announcement published", "Annuler": "Cancel", "Annuler la commande": "Cancel the order", "Annuler la commande de {} ?": "Cancel the order of {}?", "Annulée": "Cancelled", "Apposer le visa": "Sign off", "Apposer mon visa pour ce mois": "Sign off for this month", "Apposer votre visa sur la fiche « {} » du mois {} ? Il ne pourra plus être modifié.": "Sign off the “{}” sheet for {}? It can no longer be changed.", "Arrivée": "Arrival", "Aucun aliment enregistré ce mois-ci.": "No feed recorded this month.", "Aucun avis pour le moment. Soyez le premier à partager votre expérience.": "No reviews yet. Be the first to share your experience.", "Aucun avis reçu.": "No reviews received.", "Aucun compte avec cette adresse.": "No account with this address.", "Aucun employé actif à pointer.": "No active employee to check in.", "Aucun employé actif.": "No active employee.", "Aucun inscrit dans cette catégorie.": "No member in this category.", "Aucun lot en attente.": "No batch waiting.", "Aucun lot enregistré. Ajoutez vos bandes de poules pour suivre leur effectif.": "No flock recorded. Add your hen flocks to track their numbers.", "Aucun lot à mettre en stock.": "No batch to put in stock.", "Aucun mouvement ce mois-ci.": "No movement this month.", "Aucun mouvement.": "No movement.", "Aucun objectif défini pour ce mois.": "No target set for this month.", "Aucun paiement enregistré après la vente.": "No payment recorded after the sale.", "Aucun pointage ce mois-ci.": "No attendance recorded this month.", "Aucun suivi enregistré.": "No follow-up recorded.", "Aucun vaccin ou traitement programmé.": "No vaccine or treatment scheduled.", "Aucune activité enregistrée.": "No activity recorded.", "Aucune alerte : tout est en ordre.": "No alerts: everything is in order.", "Aucune alerte.": "No alerts.", "Aucune annonce.": "No announcements.", "Aucune commande en cours.": "No order in progress.", "Aucune commande.": "No orders.", "Aucune dépense enregistrée.": "No expense recorded.", "Aucune production ce mois-ci.": "No production this month.", "Aucune production n'a encore été enregistrée aujourd'hui.": "No production has been recorded yet today.", "Aucune promotion.": "No promotions.", "Aucune publication pour l'instant.": "No posts yet.", "Aucune publication pour l'instant. Ajoutez des photos et des textes : ils défileront ici, sur la page d'accueil.": "No posts yet. Add photos and texts: they will scroll here, on the home page.", "Aucune réception ce mois-ci.": "No reception this month.", "Aucune tâche.": "No tasks.", "Aucune vente enregistrée.": "No sales recorded.", "Aucune vente.": "No sales.", "Aujourd'hui": "Today", "Autre": "Other", "Avis client": "Customer review", "Avis des clients": "Customer reviews", "Avis masqué": "Review hidden", "Avis publié": "Review published", "Bande 1": "Flock 1", "Bientôt": "Soon", "Bienvenue ! Votre profil est créé.": "Welcome! Your profile is created.", "Bonjour {}": "Hello {}", "Bonjour {}. Vous avez demandé le rôle": "Hello {}. You requested the role", ". Le PDG ou le superviseur doit le valider. Cette page se met à jour automatiquement.": ". The CEO or the supervisor must approve it. This page updates automatically.", "Bons disponibles": "Good eggs available", "Bons disponibles (ramassés − cassés)": "Good eggs available (collected − broken)", "Bons transférés": "Good eggs transferred", "Bons transférés (reçus − cassés)": "Good eggs transferred (received − broken)", "Bons œufs": "Good eggs", "Bons œufs produits": "Good eggs produced", "Bons œufs produits aujourd'hui": "Good eggs produced today", "Calcul du mois": "Monthly total", "Calendrier géré par le vétérinaire. Une alerte apparaît avant chaque échéance.": "Schedule managed by the vet. An alert appears before each due date.", "Casse au magasin": "Breakage in the shop", "Casse enregistrée": "Breakage recorded", "Casse élevée au poulailler aujourd'hui : {} % (seuil : {} %).": "High breakage at the henhouse today: {} % (threshold: {} %).", "Cassés": "Broken", "Cassés au magasin": "Broken in shop", "Cassés au poulailler": "Broken at henhouse", "Cassés à la réception": "Broken at reception", "Catégorie": "Category", "Ce compte est désactivé.": "This account is disabled.", "Ce lot a déjà été réceptionné.": "This batch has already been received.", "Ce lot est déjà en stock.": "This batch is already in stock.", "Ce mois n'est pas encore commencé.": "This month has not started yet.", "Ce navigateur ne gère pas les notifications.": "This browser does not support notifications.", "Ce que disent nos clients": "What our customers say", "Ce site n'est pas autorisé dans Firebase (Authentication → Paramètres → Domaines autorisés).": "This site is not authorized in Firebase (Authentication → Settings → Authorized domains).", "Ce site nécessite JavaScript pour fonctionner.": "This site requires JavaScript to work.", "Cette adresse est déjà utilisée. Cliquez sur Connexion.": "This address is already in use. Click Log in.", "Changer le rôle": "Change role", "Changer mon mot de passe": "Change my password", "Chaque bande est suivie séparément : arrivée, âge, mortalité, effectif actuel.": "Each flock is tracked separately: arrival, age, mortality, current numbers.", "Chargement des clients…": "Loading customers…", "Chargement…": "Loading…", "Chiffre d'affaires": "Revenue", "Choisissez la date de l'événement. Pour une période, ajoutez aussi une date de fin.": "Choose the date of the event. For a period, also add an end date.", "Choisissez un mois des 6 derniers mois.": "Choose a month from the last 6 months.", "Choisissez une date à partir d'aujourd'hui.": "Choose a date from today onwards.", "Client": "Customer", "Client / destination": "Customer / destination", "Client / motif": "Customer / reason", "Clients": "Customers", "Clients débiteurs": "Customers owing money", "Commande": "Order", "Commande envoyée. La ferme vous contactera.": "Order sent. The farm will contact you.", "Commande mise à jour": "Order updated", "Commandes des clients": "Customer orders", "Commentaire trop long (500 caractères maximum).": "Comment too long (500 characters maximum).", "Compte activé": "Account activated", "Compte créé ✅": "Account created ✅", "Compte en attente de validation": "Account awaiting approval", "Compte réactivé": "Account reactivated", "Compte suspendu": "Account suspended", "Confirmation": "Confirmation", "Confirmer": "Confirm", "Confirmer le nouveau mot de passe": "Confirm the new password", "Confirmez la commande, puis cliquez sur « Livrer et vendre » : le stock et le reçu sont gérés automatiquement.": "Confirm the order, then click “Deliver and sell”: stock and receipt are handled automatically.", "Confirmée": "Confirmed", "Congé": "Leave", "Connectez-vous pour accéder à votre espace.": "Log in to access your space.", "Connexion": "Log in", "Construites à partir des ventes. Une vente payée en partie crée un crédit à encaisser ici.": "Built from sales. A partly paid sale creates a credit to collect here.", "Contact": "Contact", "Contenu d'exemple affiché aux visiteurs.": "Sample content shown to visitors.", "Contrôle : œufs reçus − œufs cassés = œufs transférés. Le nombre « reçus » doit être identique aux « bons disponibles » de la fiche de production.": "Check: eggs received − eggs broken = eggs transferred. The “received” number must match the “good eggs available” on the production sheet.", "Coordonnées et réseaux sociaux": "Contact details and social media", "Coordonnées mises à jour": "Contact details updated", "Coordonnées modifiées": "Contact details edited", "Copie impossible : sélectionnez le texte à la main.": "Copy failed: select the text by hand.", "Coût": "Cost", "Coût (FCFA)": "Cost (FCFA)", "Coût d'aliment": "Feed cost", "Coût d'aliment du mois": "Feed cost this month", "Coût d'aliment par plateau": "Feed cost per tray", "Coût estimé (FCFA, facultatif)": "Estimated cost (FCFA, optional)", "Croissance": "Growth", "Créances en cours": "Outstanding credits", "Créer le compte": "Create the account", "Créer mon profil": "Create my profile", "Date": "Date", "Date (ou début)": "Date (or start)", "Date : {}": "Date: {}", "Date d'arrivée": "Arrival date", "Date de fin (facultatif)": "End date (optional)", "Date et heure": "Date and time", "Date prévue": "Planned date", "Date souhaitée": "Requested date", "Dernier achat": "Last purchase", "Des pintades élevées en plein air, appréciées pour leur viande.": "Free-range guinea fowl, appreciated for their meat.", "Des poulets élevés pour la consommation de viande.": "Chickens raised for meat.", "Description": "Description", "Destinataires des alertes": "Alert recipients", "Destinataires enregistrés": "Recipients saved", "Dogbo, Bénin": "Dogbo, Benin", "Donnez des tâches à l'équipe. Chacun les coche quand elles sont faites.": "Give tasks to the team. Everyone ticks them when done.", "Début": "Start", "Début (facultatif)": "Start (optional)", "Déconnecté": "Logged out", "Déconnexion": "Log out", "Définir les objectifs": "Set targets", "Déjà un compte ?": "Already have an account?", "Démarrage": "Starter", "Dépense": "Expense", "Dépense enregistrée": "Expense recorded", "Dépenses": "Expenses", "Dépenses du mois": "Expenses this month", "Dépenses et résultat": "Expenses and result", "Désactivée": "Disabled", "Détail": "Details", "Détail des mouvements du mois": "Movements of the month", "Détails": "Details", "Développement de l'élevage": "Growing the farm", "Effectif actuel": "Current numbers", "Effectif à l'arrivée": "Numbers on arrival", "Email": "Email", "Employé": "Employee", "Employés": "Employees", "En attente": "Pending", "En attente de validation": "Awaiting approval", "En cours": "In progress", "En retard": "Late", "En stock": "In stock", "Encaisser": "Collect payment", "Encaisser :": "Collect payment:", "Enregistrer ces exemples pour les modifier": "Save these examples to edit them", "Enregistrer et activer": "Save and activate", "Enregistrer le paiement": "Save the payment", "Enregistrer le pointage": "Save attendance", "Enregistrer une vente": "Record a sale", "Entretien": "Maintenance", "Entrée": "Entry", "Entrée du jour": "Entry of the day", "Envoyer la commande": "Send the order", "Envoyer le lien": "Send the link", "Envoyer mon avis": "Send my review", "Envoyer par WhatsApp": "Send via WhatsApp", "Envoyer par email": "Send by email", "Erreur ({})": "Error ({})", "Espace équipe": "Team area", "Espèces": "Cash", "Exemples enregistrés": "Examples saved", "Exemples enregistrés. Vous pouvez maintenant les modifier.": "Examples saved. You can now edit them.", "Export": "Export", "Facebook": "Facebook", "Fait": "Done", "Fait le": "Done on", "Fait. Prochaine échéance dans {} jours.": "Done. Next due date in {} days.", "Ferme d'élevage à Dogbo": "Livestock farm in Dogbo", "Ferme d'élevage à Dogbo. Des œufs frais, un élevage suivi au quotidien.": "Livestock farm in Dogbo. Fresh eggs, farming followed day by day.", "Fiche de stock et vente journalière": "Daily stock and sales sheet", "Fiche de transfert": "Transfer sheet", "Fiche journalière de production": "Daily production sheet", "Fiches clients": "Customer records", "Fichier téléchargé": "File downloaded", "Fin": "End", "Fin (facultatif)": "End (optional)", "Firestore ne répond pas. Vérifiez qu'une base Firestore Database existe dans votre projet Firebase et que les règles sont publiées.": "Firestore is not responding. Check that a Firestore Database exists in your Firebase project and that the rules are published.", "Galerie": "Gallery", "Garder la photo actuelle": "Keep the current photo", "Gestion des inscrits": "Member management", "Grammes par poule et par jour": "Grams per hen per day", "Générer le rapport": "Generate the report", "Historique modifié": "History edited", "Horaires": "Opening hours", "Icône (un emoji, affichée s'il n'y a pas de photo)": "Icon (an emoji, shown when there is no photo)", "Impossible de charger le contenu du site. Vérifiez les règles Firestore.": "Unable to load the site content. Check the Firestore rules.", "Inactive": "Inactive", "Indiquez au moins une unité cassée.": "Enter at least one broken unit.", "Indiquez la présence de chaque employé pour la date choisie.": "Mark each employee's attendance for the chosen date.", "Indiquez les œufs ramassés (plateaux et/ou unités).": "Enter the eggs collected (trays and/or units).", "Indiquez un montant supérieur à 0.": "Enter an amount greater than 0.", "Indiquez un nombre entier de plateaux (1 minimum).": "Enter a whole number of trays (1 minimum).", "Indiquez une quantité supérieure à 0.": "Enter a quantity greater than 0.", "Inventaire du …": "Stocktake of …", "Je suis": "I am", "Journal d'activité": "Activity log", "Jours présents": "Days present", "Jusqu'au {}.": "Until {}.", "Justifiées / congés": "Excused / leave", "L'effectif augmente et l'équipe s'organise : production, réception, magasin et suivi vétérinaire.": "The flock grows and the team organizes itself: production, reception, shop and veterinary follow-up.", "LA JUSTICE DE DIEU": "LA JUSTICE DE DIEU", "La Justice de Dieu démarre à Dogbo avec l'envie d'élever des animaux dans de bonnes conditions.": "La Justice de Dieu starts in Dogbo with the wish to raise animals in good conditions.", "La Justice de Dieu est une ferme d'élevage située à Dogbo. Nous élevons des volailles avec soin et fournissons des œufs frais à nos clients.\nChaque jour, notre équipe enregistre la production, la réception, le stock et la santé des animaux.": "La Justice de Dieu is a livestock farm in Dogbo. We raise poultry with care and supply fresh eggs to our customers.\nEvery day, our team records production, reception, stock and the health of the animals.", "La Justice de Dieu — Ferme d'élevage à Dogbo": "La Justice de Dieu — Livestock farm in Dogbo", "La connexion par email n'est pas activée dans Firebase (Authentication → Méthode de connexion).": "Email sign-in is not enabled in Firebase (Authentication → Sign-in method).", "La date de fin doit être après la date de début.": "The end date must be after the start date.", "La ferme": "The farm", "La ferme confirmera votre commande.": "The farm will confirm your order.", "Laisser un avis": "Leave a review", "Laissez vide si le client paie la totalité. Sinon, le reste est enregistré comme crédit.": "Leave empty if the customer pays in full. Otherwise the rest is recorded as credit.", "Language / Langue": "Language / Langue", "Le compte est créé directement et activé. La personne se connecte sans s'inscrire, avec le mot de passe temporaire que vous lui transmettrez.": "The account is created and activated directly. The person logs in without signing up, using the temporary password you give them.", "Le lien Facebook doit commencer par https://": "The Facebook link must start with https://", "Le montant dépasse le reste dû ({}).": "The amount exceeds the balance due ({}).", "Le montant payé dépasse le total de la vente.": "The amount paid exceeds the sale total.", "Le nombre d'œufs disponibles affiché ici change à chaque vente.": "The number of eggs available shown here changes with every sale.", "Le nombre reçu ({}) diffère du lot annoncé ({}). Expliquez l'écart dans les observations.": "The number received ({}) differs from the announced batch ({}). Explain the gap in the notes.", "Le poste « {} » est déjà attribué.": "The “{}” position is already filled.", "Le poste « {} » est déjà attribué. Choisissez un autre rôle.": "The “{}” position is already filled. Choose another role.", "Le poste « {} » est déjà occupé par {}.": "The “{}” position is already held by {}.", "Le poulailler annonce": "The henhouse announces", "Le prix promotionnel doit être inférieur au prix normal du plateau ({}).": "The promotional price must be lower than the normal tray price ({}).", "Le résumé affiche une alerte quand un seuil est atteint.": "The summary shows an alert when a threshold is reached.", "Le résumé du jour peut être envoyé en un clic par WhatsApp ou par email à ces coordonnées. Visibles par le PDG et le superviseur seulement.": "The daily summary can be sent in one click by WhatsApp or email to these contacts. Visible to the CEO and the supervisor only.", "Le stock est vide.": "The stock is empty.", "Les avis publiés s'affichent sur la page d'accueil.": "Published reviews appear on the home page.", "Les deux mots de passe ne sont pas identiques.": "The two passwords are not identical.", "Les espèces que nous élevons à Dogbo.": "The species we raise in Dogbo.", "Les grandes étapes de la ferme La Justice de Dieu.": "The key steps of La Justice de Dieu farm.", "Les œufs cassés dépassent les œufs ramassés.": "Broken eggs exceed eggs collected.", "Les œufs cassés dépassent les œufs reçus.": "Broken eggs exceed eggs received.", "Les œufs ramassés, cassés et réceptionnés sont enregistrés par l'équipe.": "Eggs collected, broken and received are recorded by the team.", "Libellé": "Description", "Libre": "Vacant", "Lien de la page Facebook": "Facebook page link", "Lien envoyé. Vérifiez votre boîte mail (et les spams).": "Link sent. Check your inbox (and spam).", "Livraison": "Delivery", "Livrer et vendre": "Deliver and sell", "Livrée": "Delivered", "Lot": "Flock", "Lot ajouté au stock": "Batch added to stock", "Lot concerné": "Flock concerned", "Lot de poules": "Hen flock", "Lot du": "Batch of", "Lot du {} : {} reçus, {} cassés": "Batch of {}: {} received, {} broken", "Lot enregistré": "Flock saved", "Lot mis à jour": "Flock updated", "Lot réactivé": "Flock reactivated", "Lot réceptionné et transféré au magasin": "Batch received and transferred to the shop", "Lot réformé": "Flock culled", "Lots de poules": "Hen flocks", "Lots à mettre en stock": "Batches to put in stock", "Lots à réceptionner": "Batches to receive", "Lundi – Samedi : 7h – 18h": "Monday – Saturday: 7am – 6pm", "Ma note": "My rating", "Ma présence et mon salaire": "My attendance and salary", "Magasin": "Shop", "Magasinière": "Storekeeper", "Marquer comme fait": "Mark as done", "Marquer le lot « {} » comme réformé ? Il ne sera plus compté dans l'effectif.": "Mark the flock “{}” as culled? It will no longer count in the numbers.", "Marquer « {} » comme fait aujourd'hui ?": "Mark “{}” as done today?", "Marqué comme fait": "Marked as done", "Masquer": "Hide", "Masqué": "Hidden", "Masse salariale du mois": "Payroll this month", "Meilleur client": "Best customer", "Meilleurs clients du mois": "Best customers of the month", "Merci ! Votre avis sera publié après validation.": "Thank you! Your review will be published after approval.", "Merci pour votre confiance !": "Thank you for your trust!", "Mes commandes": "My orders", "Mes informations": "My information", "Message": "Message", "Message copié": "Message copied", "Mettre en stock": "Put in stock", "Mise en stock": "Put in stock", "Mobile Money MTN": "Mobile Money MTN", "Mobile Money Moov": "Mobile Money Moov", "Mode": "Method", "Mode de paiement": "Payment method", "Mode de remise": "Handover method", "Modifier": "Edit", "Modifier l'accueil": "Edit the home page", "Modifier l'animal": "Edit the animal", "Modifier l'étape": "Edit the step", "Modifier la promotion": "Edit the promotion", "Modifier la publication": "Edit the post", "Modifier le lot": "Edit the flock", "Modifier le mot de passe": "Change the password", "Modifier mon avis": "Edit my review", "Mois": "Month", "Mois :": "Month:", "Mon avis sur la ferme": "My review of the farm", "Mon commentaire": "My comment", "Mon espace": "My space", "Mon espace{}": "My space{}", "Montant": "Amount", "Montant (FCFA)": "Amount (FCFA)", "Montant estimé": "Estimated amount", "Montant payé maintenant (FCFA)": "Amount paid now (FCFA)", "Montant reçu (FCFA)": "Amount received (FCFA)", "Montant total vendu": "Total amount sold", "Montant vendu": "Amount sold", "Mortalité": "Mortality", "Mortalité du mois": "Mortality this month", "Mortalité et observations.": "Mortality and observations.", "Mortalité élevée : {} poules mortes sur les 7 derniers jours (seuil : {}).": "High mortality: {} hens dead over the last 7 days (threshold: {}).", "Morts": "Deaths", "Morts cumulés": "Total deaths", "Mot de passe": "Password", "Mot de passe actuel": "Current password", "Mot de passe incorrect.": "Incorrect password.", "Mot de passe modifié": "Password changed", "Mot de passe oublié": "Forgot password", "Mot de passe oublié ?": "Forgot password?", "Mot de passe temporaire": "Temporary password", "Mot de passe trop court (6 caractères minimum).": "Password too short (6 characters minimum).", "Motif": "Reason", "Médicaments et vaccins": "Medicines and vaccines", "Naissance du projet": "Birth of the project", "Navigation principale": "Main navigation", "Net à payer": "Net to pay", "Net à percevoir": "Net to receive", "Nettoyer le poulailler 2": "Clean henhouse 2", "Nom": "Name", "Nom complet": "Full name", "Nom de l'animal": "Animal name", "Nom du client / destination": "Customer name / destination", "Nom du lot": "Flock name", "Nom du vaccin ou du médicament": "Name of the vaccine or medicine", "Nombre d'animaux (facultatif)": "Number of animals (optional)", "Nombre de morts": "Number of deaths", "Nombre de plateaux": "Number of trays", "Nombre de plateaux vendus": "Number of trays sold", "Nombre de poules": "Number of hens", "Non publié": "Not published", "Non renseigné": "Not provided", "Nos animaux": "Our animals", "Nos coordonnées": "Our contact details", "Notes": "Notes", "Notez les œufs ramassés en plateaux et en unités (1 plateau = 30 unités). Ils seront envoyés à la réception.": "Record the eggs collected in trays and units (1 tray = 30 units). They will be sent to reception.", "Notification": "Notification", "Notifications activées : vous serez alerté tant que le site est ouvert.": "Notifications enabled: you will be alerted while the site is open.", "Notifications refusées dans le navigateur.": "Notifications refused in the browser.", "Notre historique": "Our history", "Notre vétérinaire note la mortalité et les soins au quotidien.": "Our vet records mortality and care every day.", "Notre élevage principal : des poules pondeuses suivies chaque jour pour fournir des œufs frais.": "Our main flock: laying hens followed every day to supply fresh eggs.", "Nous contacter": "Contact us", "Nous vous envoyons un lien pour choisir un nouveau mot de passe.": "We will send you a link to choose a new password.", "Nouveau lot de poules": "New hen flock", "Nouveau mot de passe": "New password", "Nouveau stock : {} ({})": "New stock: {} ({})", "Nouvel avis client": "New customer review", "Nouvelle": "New", "Nouvelle annonce": "New announcement", "Nouvelle commande": "New order", "Nouvelle inscription": "New sign-up", "Nouvelle photo (facultatif)": "New photo (optional)", "Nouvelle promotion": "New promotion", "Nouvelle tâche": "New task", "Numéro WhatsApp": "WhatsApp number", "Numéro WhatsApp (si différent)": "WhatsApp number (if different)", "Numéro de téléphone": "Phone number", "Objectifs": "Targets", "Objectifs de": "Targets for", "Objectifs du mois": "Targets of the month", "Objectifs enregistrés": "Targets saved", "Observation": "Note", "Observations": "Notes", "Observations (mortalité, aliment)": "Notes (mortality, feed)", "Observations, soins, vaccins": "Notes, care, vaccines", "On vend uniquement par plateau entier.": "We only sell whole trays.", "Outils": "Tools", "Ouvrir le menu": "Open the menu", "PDG": "CEO", "Paiement": "Payment", "Paiement client": "Customer payment", "Paiement du mois : en attente": "Payment for the month: pending", "Paiement enregistré": "Payment recorded", "Paiements reçus après la vente": "Payments received after the sale", "Par": "By", "Par défaut : {} pour {}.": "Default: {} for {}.", "Pas de connexion internet. Réessayez.": "No internet connection. Try again.", "Pas encore de compte ?": "No account yet?", "Passer une commande": "Place an order", "Payer": "Pay", "Payer {} à {} pour {}/{} ? (salaire {}, retenue {}). La dépense sera ajoutée automatiquement.": "Pay {} to {} for {}/{}? (salary {}, deduction {}). The expense will be added automatically.", "Payé": "Paid", "Payé le": "Paid on", "Payé à la vente": "Paid at the sale", "Personne": "Person", "Photo": "Photo", "Photo (facultatif)": "Photo (optional)", "Photo actuelle": "Current photo", "Photo de la ferme": "Farm photo", "Photos et nouvelles de la ferme.": "Photos and news from the farm.", "Pintades": "Guinea fowl", "Planifié": "Scheduled", "Plateaux disponibles aujourd'hui": "Trays available today", "Plateaux produits": "Trays produced", "Plateaux vendus": "Trays sold", "Pointage": "Attendance", "Pointage enregistré": "Attendance saved", "Ponte": "Laying", "Postes du personnel": "Staff positions", "Poulailler → Réception. Rempli par le Superviseur Général.": "Henhouse → Reception. Filled in by the General Supervisor.", "Poules": "Hens", "Poules pondeuses": "Laying hens", "Poules présentes": "Hens present", "Poulets de chair": "Broiler chickens", "Pour": "For", "Pour : {}{}{}{}": "For: {}{}{}{}", "Prix : {} le plateau (1 plateau = 30 œufs).": "Price: {} per tray (1 tray = 30 eggs).", "Prix actuel :": "Current price:", "Prix actuel : {} le plateau. On vend par plateau entier.": "Current price: {} per tray. We sell whole trays only.", "Prix de gros": "Wholesale price", "Prix du plateau": "Tray price", "Prix du plateau (FCFA)": "Tray price (FCFA)", "Prix du plateau pendant la promotion (FCFA)": "Tray price during the promotion (FCFA)", "Prix mis à jour": "Price updated", "Prix moyen du plateau": "Average tray price", "Prix par défaut d'un plateau de 30 œufs.": "Default price of a tray of 30 eggs.", "Prix réduit à partir d'un nombre de plateaux. Appliqué automatiquement aux ventes et aux commandes, et affiché sur l'accueil.": "Reduced price from a number of trays. Applied automatically to sales and orders, and shown on the home page.", "Prix unitaire": "Unit price", "Production": "Production", "Production (bons œufs)": "Production (good eggs)", "Production du jour": "Production of the day", "Production enregistrée": "Production recorded", "Production et ventes par jour (en plateaux)": "Production and sales per day (in trays)", "Production et ventes sur 30 jours (en plateaux)": "Production and sales over 30 days (in trays)", "Production suivie chaque jour": "Production followed every day", "Production à atteindre (plateaux)": "Production target (trays)", "Produit": "Product", "Profil créé. Un administrateur doit valider votre rôle.": "Profile created. An administrator must approve your role.", "Profil introuvable": "Profile not found", "Profil mis à jour": "Profile updated", "Profil {} créé et activé.": "{} profile created and activated.", "Programmer un vaccin ou un traitement": "Schedule a vaccine or treatment", "Programmé": "Scheduled", "Promotion": "Promotion", "Promotion enregistrée": "Promotion saved", "Promotions": "Promotions", "Précisions": "Details", "Précisions (adresse de livraison, remarque)": "Details (delivery address, remark)", "Présences de {}/{}": "Attendance for {}/{}", "Présences et salaires": "Attendance and salaries", "Présent": "Present", "Présentation de la ferme": "About the farm", "Prévu": "Planned", "Publication": "Post", "Publication enregistrée": "Post saved", "Publier": "Publish", "Publié": "Published", "Quantité": "Quantity", "Quantité (kg)": "Quantity (kg)", "Quantité d'aliment donnée (kg)": "Quantity of feed given (kg)", "Qui a fait quoi, et quand (200 dernières actions).": "Who did what, and when (last 200 actions).", "REÇU N° {}": "RECEIPT NO. {}", "Race ou type (facultatif)": "Breed or type (optional)", "Rappel WhatsApp": "WhatsApp reminder", "Rapport mensuel": "Monthly report", "Rapport mensuel :": "Monthly report:", "Rapport prêt à imprimer. Pour obtenir un PDF, choisissez « Enregistrer au format PDF » dans la fenêtre d'impression.": "Report ready to print. To get a PDF, choose “Save as PDF” in the print window.", "Reconnectez-vous puis réessayez.": "Log in again and try again.", "Refuser": "Decline", "Remarque": "Remark", "Remplacer la photo (facultatif)": "Replace the photo (optional)", "Reste du jour": "Rest of the day", "Reste dû": "Balance due", "Reste dû :": "Balance due:", "Reste à payer": "Balance to pay", "Retard": "Late", "Retards": "Late arrivals", "Retenue": "Deduction", "Retrait à la ferme": "Pick-up at the farm", "Retrouvez nos coordonnées sur la page Contact.": "Find our contact details on the Contact page.", "Reçu": "Receipt", "Reçu de vente": "Sales receipt", "Reçu {}": "Receipt {}", "Réactiver": "Reactivate", "Réactiver le compte de {} ?": "Reactivate the account of {}?", "Réactiver le lot « {} » ?": "Reactivate the flock “{}”?", "Réception": "Reception", "Réception → Magasin. Rempli par la Réceptionniste.": "Reception → Shop. Filled in by the Receptionist.", "Réceptionner": "Receive", "Réceptionner le lot du": "Receive the batch of", "Réceptionniste": "Receptionist", "Réceptionné": "Received", "Réformer": "Cull", "Réformé": "Culled", "Référence": "Reference", "Référence de la transaction (facultatif)": "Transaction reference (optional)", "Répéter tous les … jours (facultatif)": "Repeat every … days (optional)", "Réseaux sociaux": "Social media", "Résultat (ventes − dépenses)": "Result (sales − expenses)", "Résultat du mois (ventes − dépenses)": "Result of the month (sales − expenses)", "Résumé du jour": "Summary of the day", "Rôle": "Role", "Rôle accordé": "Role granted", "Rôle actuel : {}{}": "Current role: {}{}", "Rôle demandé": "Role requested", "Rôle demandé : {}": "Role requested: {}", "Sacs d'aliment": "Feed bags", "Saisi par": "Entered by", "Salaire": "Salary", "Salaire de": "Salary of", "Salaire de base": "Base salary", "Salaire enregistré": "Salary saved", "Salaire mensuel (FCFA)": "Monthly salary (FCFA)", "Salaire modifié": "Salary changed", "Salaire par défaut : 36 000 FCFA pour le superviseur, 30 000 FCFA pour les autres employés. Retenue = salaire ÷ {} jours × absences non justifiées.": "Default salary: 36,000 FCFA for the supervisor, 30,000 FCFA for the other employees. Deduction = salary ÷ {} days × unexcused absences.", "Salaire payé": "Salary paid", "Salaire payé et dépense enregistrée": "Salary paid and expense recorded", "Salaire {} {}": "Salary {} {}", "Salaires": "Salaries", "Santé des animaux contrôlée": "Animal health monitored", "Sauvegarde complète": "Full backup", "Sauvegarde téléchargée": "Backup downloaded", "Se déconnecter": "Log out", "Secrétaire général": "General Secretary", "Servi par {}": "Served by {}", "Seuils d'alerte": "Alert thresholds", "Seuils d'alerte enregistrés": "Alert thresholds saved", "Seuils d'alerte modifiés": "Alert thresholds edited", "Soldé": "Settled", "Souhaitée le": "Requested for", "Sous-titre": "Subtitle", "Stagiaire": "Intern", "Statut": "Status", "Stock actuel": "Current stock", "Stock actuel :": "Current stock:", "Stock ajusté": "Stock adjusted", "Stock bas : {} (seuil d'alerte : {}).": "Low stock: {} (alert threshold: {}).", "Stock disponible": "Stock available", "Stock disponible :": "Stock available:", "Stock insuffisant : {} disponibles.": "Insufficient stock: {} available.", "Stock mis à jour en temps réel": "Stock updated in real time", "Stock réel compté": "Actual stock counted", "Stock total": "Total stock", "Stock total = veille + entrée du jour. Reste du jour = stock total − vendus − cassés. Le reste du jour devient le stock veille du lendemain.": "Total stock = previous day + today's entry. Rest of the day = total stock − sold − broken. The rest of the day becomes the next day's opening stock.", "Stock total disponible": "Total stock available", "Stock veille": "Opening stock", "Suivi enregistré": "Follow-up saved", "Suivi vétérinaire": "Veterinary follow-up", "Superviseur": "Supervisor", "Superviseur général": "General Supervisor", "Suppression": "Deletion", "Supprimer": "Delete", "Supprimer la photo": "Remove the photo", "Supprimer {} ? Cette action est définitive.": "Delete {}? This action is permanent.", "Supprimé": "Deleted", "Suspendre": "Suspend", "Suspendre {} ? Cette personne ne pourra plus accéder à son espace{}.": "Suspend {}? This person will no longer be able to access their space{}.", "Suspendu": "Suspended", "Suspendus": "Suspended", "TOTAL": "TOTAL", "Taux de ponte": "Laying rate", "Taux de ponte aujourd'hui": "Laying rate today", "Taux de ponte bas aujourd'hui : {} % (seuil : {} %).": "Low laying rate today: {} % (threshold: {} %).", "Taux de ponte moyen": "Average laying rate", "Taux de ponte sur 30 jours (en %)": "Laying rate over 30 days (in %)", "Texte": "Text", "Titre": "Title", "Titre principal": "Main title", "Total acheté": "Total purchased", "Total cassés": "Total broken", "Total cassés au magasin": "Total broken in shop", "Total des dépenses": "Total expenses", "Total du mois": "Total of the month", "Total du mois :": "Total of the month:", "Total entrées du mois": "Total entries of the month", "Total reçus du mois": "Total received this month", "Total transférés au magasin": "Total transferred to the shop", "Total vendu": "Total sold", "Total œufs bons du mois": "Total good eggs this month", "Total œufs cassés": "Total broken eggs", "Total œufs ramassés du mois": "Total eggs collected this month", "Tous": "All", "Tous / non précisé": "All / not specified", "Toute l'activité est suivie en ligne, en temps réel : production, stock, ventes et santé des animaux.": "All activity is tracked online, in real time: production, stock, sales and animal health.", "Toute l'équipe": "The whole team", "Traitement": "Treatment", "Transport": "Transport", "Trop de tentatives. Patientez quelques minutes.": "Too many attempts. Wait a few minutes.", "Type": "Type", "Type d'aliment": "Type of feed", "Tâche": "Task", "Tâche créée": "Task created", "Tâche terminée": "Task completed", "Tâches": "Tasks", "Téléphone": "Phone", "Téléphone (avec indicatif)": "Phone (with country code)", "Téléphone du client": "Customer phone", "Un email l'invitant à choisir son propre mot de passe lui a aussi été envoyé.": "An email inviting them to choose their own password has also been sent.", "Un plateau = 30 unités.": "One tray = 30 units.", "Un seul compte par poste du personnel (sauf stagiaires). Le rôle doit être confirmé par le PDG ou le superviseur.": "One account per staff position (except interns). The role must be confirmed by the CEO or the supervisor.", "Un seul titulaire par poste du personnel.": "One holder per staff position.", "Un seul titulaire par poste. Les clients et les stagiaires peuvent être plusieurs.": "One holder per position. Customers and interns can be many.", "Une erreur est survenue.": "An error occurred.", "Une fois fait, la prochaine échéance est programmée automatiquement.": "Once done, the next due date is scheduled automatically.", "Une question, une commande ?": "A question, an order?", "Vaccin": "Vaccine", "Vaccin ou traitement fait": "Vaccine or treatment done", "Vaccin programmé": "Vaccine scheduled", "Vaccins et traitements": "Vaccines and treatments", "Valider": "Approve", "Valider la vente": "Confirm the sale", "Valider le compte": "Approve the account", "Vendre": "Sell", "Vendu": "Sold", "Vendus": "Sold", "Venez nous voir ou écrivez-nous.": "Come and see us or write to us.", "Vente": "Sale", "Vente enregistrée : {}": "Sale recorded: {}", "Ventes": "Sales", "Ventes : montant à atteindre (FCFA)": "Sales: amount to reach (FCFA)", "Ventes d'aujourd'hui": "Today's sales", "Ventes du mois": "Sales this month", "Ventes et dépenses sur 6 mois (en FCFA)": "Sales and expenses over 6 months (in FCFA)", "Vermifuge": "Dewormer", "Visa": "Sign-off", "Visa :": "Sign-off:", "Visa : en attente": "Sign-off: pending", "Visa enregistré": "Sign-off recorded", "Visas du mois": "Sign-offs of the month", "Visible dans le résumé de chaque employé.": "Visible in each employee's summary.", "Voir mes commandes": "See my orders", "Voir tous les animaux": "See all animals", "Vos tâches et celles de toute l'équipe.": "Your tasks and those of the whole team.", "Votre avis est publié sur la page d'accueil après validation par la direction.": "Your review is published on the home page after approval by management.", "Votre compte est suspendu. Contactez la direction.": "Your account is suspended. Contact management.", "Votre compte existe mais son profil n'a pas été trouvé (ou l'accès est refusé par les règles Firestore). Déconnectez-vous puis recréez votre profil, ou contactez la direction.": "Your account exists but its profile was not found (or access is refused by the Firestore rules). Log out then recreate your profile, or contact management.", "Vous": "You", "Vous n'avez pas encore donné votre avis.": "You have not left a review yet.", "Vétérinaire": "Veterinarian", "WhatsApp": "WhatsApp", "cette dépense": "this expense", "cette tâche": "this task", "cette étape": "this step", "et son poste sera libéré": " and their position will be freed", "masqué": "hidden", "non visé": "not signed off", "plateaux d'œufs frais disponibles": "trays of fresh eggs available", "publié": "published", "toute l'équipe": "the whole team", "{} : unités en plus": "{}: extra units", "{} : {} FCFA": "{}: {} FCFA", "{} : {} ramassés, {} cassés": "{}: {} collected, {} broken", "{} avis client à valider.": "{} customer review(s) to approve.", "{} demande le rôle {}": "{} requests the role {}", "{} lot(s) de production non réceptionné(s) depuis plus d'un jour.": "{} production batch(es) not received for over a day.", "{} lot(s) réceptionné(s) à mettre en stock.": "{} received batch(es) to put in stock.", "{} lot(s) à réceptionner aujourd'hui.": "{} batch(es) to receive today.", "{} nouvelle(s) commande(s) à traiter.": "{} new order(s) to process.", "{} peut se connecter (rôle : {}) sans s'inscrire. Transmettez-lui ces identifiants : ils ne seront plus affichés après la fermeture de cette fenêtre.": "{} can log in (role: {}) without signing up. Give them these credentials: they will not be shown again once this window is closed.", "{} poules actuellement en élevage": "{} hens currently on the farm", "{} réception(s) avec écart ce mois-ci (voir l'onglet Réception).": "{} reception(s) with a gap this month (see the Reception tab).", "{} types d'animaux élevés": "{} types of animals raised", "{} tâche(s) en retard.": "{} task(s) overdue.", "{} têtes": "{} animals", "{} vaccin(s) ou traitement(s) à faire dans les 3 jours.": "{} vaccine(s) or treatment(s) due within 3 days.", "· avant le {}": "· before {}", "· crédit": "· credit", "· fait par {} le {}": "· done by {} on {}", "· ⚠️ en retard": "· ⚠️ overdue", "· {} bons œufs envoyés par {}": "· {} good eggs sent by {}", "À faire avant le (facultatif)": "To do before (optional)", "À la une": "Latest news", "À mettre en stock": "To put in stock", "À partir de (plateaux)": "From (trays)", "À partir de {}.": "From {}.", "À partir de … plateaux": "From … trays", "À payer": "To pay", "À réceptionner": "To receive", "À valider": "To approve", "Âge": "Age", "Écart": "Gap", "Écrire sur WhatsApp": "Write on WhatsApp", "Édité le {} par {} ({})": "Issued on {} by {} ({})", "Étape enregistrée": "Step saved", "État": "Status", "Évolution du mois": "Evolution of the month", "à partir de {}": "from {}", "Œufs": "Eggs", "Œufs cassés": "Broken eggs", "Œufs cassés au magasin": "Eggs broken in the shop", "Œufs cassés au poulailler": "Eggs broken at the henhouse", "Œufs cassés à la réception": "Eggs broken at reception", "Œufs ramassés": "Eggs collected", "Œufs reçus": "Eggs received", "Œufs reçus du poulailler": "Eggs received from the henhouse", "Œufs vendus": "Eggs sold", "★★★★★  Excellent": "★★★★★  Excellent", "★★★★☆  Très bien": "★★★★☆  Very good", "★★★☆☆  Bien": "★★★☆☆  Good", "★★☆☆☆  Moyen": "★★☆☆☆  Average", "★☆☆☆☆  Décevant": "★☆☆☆☆  Disappointing", "⚙️ Destinataires": "⚙️ Recipients", "⚙️ Seuils d'alerte": "⚙️ Alert thresholds", "✅ Fait": "✅ Done", "✅ Terminée": "✅ Completed", "✅ Tâches": "✅ Tasks", "✏️ Modifier": "✏️ Edit", "✏️ Modifier l'accueil": "✏️ Edit the home page", "✏️ Modifier les coordonnées": "✏️ Edit contact details", "➕ Ajouter une personne": "➕ Add a person", "⭐ Avis": "⭐ Reviews", "＋ Ajouter un animal": "＋ Add an animal", "＋ Ajouter une dépense": "＋ Add an expense", "＋ Ajouter une photo ou un texte": "＋ Add a photo or a text", "＋ Ajouter une étape": "＋ Add a step", "＋ Enregistrer l'aliment": "＋ Record feed", "＋ Enregistrer la production": "＋ Record production", "＋ Nouveau lot": "＋ New flock", "＋ Nouveau suivi": "＋ New follow-up", "＋ Nouvelle annonce": "＋ New announcement", "＋ Nouvelle promotion": "＋ New promotion", "＋ Nouvelle tâche": "＋ New task", "＋ Programmer": "＋ Schedule", "🎯 Objectifs du mois": "🎯 Targets of the month", "🏪 Magasin et ventes": "🏪 Shop and sales", "🏷️ Promotion « {} » appliquée : {} le plateau.": "🏷️ Promotion “{}” applied: {} per tray.", "🏷️ Promotions": "🏷️ Promotions", "🏷️ {} : {} le plateau{}": "🏷️ {}: {} per tray{}", "🐔 Élevage": "🐔 Livestock", "👤 Mon profil": "👤 My profile", "👥 Inscrits": "👥 Members", "👷 Équipe et salaires": "👷 Team and salaries", "💸 Dépenses": "💸 Expenses", "💾 Sauvegarde complète": "💾 Full backup", "📄 Rapport mensuel (PDF)": "📄 Monthly report (PDF)", "📊 Résumé": "📊 Summary", "📋 Copier le message": "📋 Copy the message", "📜 Journal": "📜 Log", "📝 Pointage du jour": "📝 Today's attendance", "📢 Annonces de la direction": "📢 Management announcements", "📤 Envoyer le résumé du jour": "📤 Send today's summary", "📥 Excel": "📥 Excel", "📦 Réception": "📦 Reception", "📨 Destinataires des alertes": "📨 Alert recipients", "🔑 Changer mon mot de passe": "🔑 Change my password", "🔔 Activer les notifications": "🔔 Enable notifications", "🖨️ Imprimer": "🖨️ Print", "🖨️ Imprimer / Enregistrer en PDF": "🖨️ Print / Save as PDF", "🛒 Commandes": "🛒 Orders", "🛒 Mes commandes": "🛒 My orders", "🛒 Passer une commande": "🛒 Place an order", "🤝 Clients et crédits": "🤝 Customers and credits", "🥚 Production": "🥚 Production", "🧾 Reçu": "🧾 Receipt", "🩺 Santé": "🩺 Health", "Gestion en ligne": "Online management", "Veuillez patienter…": "Please wait…", "Mon espace — ": "My space — ", "{} (à valider)": "{} (to be approved)", "{} (déjà attribué)": "{} (already taken)", "500 caractères maximum.": "500 characters maximum.", "6 caractères minimum.": "6 characters minimum.", "Ajouter": "Add", "Connexion réussie": "Logged in successfully", "Entrez votre adresse Gmail et votre mot de passe.": "Enter your Gmail address and your password.", "Choisissez un fichier image (JPG, PNG…).": "Choose an image file (JPG, PNG…).", "Image trop lourde. Choisissez une image plus petite.": "Image too large. Choose a smaller image.", "Impossible de lire cette image.": "Unable to read this image.", "Renseignez vos informations. Les comptes du personnel sont validés par un administrateur avant d'être activés.": "Fill in your details. Staff accounts are approved by an administrator before being activated.", "Base Firestore introuvable ou injoignable. Vérifiez qu'elle est créée (Firebase → Firestore Database → Créer une base) et que la connexion internet fonctionne.": "Firestore database not found or unreachable. Check that it is created (Firebase → Firestore Database → Create database) and that the internet connection works.", "· rôle demandé :": "· role requested:", "Remettre à zéro": "Reset to zero", "🧹 Remettre à zéro (supprimer les essais)": "🧹 Reset to zero (delete the test data)", "Supprimer définitivement": "Delete permanently", "Que faut-il effacer ?": "What should be erased?", "Tapez EFFACER pour confirmer": "Type EFFACER to confirm", "Tapez exactement EFFACER pour confirmer.": "Type exactly EFFACER to confirm.", "Toutes les données d'essai (sauf le contenu du site)": "All test data (except the site content)", "Production, réceptions, stock, ventes, paiements, commandes, visas": "Production, receptions, stock, sales, payments, orders, sign-offs", "Santé, vaccins, alimentation, lots de poules": "Health, vaccines, feeding, hen flocks", "Dépenses, salaires payés, présences": "Expenses, salaries paid, attendance", "Tâches, annonces, objectifs": "Tasks, announcements, targets", "Avis clients, galerie, promotions": "Customer reviews, gallery, promotions", "{} enregistrement(s) supprimé(s). Le site est prêt à être utilisé.": "{} record(s) deleted. The site is ready to use.", "⚠️ Supprime définitivement les enregistrements choisis (données d'essai). Les comptes, les rôles, les animaux, l'historique et les coordonnées sont conservés. Cette action est irréversible : faites d'abord une sauvegarde complète si besoin.": "⚠️ Permanently deletes the selected records (test data). Accounts, roles, animals, history and contact details are kept. This cannot be undone: make a full backup first if needed.", "Remise à zéro": "Reset", "Pensez à le changer dans « Mon profil ».": "Remember to change it in “My profile”.", "📊 Résumé ({})": "📊 Summary ({})", "✅ Tâches ({})": "✅ Tasks ({})", "🛒 Commandes ({})": "🛒 Orders ({})", "👥 Inscrits ({})": "👥 Members ({})", "⭐ Avis ({})": "⭐ Reviews ({})", "{} (total {})": "{} (total {})", "{} ({}) le {}": "{} ({}) on {}", "Écart {}": "Gap {}", "Fait le {}": "Done on {}", "Payé le {}": "Paid on {}", "Prix actuel : {} le plateau. La ferme confirme chaque commande.": "Current price: {} per tray. The farm confirms each order.", ": {} le plateau{}": ": {} per tray{}", "le plateau": "per tray", "{} sur 5": "{} out of 5", "{} poules actuellement en élevage · {} types d'animaux élevés": "{} hens currently on the farm · {} types of animals raised", "Mon espace ({})": "My space ({})", "avant le {}": "before {}", "fait par {} le {}": "done by {} on {}", "⚠️ en retard": "⚠️ overdue", "rôle demandé :": "role requested:", "crédit": "credit"};
+const ENRX=Object.keys(EN).filter(k=>k.includes('{}')).sort((a,b)=>b.length-a.length).map(k=>[new RegExp('^'+k.split('{}').map(x=>x.replace(/[.*+?^$()|[\]\\]/g,'\\$&')).join('(.*?)')+'$','s'),EN[k]]);
+const trWords=t=>t.replace(/\bplateaux\b/g,'trays').replace(/\bplateau\b/g,'tray').replace(/\bunités\b/g,'units').replace(/\bunité\b/g,'unit');
+function trText(t,d=0){
+ const k=t.trim();if(!k)return t;
+ let r=EN[k];
+ if(r===undefined){
+  for(const[rx,v]of ENRX){const m=k.match(rx);if(m){let i=0;r=v.replace(/\{(\d*)\}/g,(_,x)=>{const c=m[x?+x:++i]??'';return d<3?trText(c,d+1):c;});break;}}
+ }
+ if(r===undefined&&d<3&&k.includes(' · ')){const a=k.split(' · '),b=a.map(x=>trText(x,d+1));if(b.some((x,i)=>x!==a[i]))r=b.join(' · ');}
+ r=trWords(r===undefined?k:r);
+ return r===k?t:t.replace(k,()=>r);
+}
+const TR_ATTRS=['placeholder','aria-label','title'];
+function trNode(n){
+ if(n.nodeType===3){
+  const p=n.parentNode;if(!p||/^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName))return;
+  const v=n.nodeValue;if(n.__en===v)return;
+  const t=trText(v);if(t!==v){n.__fr=v;n.__en=t;n.nodeValue=t;}
+ }else if(n.nodeType===1){
+  if(/^(SCRIPT|STYLE)$/.test(n.nodeName))return;
+  for(const a of TR_ATTRS){const v=n.getAttribute(a);if(v){if(n.__fa&&n.__fa[a]&&n.__fa[a][1]===v)continue;const t=trText(v);if(t!==v){n.__fa=n.__fa||{};n.__fa[a]=[v,t];n.setAttribute(a,t);}}}
+  n.childNodes.forEach(trNode);
+ }
+}
+function untrNode(n){
+ if(n.nodeType===3){if(n.__fr!==undefined&&n.nodeValue===n.__en)n.nodeValue=n.__fr;delete n.__en;}
+ else if(n.nodeType===1){
+  if(n.__fa){for(const a in n.__fa){if(n.getAttribute(a)===n.__fa[a][1])n.setAttribute(a,n.__fa[a][0]);}n.__fa=null;}
+  n.childNodes.forEach(untrNode);
+ }
+}
+function applyLang(){
+ document.documentElement.lang=lang;
+ const b=$('#langBtn');if(b)b.textContent=lang==='en'?'FR':'EN';
+ document.title=lang==='en'?'La Justice de Dieu — Livestock farm in Dogbo':"La Justice de Dieu — Ferme d'élevage à Dogbo";
+ if(lang==='en'){renderAllNow();trNode(document.body);}
+ else{untrNode(document.body);renderAllNow();}
+}
+function toggleLang(){
+ lang=lang==='en'?'fr':'en';
+ try{localStorage.setItem('lang',lang);}catch(_){}
+ applyLang();
+}
+new MutationObserver(ms=>{
+ if(lang!=='en')return;
+ for(const m of ms){if(m.type==='characterData')trNode(m.target);else m.addedNodes.forEach(trNode);}
+}).observe(document.body,{childList:true,subtree:true,characterData:true});
 window.addEventListener('afterprint',()=>document.body.classList.remove('print-receipt'));
 $('#h-une').addEventListener('mouseenter',()=>{sliderPaused=true;});
 $('#h-une').addEventListener('mouseleave',()=>{sliderPaused=false;});
 setInterval(()=>{if(galerie.length>1&&!sliderPaused&&!document.hidden&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&$('#v-accueil').classList.contains('active'))goSlide(slideIdx+1);},6000);
-renderAll();route();
+renderAll();route();applyLang();
 </script>
 </body>
 </html>
