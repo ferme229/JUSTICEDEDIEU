@@ -370,7 +370,7 @@ const CAN={prod:ADMINS,recep:[...ADMINS,'receptionniste'],vente:[...ADMINS,'maga
 const ORDER_STAFF=[...ADMINS,'magasiniere'];
 const STATUS={pending:['En attente','amber'],active:['Actif','green'],banned:['Suspendu','red']};
 const VIEWS=['accueil','historique','animaux','galerie','contact','espace'];
-const DEF_CFG={heroTitre:'LA JUSTICE DE DIEU',heroSoustitre:"Ferme d'élevage à Dogbo. Des œufs frais, un élevage suivi au quotidien.",apropos:"La Justice de Dieu est une ferme d'élevage située à Dogbo. Nous élevons des volailles avec soin et fournissons des œufs frais à nos clients.\nChaque jour, notre équipe enregistre la production, la réception, le stock et la santé des animaux.",telephone:'',email:'',adresse:'Dogbo, Bénin',horaires:'',prixOeuf:120,prixPlateau:3600,facebook:'',whatsapp:'',seuilStock:150,seuilMortalite:5,seuilCasse:5,seuilPonte:60};
+const DEF_CFG={heroTitre:'LA JUSTICE DE DIEU',heroSoustitre:"Ferme d'élevage à Dogbo. Des œufs frais, un élevage suivi au quotidien.",apropos:"La Justice de Dieu est une ferme d'élevage située à Dogbo. Nous élevons des volailles avec soin et fournissons des œufs frais à nos clients.\nChaque jour, notre équipe enregistre la production, la réception, le stock et la santé des animaux.",telephone:'',email:'',adresse:'Dogbo, Bénin',horaires:'',prixOeuf:100,prixLot3:250,prixPlateau:2300,facebook:'',whatsapp:'',seuilStock:150,seuilMortalite:5,seuilCasse:5,seuilPonte:60};
 const DEF_ANIMAUX=[
  {icone:'🐔',nom:'Poules pondeuses',quantite:null,description:"Notre élevage principal : des poules pondeuses suivies chaque jour pour fournir des œufs frais."},
  {icone:'🍗',nom:'Poulets de chair',quantite:null,description:"Des poulets élevés pour la consommation de viande."},
@@ -399,7 +399,12 @@ const oeufs=n=>{const{neg,p,u}=splitOeufs(n),a=`${fmt(p)} plateau${p>1?'x':''}`,
 const plX=n=>`${fmt(n)} plateau${n>1?'x':''}`;
 const eggFields=(name,label,total)=>{const x=splitOeufs(total||0);return[{name:name+'P',label:`${label} : plateaux`,type:'number',value:x.p},{name:name+'U',label:`${label} : unités en plus`,type:'number',value:x.u,help:'Un plateau = 30 unités.'}];};
 const eggsOf=(v,k)=>(Number(v[k+'P'])||0)*PLAT+(Number(v[k+'U'])||0);
-const prixPl=()=>Number(cfg.prixPlateau)||Number(cfg.prixOeuf)*PLAT||0;
+const prixOeuf=()=>Number(cfg.prixOeuf)||100;
+const prixLot3=()=>Number(cfg.prixLot3)||250;
+const prixPl=()=>Number(cfg.prixPlateau)||2300;
+const prixPaquet=(format,q=1)=>format==='unite'?prixOeuf():format==='lot3'?prixLot3():bestPrice(q).prix;
+const oeufsParPaquet=format=>format==='unite'?1:format==='lot3'?3:PLAT;
+const libellePaquet=format=>format==='unite'?'œuf à l’unité':format==='lot3'?'lot de 3 œufs':'plateau de 30 œufs';
 const pl1=n=>Math.round(n/PLAT*10)/10;
 const fmtLong=d=>{try{return new Date(d+'T12:00:00').toLocaleDateString(LOC(),{day:'numeric',month:'long',year:'numeric'});}catch(_){return d;}};
 const histoLabel=h=>h.date?fmtLong(h.date)+(h.dateFin?' – '+fmtLong(h.dateFin):''):(h.annee||'');
@@ -453,11 +458,13 @@ function imgToData(file,max=900,limit=700000){
 
 /* ============ État ============ */
 let user=null,me=null,prof='loading',authReady=false,registering=false;
-let cfg={...DEF_CFG},animaux=[],histo=[],stats={};
+let cfg=(()=>{try{return {...DEF_CFG,...JSON.parse(localStorage.getItem('ljd_public_config')||'{}')}}catch(_){return {...DEF_CFG}}})(),animaux=[],histo=[];
+// Affiche immédiatement les dernières statistiques connues sur cet appareil, puis les actualise depuis Firebase.
+let stats=(()=>{try{return JSON.parse(localStorage.getItem('ljd_public_stats')||'{}')}catch(_){return {}}})();
 const D={prod:[],trans:[],ventes:[],sante:[],dep:[],users:[],visas:[],cmd:[],journal:[],avisAll:[],mesAvis:[],lots:[],aliment:[],vaccins:[],taches:[],annonces:[],objectifs:[],presences:[],paies:[],myPres:[],myPaies:[],ventesAll:[],paiements:[]};
 let promos=[],galUnsub=null,galN=6,loadFrom='',eq=false,rq=false,clientsLoaded=false,clientsReady=false,notifCfg={};
 let galerie=[],avisPub=[],slideIdx=0,sliderPaused=false,lastReceipt=null;
-let curTab='resume',uFilter='all',unsubMe=null,privUnsubs=[],privKey='',warned=false,creatingProfile=false,fixingAdmin=false,slots={},slotsReady=false,claimTried='',curMonth=today().slice(0,7);
+let curTab='resume',uFilter='all',unsubMe=null,privUnsubs=[],privKey='',privateStarted=false,warned=false,creatingProfile=false,fixingAdmin=false,slots={},slotsReady=false,claimTried='',curMonth=today().slice(0,7);
 const isSup=()=>!!me&&me.status==='active'&&me.role==='superviseur';
 const isAdmin=()=>!!me&&me.status==='active'&&ADMINS.includes(me.role);
 const can=l=>!!me&&me.status==='active'&&l.includes(me.role);
@@ -587,7 +594,7 @@ async function handleUser(u){
   if(me.status==='banned'&&!ar){toast('Votre compte est suspendu. Contactez la direction.','err');await signOut(auth);return;}
   document.body.classList.toggle('is-admin',isAdmin());
   const key=me.role+'|'+me.status;
-  if(key!==privKey){stopPrivate();privKey=key;if(me.status==='active')startPrivate();}
+  if(key!==privKey){stopPrivate();privKey=key;if(me.status==='active'&&location.hash.replace('#','')==='espace')startPrivate();}
   renderAll();
  },e=>{authReady=true;prof='missing';console.error(e);toast(errMsg(e),'err');renderAll();});
 }
@@ -595,7 +602,7 @@ onAuthStateChanged(auth,u=>{if(registering)return;handleUser(u);});
 
 /* ============ Données publiques ============ */
 const pubErr=e=>{console.error(e);if(!warned){warned=true;toast("Impossible de charger le contenu du site. Vérifiez les règles Firestore.",'err');}};
-onSnapshot(doc(db,'site','config'),s=>{cfg={...DEF_CFG,...(s.exists()?s.data():{})};$('#loadbar')?.remove();renderAll();},pubErr);
+onSnapshot(doc(db,'site','config'),s=>{const saved=s.exists()?s.data():{};cfg={...DEF_CFG,...saved};/* Migration locale des anciens tarifs par défaut, sans écraser les prix personnalisés. */if(saved.prixOeuf===120)cfg.prixOeuf=100;if(saved.prixPlateau===3600)cfg.prixPlateau=2300;if(saved.prixLot3==null)cfg.prixLot3=250;try{localStorage.setItem('ljd_public_config',JSON.stringify(cfg));}catch(_){}renderAll();},pubErr);
 onSnapshot(collection(db,'animaux'),s=>{animaux=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.nom).localeCompare(String(b.nom),'fr'));renderAll();},pubErr);
 onSnapshot(collection(db,'historique'),s=>{histo=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date&&b.date?a.date.localeCompare(b.date):a.date?1:b.date?-1:(a.ordre??99)-(b.ordre??99));renderAll();},pubErr);
 function startGalerie(n){galUnsub&&galUnsub();galN=n;galUnsub=onSnapshot(query(collection(db,'galerie'),orderBy('createdAt','desc'),limit(n)),s=>{galerie=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();},pubErr);}
@@ -604,7 +611,9 @@ onSnapshot(query(collection(db,'promos'),limit(30)),s=>{promos=s.docs.map(d=>({i
 setTimeout(()=>$('#loadbar')?.remove(),8000);
 onSnapshot(query(collection(db,'avis'),where('status','==','approved'),limit(30)),s=>{avisPub=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();},pubErr);
 onSnapshot(collection(db,'roleSlots'),s=>{slots={};s.docs.forEach(d=>{slots[d.id]=d.data().uid;});slotsReady=true;maybeClaim();renderAll();},pubErr);
-onSnapshot(doc(db,'stats','public'),s=>{stats=s.exists()?s.data():{};renderAll();},pubErr);
+onSnapshot(doc(db,'stats','public'),s=>{stats=s.exists()?s.data():{};try{localStorage.setItem('ljd_public_stats',JSON.stringify(stats));}catch(_){}renderAll();},pubErr);
+// Ne bloque jamais l'affichage initial sur la réponse de Firebase.
+renderAll();$('#loadbar')?.remove();
 
 /* ============ Données privées (équipe) ============ */
 const dayStr=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
@@ -612,7 +621,7 @@ const addDays=(iso,n)=>{const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+
 const baseFrom=()=>addDays(today(),-190);
 const setHTML=(el,sig,html)=>{if(el.dataset.sig===sig)return;el.dataset.sig=sig;el.innerHTML=html;};
 function schedEspace(){if(eq)return;eq=true;requestAnimationFrame(()=>{eq=false;renderEspace();renderAuth();});}
-function stopPrivate(){privUnsubs.forEach(f=>f());privUnsubs=[];privKey='';clientsLoaded=false;clientsReady=false;notifCfg={};Object.keys(D).forEach(k=>D[k]=[]);}
+function stopPrivate(){privUnsubs.forEach(f=>f());privUnsubs=[];privKey='';privateStarted=false;clientsLoaded=false;clientsReady=false;notifCfg={};Object.keys(D).forEach(k=>D[k]=[]);}
 function reloadPrivate(){if(!me||me.status!=='active')return;const k=privKey;stopPrivate();privKey=k;startPrivate();}
 function loadClients(){
  clientsLoaded=true;
@@ -629,6 +638,8 @@ async function enableNotif(){
  toast(r==='granted'?'Notifications activées : vous serez alerté tant que le site est ouvert.':'Notifications refusées dans le navigateur.',r==='granted'?'ok':'err');
 }
 function startPrivate(){
+ if(privateStarted||!me||me.status!=='active')return;
+ privateStarted=true;
  if(!loadFrom)loadFrom=baseFrom();
  const w=(q,k,onAdd)=>{let first=true;privUnsubs.push(onSnapshot(q,s=>{
   if(!first&&onAdd)s.docChanges().forEach(c=>{if(c.type==='added')onAdd({id:c.doc.id,...c.doc.data()});});
@@ -670,7 +681,7 @@ function route(){
  VIEWS.forEach(v=>$('#v-'+v).classList.toggle('active',v===h));
  document.querySelectorAll('#menu nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+h));
  $('#menu').classList.remove('open');window.scrollTo({top:0});
- if(h==='espace')renderEspace();
+ if(h==='espace'){if(me&&me.status==='active'&&!privateStarted){privKey=me.role+'|'+me.status;startPrivate();}renderEspace();}
 }
 window.addEventListener('hashchange',route);
 
@@ -948,7 +959,7 @@ function pMag(){
  const tot=`<div class="stats">${stat('Total entrées du mois',oeufs(sum(days,'entree')))}${stat('Total vendu',oeufs(sum(days,'vendus')),'j')}${stat('Total cassés au magasin',oeufs(sum(days,'casses')),'r')}${stat('Montant total vendu',money(sum(days,'montant')))}</div>`;
  const TL={vente:['Vente','green'],perte:['Cassés','red'],ajustement:['Ajustement','blue'],entree:['Entrée','amber']};
  const det=D.ventes.filter(v=>(v.date||'').startsWith(curMonth)).map(v=>{const [l,c]=TL[v.type]||['',''];return `<tr><td>${dateFr(v.date)}</td><td>${badge(l,c)}</td><td>${oeufs(v.quantite)}</td><td>${v.type==='vente'?fmt(v.prixPlateau??v.prix*PLAT):''}</td><td>${v.type==='vente'?money(v.montant):''}</td><td>${esc(v.clientNom||v.motif||'')}</td><td>${esc(v.clientTel||'')}</td><td>${esc(v.operateurNom||'')}</td><td>${v.type==='vente'?btnIf(true,'receipt','🧾 Reçu','line',v.id):''}</td></tr>`;});
- return `<div class="bloc"><div class="head"><div><h3>Stock disponible</h3><div class="bigstock" style="font-size:2rem">${oeufs(stock())}</div><p class="muted">Prix actuel : ${money(prixPl())} le plateau. On vend par plateau entier.</p></div><div class="row">${btnIf(can(CAN.vente),'sell','Vendre','primary')}${btnIf(can(CAN.vente),'loss','Œufs cassés au magasin','line')}${btnIf(isAdmin(),'adjust','Ajuster le stock','line')}${btnIf(isAdmin(),'price','Prix du plateau','line')}</div></div></div>
+ return `<div class="bloc"><div class="head"><div><h3>Stock disponible</h3><div class="bigstock" style="font-size:2rem">${oeufs(stock())}</div><p class="muted">Tarifs : ${money(prixOeuf())} l’unité · ${money(prixLot3())} les 3 · ${money(prixPl())} le plateau de 30 œufs.</p></div><div class="row">${btnIf(can(CAN.vente),'sell','Vendre','primary')}${btnIf(can(CAN.vente),'loss','Œufs cassés au magasin','line')}${btnIf(isAdmin(),'adjust','Ajuster le stock','line')}${btnIf(isAdmin(),'price','Prix du plateau','line')}</div></div></div>
  <div class="bloc"><h3>Lots à mettre en stock</h3>${lots}</div>
  <div class="bloc"><div class="head"><div><h3>Fiche de stock et vente journalière</h3><p class="muted">Stock total = veille + entrée du jour. Reste du jour = stock total − vendus − cassés. Le reste du jour devient le stock veille du lendemain.</p></div></div>${monthBar('mag')}${table(['Date','Stock veille','Entrée du jour','Stock total disponible','Vendus','Cassés au magasin','Ajust.','Reste du jour','Prix du plateau (FCFA)','Montant total vendu','Client / destination','Magasinière'],rows)||'<p class="empty">Aucun mouvement ce mois-ci.</p>'}<h3 style="margin-top:22px">Total du mois</h3>${tot}${visaRow('magasin')}</div>
  <div class="bloc"><h3>Détail des mouvements du mois</h3>${table(['Date','Type','Quantité','Prix du plateau','Montant','Client / motif','Téléphone','Par',''],det)||'<p class="empty">Aucun mouvement.</p>'}</div>
@@ -1028,7 +1039,7 @@ function pCmd(){
   else if(c.status==='nouvelle')act=btnIf(true,'cmd-no','Annuler','danger',c.id);
   return `<tr><td>${tsDate(c.createdAt)}</td><td>${esc(c.nom||'')}${staff&&c.telephone?`<small>${esc(c.telephone)}</small>`:''}</td><td><b>${oeufs(c.quantite)}</b></td><td>${money((c.quantite||0)/PLAT*cmdPrix(c))}</td><td>${esc(c.mode||'')}</td><td>${dateFr(c.dateSouhaitee)}</td><td>${esc(c.note||'')}${c.numeroRecu?`<small>Reçu ${esc(c.numeroRecu)}</small>`:''}</td><td>${badge(sl,sc)}</td><td><div class="row">${act}${wa}</div></td></tr>`;
  });
- return `<div class="bloc"><div class="head"><div><h3>${staff?'Commandes des clients':'Mes commandes'}</h3><p class="muted">${staff?'Confirmez la commande, puis cliquez sur « Livrer et vendre » : le stock et le reçu sont gérés automatiquement.':'Prix actuel : '+money(prixPl())+' le plateau. La ferme confirme chaque commande.'}</p></div><div class="row">${staff?btnIf(true,'export','📥 Excel','line','cmd'):''}${staff?'':btnIf(true,'new-cmd','🛒 Passer une commande')}</div></div>${table(['Date','Client','Quantité','Montant estimé','Mode','Souhaitée le','Précisions','Statut',''],rows)||'<p class="empty">Aucune commande.</p>'}</div>`;
+ return `<div class="bloc"><div class="head"><div><h3>${staff?'Commandes des clients':'Mes commandes'}</h3><p class="muted">${staff?'Confirmez la commande, puis cliquez sur « Livrer et vendre » : le stock et le reçu sont gérés automatiquement.':`Tarifs : ${money(prixOeuf())} l’unité, ${money(prixLot3())} les 3, ${money(prixPl())} le plateau de 30 œufs. La ferme confirme chaque commande.`}</p></div><div class="row">${staff?btnIf(true,'export','📥 Excel','line','cmd'):''}${staff?'':btnIf(true,'new-cmd','🛒 Passer une commande')}</div></div>${table(['Date','Client','Quantité','Montant estimé','Mode','Souhaitée le','Précisions','Statut',''],rows)||'<p class="empty">Aucune commande.</p>'}</div>`;
 }
 function pJournal(){
  const rows=D.journal.map(j=>`<tr><td>${tsTime(j.createdAt)}</td><td>${esc(j.nom||'')}</td><td>${esc(ROLES[j.role]||j.role||'')}</td><td><b>${esc(j.action)}</b></td><td>${esc(j.detail||'')}</td></tr>`);
@@ -1174,25 +1185,29 @@ async function moveStock(delta,entry){
 }
 function sell(prefill){
  prefill=prefill&&typeof prefill==='object'?prefill:{};
- const p0=bestPrice(prefill.plateaux||0);
- openForm({title:'Enregistrer une vente',intro:`Stock disponible : <b>${oeufs(stock())}</b>. On vend par plateau (1 plateau = 30 œufs).<span id="promoHint"></span>`,submit:'Valider la vente',fields:[
-  {name:'plateaux',label:'Nombre de plateaux vendus',type:'number',required:true,value:prefill.plateaux},
-  {name:'prix',label:'Prix du plateau (FCFA)',type:'number',required:true,value:p0.prix},
+ const formatInitial=prefill.formatVente||(prefill.plateaux?'plateau':'plateau');
+ const quantiteInitial=prefill.nombreVendu||(prefill.plateaux||1);
+ const p0=formatInitial==='plateau'?bestPrice(quantiteInitial).prix:prixPaquet(formatInitial,quantiteInitial);
+ openForm({title:'Enregistrer une vente',intro:`Stock disponible : <b>${oeufs(stock())}</b>. Tarifs : ${money(prixOeuf())} l’unité · ${money(prixLot3())} les 3 · ${money(prixPl())} le plateau de 30 œufs.<span id="promoHint"></span>`,submit:'Valider la vente',fields:[
+  {name:'formatVente',label:'Format vendu',type:'select',required:true,value:formatInitial,options:[['unite',`À l’unité — ${money(prixOeuf())}`],['lot3',`Lot de 3 — ${money(prixLot3())}`],['plateau',`Plateau de 30 — ${money(prixPl())}`]]},
+  {name:'nombreVendu',label:'Nombre de unités / lots / plateaux',type:'number',required:true,value:quantiteInitial},
+  {name:'prix',label:'Prix du format choisi (FCFA)',type:'number',required:true,value:p0},
   {name:'paye',label:'Montant payé maintenant (FCFA)',type:'number',help:'Laissez vide si le client paie la totalité. Sinon, le reste est enregistré comme crédit.'},
   {name:'mode',label:'Mode de paiement',type:'select',value:'Espèces',options:['Espèces','Mobile Money MTN','Mobile Money Moov','Autre'].map(x=>[x,x])},
   {name:'clientNom',label:'Nom du client / destination',required:true,value:prefill.clientNom},
   {name:'clientTel',label:'Téléphone du client',type:'tel',value:prefill.clientTel}],
   onSubmit:async v=>{
-   if(!(v.plateaux>=1)||!Number.isInteger(v.plateaux))throw new Error('Indiquez un nombre entier de plateaux (1 minimum).');
-   const q=v.plateaux*PLAT,montant=v.plateaux*v.prix,paye=v.paye===null?montant:v.paye;
+   if(!(v.nombreVendu>=1)||!Number.isInteger(v.nombreVendu))throw new Error('Indiquez une quantité entière (1 minimum).');
+   const q=v.nombreVendu*oeufsParPaquet(v.formatVente),montant=v.nombreVendu*v.prix,paye=v.paye===null?montant:v.paye;
    if(paye>montant)throw new Error('Le montant payé dépasse le total de la vente.');
-   const rec=await moveStock(-q,{type:'vente',plateaux:v.plateaux,quantite:q,prixPlateau:v.prix,prix:v.prix/PLAT,montant,paye,reste:montant-paye,mode:v.mode,clientNom:v.clientNom,clientTel:v.clientTel});
+   const prixEquivalentPlateau=montant/(q/PLAT);
+   const rec=await moveStock(-q,{type:'vente',formatVente:v.formatVente,nombreVendu:v.nombreVendu,libelleVente:libellePaquet(v.formatVente),quantite:q,prixUnitaire:v.prix,prixPlateau:prixEquivalentPlateau,prix:prixEquivalentPlateau/PLAT,montant,paye,reste:montant-paye,mode:v.mode,clientNom:v.clientNom,clientTel:v.clientTel});
    if(prefill.orderId){try{await updateDoc(doc(db,'commandes',prefill.orderId),{status:'livree',numeroRecu:rec.numero,updatedAt:serverTimestamp()});}catch(e){console.warn(e);}}
-   logAct('Vente',`${rec.numero} · ${plX(v.plateaux)} · ${fmt(montant)} FCFA${montant>paye?' · crédit '+fmt(montant-paye):''} · ${v.clientNom}`);
+   logAct('Vente',`${rec.numero} · ${v.nombreVendu} ${libellePaquet(v.formatVente)} · ${fmt(montant)} FCFA${montant>paye?' · crédit '+fmt(montant-paye):''} · ${v.clientNom}`);
    closeModal();toast(`Vente enregistrée : ${money(montant)}`);showReceipt(rec);}});
- const q=$('#f_plateaux'),pr=$('#f_prix'),hint=$('#promoHint');let touched=false;
- const upd=()=>{const b=bestPrice(Number(q.value)||0);if(!touched)pr.value=b.prix;hint.innerHTML=b.promo?`<br>🏷️ Promotion « ${esc(b.promo.titre)} » appliquée : ${money(b.prix)} le plateau.`:'';};
- pr.addEventListener('input',()=>{touched=true;});q.addEventListener('input',upd);upd();
+ const q=$('#f_nombreVendu'),pr=$('#f_prix'),fmtEl=$('#f_formatVente'),hint=$('#promoHint');let touched=false;
+ const upd=()=>{const f=fmtEl.value,n=Number(q.value)||1; if(!touched)pr.value=f==='plateau'?bestPrice(n).prix:prixPaquet(f,n);hint.innerHTML=f==='plateau'&&bestPrice(n).promo?`<br>🏷️ Promotion « ${esc(bestPrice(n).promo.titre)} » appliquée : ${money(bestPrice(n).prix)} le plateau.`:'';};
+ pr.addEventListener('input',()=>{touched=true;});q.addEventListener('input',()=>{touched=false;upd();});fmtEl.addEventListener('change',()=>{touched=false;upd();});upd();
 }
 function loss(){
  openForm({title:'Œufs cassés au magasin',intro:`Stock disponible : <b>${oeufs(stock())}</b>.`,fields:[
@@ -1294,16 +1309,17 @@ function galForm(id){
 }
 function newCmd(){
  const P=activePromos();
- openForm({title:'Passer une commande',intro:`Prix actuel : <b>${money(prixPl())}</b> le plateau (30 œufs).${P.map(p=>`<br>🏷️ ${esc(p.titre)} : ${money(p.prix)} le plateau${p.qteMin>1?` à partir de ${plX(p.qteMin)}`:''}`).join('')}<br>La ferme confirmera votre commande.`,submit:'Envoyer la commande',fields:[
-  {name:'plateaux',label:'Nombre de plateaux',type:'number',required:true,help:'On vend uniquement par plateau entier.'},
+ openForm({title:'Passer une commande',intro:`Tarifs : <b>${money(prixOeuf())}</b> l’unité · <b>${money(prixLot3())}</b> les 3 œufs · <b>${money(prixPl())}</b> le plateau de 30 œufs.${P.map(p=>`<br>🏷️ ${esc(p.titre)} : ${money(p.prix)} le plateau${p.qteMin>1?` à partir de ${plX(p.qteMin)}`:''}`).join('')}<br>La ferme confirmera votre commande.`,submit:'Envoyer la commande',fields:[
+  {name:'formatVente',label:'Format commandé',type:'select',required:true,value:'plateau',options:[['unite',`Œuf à l’unité — ${money(prixOeuf())}`],['lot3',`Lot de 3 œufs — ${money(prixLot3())}`],['plateau',`Plateau de 30 œufs — ${money(prixPl())}`]]},
+  {name:'nombreVendu',label:'Quantité',type:'number',required:true,value:1,help:'Indiquez le nombre d’unités, de lots de 3 ou de plateaux selon le format choisi.'},
   {name:'mode',label:'Mode de remise',type:'select',value:'Retrait à la ferme',options:[['Retrait à la ferme','Retrait à la ferme'],['Livraison','Livraison']]},
   {name:'date',label:'Date souhaitée',type:'date',required:true,value:today(),min:today()},
   {name:'note',label:'Précisions (adresse de livraison, remarque)',type:'textarea'}],
   onSubmit:async v=>{
-   if(!(v.plateaux>=1)||!Number.isInteger(v.plateaux))throw new Error('Indiquez un nombre entier de plateaux (1 minimum).');
+   if(!(v.nombreVendu>=1)||!Number.isInteger(v.nombreVendu))throw new Error('Indiquez une quantité entière (1 minimum).');
    if(v.date<today())throw new Error("Choisissez une date à partir d'aujourd'hui.");
-   const pp=bestPrice(v.plateaux).prix;
-   await addDoc(collection(db,'commandes'),{uid:user.uid,nom:me.nom,telephone:me.telephone||'',plateaux:v.plateaux,quantite:v.plateaux*PLAT,mode:v.mode,dateSouhaitee:v.date,note:v.note,prixPlateau:pp,prix:pp/PLAT,status:'nouvelle',createdAt:serverTimestamp()});
+   const q=v.nombreVendu*oeufsParPaquet(v.formatVente),pp=prixPaquet(v.formatVente,v.nombreVendu),montant=v.nombreVendu*pp;
+   await addDoc(collection(db,'commandes'),{uid:user.uid,nom:me.nom,telephone:me.telephone||'',formatVente:v.formatVente,nombreVendu:v.nombreVendu,libelleVente:libellePaquet(v.formatVente),plateaux:q/PLAT,quantite:q,mode:v.mode,dateSouhaitee:v.date,note:v.note,prixUnitaire:pp,montantCommande:montant,prixPlateau:montant/(q/PLAT),prix:(montant/(q/PLAT))/PLAT,status:'nouvelle',createdAt:serverTimestamp()});
    closeModal();toast('Commande envoyée. La ferme vous contactera.');}});
 }
 async function setCmd(id,status){
@@ -1312,7 +1328,7 @@ async function setCmd(id,status){
  try{await updateDoc(doc(db,'commandes',id),{status,updatedAt:serverTimestamp()});logAct('Commande',`${status} · ${c.nom} · ${oeufs(c.quantite)}`);toast('Commande mise à jour');}
  catch(e){toast(errMsg(e),'err');}
 }
-function cmdSell(id){const c=D.cmd.find(x=>x.id===id);if(c)sell({orderId:id,clientNom:c.nom,clientTel:c.telephone,plateaux:c.plateaux||Math.max(1,Math.round(c.quantite/PLAT))});}
+function cmdSell(id){const c=D.cmd.find(x=>x.id===id);if(c)sell({orderId:id,clientNom:c.nom,clientTel:c.telephone,formatVente:c.formatVente||'plateau',nombreVendu:c.nombreVendu||(c.plateaux||Math.max(1,Math.round(c.quantite/PLAT))),plateaux:c.plateaux||Math.max(1,Math.round(c.quantite/PLAT))});}
 function editProfil(){
  openForm({title:'Mes informations',fields:[
   {name:'nom',label:'Nom complet',required:true,value:me.nom,auto:'name'},
@@ -1372,12 +1388,12 @@ function backup(){
 }
 function receiptHTML(v){
  const r=v.reste>0;
- return `<div class="rc"><h2>${esc(cfg.heroTitre)}</h2><p class="sub">${esc(cfg.adresse||'')}${cfg.telephone?' · '+esc(cfg.telephone):''}</p><p><b>REÇU N° ${esc(v.numero||'')}</b><br>Date : ${dateFr(v.date)}</p><table><tr><td>Client</td><td style="text-align:right">${esc(v.clientNom||'—')}</td></tr>${v.clientTel?`<tr><td>Téléphone</td><td style="text-align:right">${esc(v.clientTel)}</td></tr>`:''}<tr><td>Quantité</td><td style="text-align:right">${oeufs(v.quantite)}</td></tr><tr><td>Prix du plateau</td><td style="text-align:right">${money(v.prixPlateau??v.prix*PLAT)}</td></tr>${v.mode?`<tr><td>Paiement</td><td style="text-align:right">${esc(v.mode)}</td></tr>`:''}</table><div class="tot"><span>TOTAL</span><span>${money(v.montant)}</span></div>${r?`<table><tr><td>Payé</td><td style="text-align:right">${money(v.paye)}</td></tr><tr><td><b>Reste à payer</b></td><td style="text-align:right"><b>${money(v.reste)}</b></td></tr></table>`:''}<p class="foot">Servi par ${esc(v.operateurNom||'')}<br>Merci pour votre confiance !</p></div>`;
+ return `<div class="rc"><h2>${esc(cfg.heroTitre)}</h2><p class="sub">${esc(cfg.adresse||'')}${cfg.telephone?' · '+esc(cfg.telephone):''}</p><p><b>REÇU N° ${esc(v.numero||'')}</b><br>Date : ${dateFr(v.date)}</p><table><tr><td>Client</td><td style="text-align:right">${esc(v.clientNom||'—')}</td></tr>${v.clientTel?`<tr><td>Téléphone</td><td style="text-align:right">${esc(v.clientTel)}</td></tr>`:''}<tr><td>Quantité</td><td style="text-align:right">${v.formatVente?`${fmt(v.nombreVendu||1)} × ${esc(v.libelleVente||libellePaquet(v.formatVente))} (${oeufs(v.quantite)})`:oeufs(v.quantite)}</td></tr><tr><td>${v.formatVente?`Prix — ${esc(v.libelleVente||libellePaquet(v.formatVente))}`:'Prix du plateau'}</td><td style="text-align:right">${money(v.prixUnitaire??(v.prixPlateau??v.prix*PLAT))}</td></tr>${v.mode?`<tr><td>Paiement</td><td style="text-align:right">${esc(v.mode)}</td></tr>`:''}</table><div class="tot"><span>TOTAL</span><span>${money(v.montant)}</span></div>${r?`<table><tr><td>Payé</td><td style="text-align:right">${money(v.paye)}</td></tr><tr><td><b>Reste à payer</b></td><td style="text-align:right"><b>${money(v.reste)}</b></td></tr></table>`:''}<p class="foot">Servi par ${esc(v.operateurNom||'')}<br>Merci pour votre confiance !</p></div>`;
 }
 function showReceipt(v){
  if(modalDone){modalDone(false);modalDone=null;}
  lastReceipt=v;
- const txt=`Reçu ${v.numero}\n${cfg.heroTitre}\nDate : ${(v.date||'').split('-').reverse().join('/')}\n${oeufs(v.quantite)} × ${fmt(v.prixPlateau??v.prix*PLAT)} FCFA le plateau = ${fmt(v.montant)} FCFA\nMerci pour votre confiance !`;
+ const txt=`Reçu ${v.numero}\n${cfg.heroTitre}\nDate : ${(v.date||'').split('-').reverse().join('/')}\n${v.formatVente?`${fmt(v.nombreVendu||1)} × ${v.libelleVente||libellePaquet(v.formatVente)} à ${fmt(v.prixUnitaire)} FCFA`: `${oeufs(v.quantite)} au tarif plateau ${fmt(v.prixPlateau??v.prix*PLAT)} FCFA`} = ${fmt(v.montant)} FCFA\nMerci pour votre confiance !`;
  $('#mbox').className='mbox';
  $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><h3>Reçu de vente</h3>${receiptHTML(v)}<div class="row" style="margin-top:18px;justify-content:center"><button class="btn primary" data-act="print-receipt">🖨️ Imprimer</button><a class="btn line" target="_blank" rel="noopener" href="https://wa.me/${esc(waNumber(v.clientTel))}?text=${encodeURIComponent(txt)}">Envoyer par WhatsApp</a></div>`;
  showModal();
