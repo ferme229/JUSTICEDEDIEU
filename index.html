@@ -458,7 +458,7 @@ function imgToData(file,max=900,limit=700000){
 
 /* ============ État ============ */
 let user=null,me=null,prof='loading',authReady=false,registering=false;
-let cfg=(()=>{try{return {...DEF_CFG,...JSON.parse(localStorage.getItem('ljd_public_config')||'{}')}}catch(_){return {...DEF_CFG}}})(),animaux=[],histo=[];
+let cfg=(()=>{let c;try{c={...DEF_CFG,...JSON.parse(localStorage.getItem('ljd_public_config')||'{}')}}catch(_){c={...DEF_CFG}}c.prixOeuf=100;c.prixLot3=250;c.prixPlateau=2300;return c})(),animaux=[],histo=[];
 // Affiche immédiatement les dernières statistiques connues sur cet appareil, puis les actualise depuis Firebase.
 let stats=(()=>{try{return JSON.parse(localStorage.getItem('ljd_public_stats')||'{}')}catch(_){return {}}})();
 const D={prod:[],trans:[],ventes:[],sante:[],dep:[],users:[],visas:[],cmd:[],journal:[],avisAll:[],mesAvis:[],lots:[],aliment:[],vaccins:[],taches:[],annonces:[],objectifs:[],presences:[],paies:[],myPres:[],myPaies:[],ventesAll:[],paiements:[]};
@@ -602,7 +602,7 @@ onAuthStateChanged(auth,u=>{if(registering)return;handleUser(u);});
 
 /* ============ Données publiques ============ */
 const pubErr=e=>{console.error(e);if(!warned){warned=true;toast("Impossible de charger le contenu du site. Vérifiez les règles Firestore.",'err');}};
-onSnapshot(doc(db,'site','config'),s=>{const saved=s.exists()?s.data():{};cfg={...DEF_CFG,...saved};/* Migration locale des anciens tarifs par défaut, sans écraser les prix personnalisés. */if(saved.prixOeuf===120)cfg.prixOeuf=100;if(saved.prixPlateau===3600)cfg.prixPlateau=2300;if(saved.prixLot3==null)cfg.prixLot3=250;try{localStorage.setItem('ljd_public_config',JSON.stringify(cfg));}catch(_){}renderAll();},pubErr);
+onSnapshot(doc(db,'site','config'),s=>{const saved=s.exists()?s.data():{};cfg={...DEF_CFG,...saved};/* Tarifs officiels de la ferme : ils remplacent les anciennes valeurs éventuellement enregistrées dans Firebase. */cfg.prixOeuf=100;cfg.prixLot3=250;cfg.prixPlateau=2300;try{localStorage.setItem('ljd_public_config',JSON.stringify(cfg));}catch(_){}renderAll();},pubErr);
 onSnapshot(collection(db,'animaux'),s=>{animaux=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.nom).localeCompare(String(b.nom),'fr'));renderAll();},pubErr);
 onSnapshot(collection(db,'historique'),s=>{histo=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date&&b.date?a.date.localeCompare(b.date):a.date?1:b.date?-1:(a.ordre??99)-(b.ordre??99));renderAll();},pubErr);
 function startGalerie(n){galUnsub&&galUnsub();galN=n;galUnsub=onSnapshot(query(collection(db,'galerie'),orderBy('createdAt','desc'),limit(n)),s=>{galerie=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();},pubErr);}
@@ -959,7 +959,7 @@ function pMag(){
  const tot=`<div class="stats">${stat('Total entrées du mois',oeufs(sum(days,'entree')))}${stat('Total vendu',oeufs(sum(days,'vendus')),'j')}${stat('Total cassés au magasin',oeufs(sum(days,'casses')),'r')}${stat('Montant total vendu',money(sum(days,'montant')))}</div>`;
  const TL={vente:['Vente','green'],perte:['Cassés','red'],ajustement:['Ajustement','blue'],entree:['Entrée','amber']};
  const det=D.ventes.filter(v=>(v.date||'').startsWith(curMonth)).map(v=>{const [l,c]=TL[v.type]||['',''];return `<tr><td>${dateFr(v.date)}</td><td>${badge(l,c)}</td><td>${oeufs(v.quantite)}</td><td>${v.type==='vente'?fmt(v.prixPlateau??v.prix*PLAT):''}</td><td>${v.type==='vente'?money(v.montant):''}</td><td>${esc(v.clientNom||v.motif||'')}</td><td>${esc(v.clientTel||'')}</td><td>${esc(v.operateurNom||'')}</td><td>${v.type==='vente'?btnIf(true,'receipt','🧾 Reçu','line',v.id):''}</td></tr>`;});
- return `<div class="bloc"><div class="head"><div><h3>Stock disponible</h3><div class="bigstock" style="font-size:2rem">${oeufs(stock())}</div><p class="muted">Tarifs : ${money(prixOeuf())} l’unité · ${money(prixLot3())} les 3 · ${money(prixPl())} le plateau de 30 œufs.</p></div><div class="row">${btnIf(can(CAN.vente),'sell','Vendre','primary')}${btnIf(can(CAN.vente),'loss','Œufs cassés au magasin','line')}${btnIf(isAdmin(),'adjust','Ajuster le stock','line')}${btnIf(isAdmin(),'price','Prix du plateau','line')}</div></div></div>
+ return `<div class="bloc"><div class="head"><div><h3>Stock disponible</h3><div class="bigstock" style="font-size:2rem">${oeufs(stock())}</div><p class="muted">Tarifs : ${money(prixOeuf())} l’unité · ${money(prixLot3())} les 3 · ${money(prixPl())} le plateau de 30 œufs.</p></div><div class="row">${btnIf(can(CAN.vente),'sell','Vendre','primary')}${btnIf(can(CAN.vente),'loss','Œufs cassés au magasin','line')}${btnIf(isAdmin(),'adjust','Ajuster le stock','line')}</div></div></div>
  <div class="bloc"><h3>Lots à mettre en stock</h3>${lots}</div>
  <div class="bloc"><div class="head"><div><h3>Fiche de stock et vente journalière</h3><p class="muted">Stock total = veille + entrée du jour. Reste du jour = stock total − vendus − cassés. Le reste du jour devient le stock veille du lendemain.</p></div></div>${monthBar('mag')}${table(['Date','Stock veille','Entrée du jour','Stock total disponible','Vendus','Cassés au magasin','Ajust.','Reste du jour','Prix du plateau (FCFA)','Montant total vendu','Client / destination','Magasinière'],rows)||'<p class="empty">Aucun mouvement ce mois-ci.</p>'}<h3 style="margin-top:22px">Total du mois</h3>${tot}${visaRow('magasin')}</div>
  <div class="bloc"><h3>Détail des mouvements du mois</h3>${table(['Date','Type','Quantité','Prix du plateau','Montant','Client / motif','Téléphone','Par',''],det)||'<p class="empty">Aucun mouvement.</p>'}</div>
@@ -1187,27 +1187,26 @@ function sell(prefill){
  prefill=prefill&&typeof prefill==='object'?prefill:{};
  const formatInitial=prefill.formatVente||(prefill.plateaux?'plateau':'plateau');
  const quantiteInitial=prefill.nombreVendu||(prefill.plateaux||1);
- const p0=formatInitial==='plateau'?bestPrice(quantiteInitial).prix:prixPaquet(formatInitial,quantiteInitial);
  openForm({title:'Enregistrer une vente',intro:`Stock disponible : <b>${oeufs(stock())}</b>. Tarifs : ${money(prixOeuf())} l’unité · ${money(prixLot3())} les 3 · ${money(prixPl())} le plateau de 30 œufs.<span id="promoHint"></span>`,submit:'Valider la vente',fields:[
   {name:'formatVente',label:'Format vendu',type:'select',required:true,value:formatInitial,options:[['unite',`À l’unité — ${money(prixOeuf())}`],['lot3',`Lot de 3 — ${money(prixLot3())}`],['plateau',`Plateau de 30 — ${money(prixPl())}`]]},
   {name:'nombreVendu',label:'Nombre de unités / lots / plateaux',type:'number',required:true,value:quantiteInitial},
-  {name:'prix',label:'Prix du format choisi (FCFA)',type:'number',required:true,value:p0},
   {name:'paye',label:'Montant payé maintenant (FCFA)',type:'number',help:'Laissez vide si le client paie la totalité. Sinon, le reste est enregistré comme crédit.'},
   {name:'mode',label:'Mode de paiement',type:'select',value:'Espèces',options:['Espèces','Mobile Money MTN','Mobile Money Moov','Autre'].map(x=>[x,x])},
   {name:'clientNom',label:'Nom du client / destination',required:true,value:prefill.clientNom},
   {name:'clientTel',label:'Téléphone du client',type:'tel',value:prefill.clientTel}],
   onSubmit:async v=>{
    if(!(v.nombreVendu>=1)||!Number.isInteger(v.nombreVendu))throw new Error('Indiquez une quantité entière (1 minimum).');
-   const q=v.nombreVendu*oeufsParPaquet(v.formatVente),montant=v.nombreVendu*v.prix,paye=v.paye===null?montant:v.paye;
+   const prixFormat=prixPaquet(v.formatVente,v.nombreVendu);
+   const q=v.nombreVendu*oeufsParPaquet(v.formatVente),montant=v.nombreVendu*prixFormat,paye=v.paye===null?montant:v.paye;
    if(paye>montant)throw new Error('Le montant payé dépasse le total de la vente.');
    const prixEquivalentPlateau=montant/(q/PLAT);
-   const rec=await moveStock(-q,{type:'vente',formatVente:v.formatVente,nombreVendu:v.nombreVendu,libelleVente:libellePaquet(v.formatVente),quantite:q,prixUnitaire:v.prix,prixPlateau:prixEquivalentPlateau,prix:prixEquivalentPlateau/PLAT,montant,paye,reste:montant-paye,mode:v.mode,clientNom:v.clientNom,clientTel:v.clientTel});
+   const rec=await moveStock(-q,{type:'vente',formatVente:v.formatVente,nombreVendu:v.nombreVendu,libelleVente:libellePaquet(v.formatVente),quantite:q,prixUnitaire:prixFormat,prixPlateau:prixEquivalentPlateau,prix:prixEquivalentPlateau/PLAT,montant,paye,reste:montant-paye,mode:v.mode,clientNom:v.clientNom,clientTel:v.clientTel});
    if(prefill.orderId){try{await updateDoc(doc(db,'commandes',prefill.orderId),{status:'livree',numeroRecu:rec.numero,updatedAt:serverTimestamp()});}catch(e){console.warn(e);}}
    logAct('Vente',`${rec.numero} · ${v.nombreVendu} ${libellePaquet(v.formatVente)} · ${fmt(montant)} FCFA${montant>paye?' · crédit '+fmt(montant-paye):''} · ${v.clientNom}`);
    closeModal();toast(`Vente enregistrée : ${money(montant)}`);showReceipt(rec);}});
- const q=$('#f_nombreVendu'),pr=$('#f_prix'),fmtEl=$('#f_formatVente'),hint=$('#promoHint');let touched=false;
- const upd=()=>{const f=fmtEl.value,n=Number(q.value)||1; if(!touched)pr.value=f==='plateau'?bestPrice(n).prix:prixPaquet(f,n);hint.innerHTML=f==='plateau'&&bestPrice(n).promo?`<br>🏷️ Promotion « ${esc(bestPrice(n).promo.titre)} » appliquée : ${money(bestPrice(n).prix)} le plateau.`:'';};
- pr.addEventListener('input',()=>{touched=true;});q.addEventListener('input',()=>{touched=false;upd();});fmtEl.addEventListener('change',()=>{touched=false;upd();});upd();
+ const q=$('#f_nombreVendu'),fmtEl=$('#f_formatVente'),hint=$('#promoHint');
+ const upd=()=>{const f=fmtEl.value,n=Number(q.value)||1;hint.innerHTML=f==='plateau'&&bestPrice(n).promo?`<br>🏷️ Promotion « ${esc(bestPrice(n).promo.titre)} » appliquée : ${money(bestPrice(n).prix)} le plateau.`:'';};
+ q.addEventListener('input',upd);fmtEl.addEventListener('change',upd);upd();
 }
 function loss(){
  openForm({title:'Œufs cassés au magasin',intro:`Stock disponible : <b>${oeufs(stock())}</b>.`,fields:[
