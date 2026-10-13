@@ -332,6 +332,7 @@ td{padding:9px 10px;border-bottom:1px solid var(--ligne);vertical-align:top}
 <div id="toasts" aria-live="polite"></div>
 <noscript><p style="padding:20px;text-align:center">Ce site nécessite JavaScript pour fonctionner.</p></noscript>
 
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="module">
 import {initializeApp,deleteApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,sendPasswordResetEmail,deleteUser,EmailAuthProvider,reauthenticateWithCredential,updatePassword} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -352,6 +353,64 @@ const auth=getAuth(app);
 let db;
 try{db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()}),experimentalAutoDetectLongPolling:true},'default');}
 catch(e){console.warn('cache local indisponible',e);db=getFirestore(app,'default');}
+
+/* ============ EmailJS ============
+   Remplacez les trois valeurs ci-dessous depuis votre tableau de bord EmailJS.
+   Le modèle EmailJS doit utiliser : To Email={{to_email}}, Subject={{subject}}, contenu={{message}}.
+   N'ajoutez JAMAIS une clé privée/secrète EmailJS dans ce fichier public.
+*/
+const EMAILJS_CONFIG={
+ publicKey:'VOTRE_CLE_PUBLIQUE_EMAILJS',
+ serviceId:'VOTRE_SERVICE_ID',
+ templateId:'VOTRE_TEMPLATE_ID'
+};
+const EMAILJS_CONFIGURE=()=>window.emailjs && EMAILJS_CONFIG.publicKey!=='VOTRE_CLE_PUBLIQUE_EMAILJS' && EMAILJS_CONFIG.serviceId!=='VOTRE_SERVICE_ID' && EMAILJS_CONFIG.templateId!=='VOTRE_TEMPLATE_ID';
+async function envoyerEmailJS({toEmail,subject,message,replyTo=''}){
+ if(!EMAILJS_CONFIGURE()){
+  console.warn('EmailJS pas encore configuré : renseignez publicKey, serviceId et templateId.');
+  return false;
+ }
+ try{
+  await window.emailjs.send(EMAILJS_CONFIG.serviceId,EMAILJS_CONFIG.templateId,{
+   to_email:toEmail,subject,message,reply_to:replyTo
+  },{publicKey:EMAILJS_CONFIG.publicKey});
+  return true;
+ }catch(e){console.error('Échec envoi EmailJS',e);return false;}
+}
+async function envoyerEmailsInscription({nom,email,telephone,role,isClient}){
+ const superviseur='franckadre7@gmail.com';
+ const roleLabel=ROLES[role]||role;
+ const confirmation=await envoyerEmailJS({
+  toEmail:email,
+  subject:'Votre inscription — La Justice de Dieu',
+  message:`Bonjour ${nom},
+
+Votre compte sur le site La Justice de Dieu a bien été créé avec l'adresse ${email}.
+Rôle demandé : ${roleLabel}.
+${isClient?'Votre compte client est créé.':'Votre demande de rôle est en attente de validation par la direction.'}
+
+La Justice de Dieu — Dogbo, Bénin`,
+  replyTo:email
+ });
+ let notification=true;
+ if(!isClient){
+  notification=await envoyerEmailJS({
+   toEmail:superviseur,
+   subject:`Demande d'inscription — ${roleLabel}`,
+   message:`Une nouvelle inscription nécessite votre attention.
+
+Nom : ${nom}
+Email : ${email}
+Téléphone : ${telephone||'Non renseigné'}
+Rôle demandé : ${roleLabel}
+Statut : en attente de validation.
+
+Connectez-vous à l'espace équipe pour examiner cette demande.`,
+   replyTo:email
+  });
+ }
+ return confirmation && notification;
+}
 
 /* ============ Constantes ============ */
 const ROLES={pdg:'PDG',superviseur:'Superviseur général',secretaire_general:'Secrétaire général',veterinaire:'Vétérinaire',receptionniste:'Réceptionniste',magasiniere:'Magasinière',stagiaire:'Stagiaire',client:'Client'};
@@ -525,7 +584,7 @@ function openRegister(){
    {name:'adresse',label:'Adresse',auto:'street-address'},
    {name:'email',label:'Adresse Gmail',type:'email',required:true,auto:'email'},
    {name:'password',label:'Mot de passe',type:'password',required:true,auto:'new-password',help:'6 caractères minimum.'},
-   {name:'role',label:'Je suis',type:'select',value:'client',options:Object.entries(ROLES).map(([k,l])=>[k,k==='client'?'Client':(UNIQUE.includes(k)&&slots[k]?l+' (déjà attribué)':l+' (à valider)'),UNIQUE.includes(k)&&!!slots[k]]),help:'Un seul compte par poste du personnel (sauf stagiaires). Le rôle doit être confirmé par le PDG ou le superviseur.'}],
+   {name:'role',label:'Je suis',type:'select',value:'client',options:Object.entries(ROLES).map(([k,l])=>[k,k==='client'?'Client':(UNIQUE.includes(k)&&slots[k]?l+' (déjà attribué)':l+' (à valider)'),UNIQUE.includes(k)&&!!slots[k]]),help:'Chaque poste est réservé au premier compte qui le demande. Le personnel reste en attente de validation par la direction.'}],
   footer:`<p class="links">Déjà un compte ? <a href="#" data-act="login">Connexion</a></p>`,
   onSubmit:async v=>{
    if(v.password.length<6)throw new Error('Mot de passe trop court (6 caractères minimum).');
@@ -535,7 +594,7 @@ function openRegister(){
    try{
     cred=await createUserWithEmailAndPassword(auth,v.email,v.password);
     adminRole=adminRoleFor(cred.user.email);
-    await saveProfile(cred.user,c=>{claimed=c;return {uid:cred.user.uid,email:cred.user.email,nom:v.nom,telephone:v.tel,adresse:v.adresse,role:c||'client',roleDemande:c||v.role,status:(c||isClient)?'active':'pending',createdAt:serverTimestamp()};},adminRole,true);
+    await saveProfile(cred.user,c=>{claimed=c;return {uid:cred.user.uid,email:cred.user.email,nom:v.nom,telephone:v.tel,adresse:v.adresse,role:c||'client',roleDemande:c||v.role,status:(c||isClient)?'active':'pending',createdAt:serverTimestamp()};},adminRole,true,v.role);
    }catch(e){
     if(cred){try{await deleteUser(cred.user);}catch(_){}}
     registering=false;throw e;
@@ -543,7 +602,8 @@ function openRegister(){
    registering=false;closeModal();
    await handleUser(auth.currentUser);
    location.hash='espace';
-   toast(claimed?`Profil ${ROLES[claimed]} créé et activé.`:isClient?'Bienvenue ! Votre profil est créé.':'Profil créé. Un administrateur doit valider votre rôle.');
+   const emailsEnvoyes=await envoyerEmailsInscription({nom:v.nom,email:cred.user.email,telephone:v.tel,role:v.role,isClient});
+   toast((claimed?`Profil ${ROLES[claimed]} créé et activé.`:isClient?'Bienvenue ! Votre profil est créé.':'Profil créé. Un administrateur doit valider votre rôle.')+(emailsEnvoyes?' E-mails envoyés.':" Configurez EmailJS pour activer les e-mails de notification."));
   }});
 }
 function openForgot(){
@@ -551,13 +611,21 @@ function openForgot(){
   fields:[{name:'email',label:'Adresse Gmail',type:'email',required:true,auto:'email'}],
   onSubmit:async v=>{await sendPasswordResetEmail(auth,v.email);closeModal();toast('Lien envoyé. Vérifiez votre boîte mail (et les spams).');}});
 }
-async function saveProfile(u,build,adminRole,isNew){
+async function saveProfile(u,build,adminRole,isNew,requestedRole=null){
  await withTimeout(runTransaction(db,async tx=>{
   let claimed=null;
-  if(adminRole){
-   const sref=doc(db,'roleSlots',adminRole),ss=await tx.get(sref);
-   if(!ss.exists()){tx.set(sref,{uid:u.uid,createdAt:serverTimestamp()});claimed=adminRole;}
-   else if(ss.data().uid===u.uid)claimed=adminRole;
+  // Le poste demandé est réservé atomiquement pendant la création du profil.
+  // Une transaction Firestore empêche deux inscriptions simultanées d'obtenir le même poste.
+  const reserveRole=adminRole||(isNew&&UNIQUE.includes(requestedRole)?requestedRole:null);
+  let slotSnap=null,slotRef=null;
+  if(reserveRole){
+   slotRef=doc(db,'roleSlots',reserveRole);
+   slotSnap=await tx.get(slotRef);
+   if(slotSnap.exists()&&slotSnap.data().uid!==u.uid){
+    throw new Error(`Le poste « ${ROLES[reserveRole]} » est déjà attribué ou réservé. Choisissez un autre rôle.`);
+   }
+   if(!slotSnap.exists())tx.set(slotRef,{uid:u.uid,createdAt:serverTimestamp(),status:'reserved'});
+   if(adminRole)claimed=adminRole;
   }
   const data=build(claimed);
   if(!Object.keys(data).length)return;
@@ -1266,7 +1334,8 @@ async function assignRole(u,role,status){
   if(other)throw new Error(`Le poste « ${ROLES[role]} » est déjà occupé par ${other.nom}.`);
  }
  await runTransaction(db,async tx=>{
-  const oldRef=UNIQUE.includes(u.role)?doc(db,'roleSlots',u.role):null;
+  const oldRole=UNIQUE.includes(u.role)?u.role:(u.status==='pending'&&UNIQUE.includes(u.roleDemande)?u.roleDemande:null);
+  const oldRef=oldRole?doc(db,'roleSlots',oldRole):null;
   const newRef=UNIQUE.includes(role)&&status==='active'?doc(db,'roleSlots',role):null;
   const same=!!(oldRef&&newRef&&oldRef.path===newRef.path);
   const oldS=oldRef?await tx.get(oldRef):null;
