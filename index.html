@@ -441,14 +441,16 @@ function logAct(action,detail=''){
  addDoc(collection(db,'journal'),{action,detail:String(detail).slice(0,300),uid:user.uid,nom:me.nom,role:me.role,createdAt:serverTimestamp()}).catch(e=>console.warn('journal',e));
 }
 /* ============ Emails automatiques (EmailJS) ============ */
-const emailCfg=()=>({on:cfg.ejsOn!=='non',serviceId:cfg.ejsService||'',publicKey:cfg.ejsKey||'',tplAdmin:cfg.ejsTplAdmin||'',tplUser:cfg.ejsTplUser||'',adminTo:cfg.ejsAdminTo||''});
+const emailCfg=()=>({on:cfg.ejsOn!=='non',serviceId:cfg.ejsService||'',publicKey:cfg.ejsKey||'',userServiceId:cfg.ejsUserService||cfg.ejsService||'',userPublicKey:cfg.ejsUserKey||cfg.ejsKey||'',tplAdmin:cfg.ejsTplAdmin||'',tplUser:cfg.ejsTplUser||'',adminTo:cfg.ejsAdminTo||''});
 const canMailAdmin=()=>{const c=emailCfg();return !!(c.on&&c.serviceId&&c.publicKey&&(c.tplAdmin||(c.tplUser&&c.adminTo)));};
 const ejsReady=k=>{const c=emailCfg();return !!(c.on&&c.serviceId&&c.publicKey&&(k?c[k]:true));};
-async function ejsSend(template,params){
+async function ejsSend(template,params,kind='admin'){
  const c=emailCfg();
- if(!c.on||!c.serviceId||!c.publicKey||!template)return{ok:false,err:'EmailJS non configuré'};
+ const serviceId=kind==='user'?c.userServiceId:c.serviceId;
+ const publicKey=kind==='user'?c.userPublicKey:c.publicKey;
+ if(!c.on||!serviceId||!publicKey||!template)return{ok:false,err:'EmailJS non configuré pour '+(kind==='user'?'les clients/stagiaires':'la direction')};
  try{
-  const r=await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:c.serviceId,template_id:template,user_id:c.publicKey,template_params:{site_name:cfg.heroTitre,site_url:location.href.split('#')[0],...params}})});
+  const r=await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:serviceId,template_id:template,user_id:publicKey,template_params:{site_name:cfg.heroTitre,site_url:location.href.split('#')[0],...params}})});
   if(!r.ok){const t=await r.text();console.warn('EmailJS',r.status,t);return{ok:false,err:`${r.status} ${t}`.slice(0,200)};}
   return{ok:true};
  }catch(e){console.warn('EmailJS',e);return{ok:false,err:String((e&&e.message)||e)};}
@@ -458,10 +460,10 @@ const okMail=e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e||'');
 const mailAdmin=(subject,message,details='')=>{
  const c=emailCfg(),p={subject:clip(subject,150),title:clip(subject,150),message:clip(message),details:clip(details)};
  if(c.tplAdmin)return ejsSend(c.tplAdmin,p);
- if(c.tplUser&&c.adminTo)return ejsSend(c.tplUser,{...p,to_email:c.adminTo,to_name:'Direction'});
+ if(c.tplUser&&c.adminTo)return ejsSend(c.tplUser,{...p,to_email:c.adminTo,to_name:'Direction'},'admin');
  return Promise.resolve({ok:false,err:'aucune adresse de direction configurée'});
 };
-const mailUser=(to,nom,subject,message,details='')=>okMail(to)?ejsSend(emailCfg().tplUser,{to_email:to,to_name:clip(nom,80),subject:clip(subject,150),title:clip(subject,150),message:clip(message),details:clip(details)}):Promise.resolve({ok:false,err:'adresse invalide'});
+const mailUser=(to,nom,subject,message,details='')=>okMail(to)?ejsSend(emailCfg().tplUser,{to_email:to,to_name:clip(nom,80),subject:clip(subject,150),title:clip(subject,150),message:clip(message),details:clip(details)},'user'):Promise.resolve({ok:false,err:'adresse invalide'});
 const staffMails=(who)=>D.users.filter(u=>u.status==='active'&&u.id!==(user&&user.uid)&&okMail(u.email)&&(who==='tous'?STAFF.includes(u.role):u.role==='stagiaire'));
 let digestTried=false;
 async function maybeDigest(force){
@@ -477,8 +479,10 @@ async function maybeDigest(force){
 function ejsForm(){
  const c=emailCfg();
  openForm({title:'Emails automatiques (EmailJS)',intro:"Collez ici les identifiants de votre compte emailjs.com (jamais la clé privée). Les alertes partent vers le PDG et le superviseur ; les clients et les stagiaires reçoivent leurs messages automatiquement.",submit:'Enregistrer',fields:[
-  {name:'ejsService',label:'Service ID',value:c.serviceId,required:true,placeholder:'service_xxxxxxx'},
-  {name:'ejsKey',label:'Public Key (clé publique)',value:c.publicKey,required:true},
+   {name:'ejsService',label:'Service ID — alertes direction (compte EmailJS alertes)',value:c.serviceId,required:true,placeholder:'service_xxxxxxx'},
+  {name:'ejsKey',label:'Public Key — alertes direction',value:c.publicKey,required:true},
+  {name:'ejsUserService',label:'Service ID — messages clients/stagiaires (ancien compte)',value:c.userServiceId,required:true,placeholder:'service_xxxxxxx'},
+  {name:'ejsUserKey',label:'Public Key — messages clients/stagiaires',value:c.userPublicKey,required:true},
   {name:'ejsTplUser',label:'Template ID : messages aux clients et stagiaires',value:c.tplUser,required:true,placeholder:'template_xxxxxxx'},
   {name:'ejsTplAdmin',label:'Template ID : alertes au PDG et au superviseur (recommandé)',value:c.tplAdmin,placeholder:'template_xxxxxxx'},
   {name:'ejsAdminTo',label:"Adresses de la direction (seulement si vous n'avez qu'un modèle)",value:c.adminTo,placeholder:'pdg@gmail.com, superviseur@gmail.com',help:"Séparées par une virgule. Attention : ces adresses sont visibles dans la configuration publique du site. Avec un 2e modèle dont l'adresse est fixée dans EmailJS, rien n'est exposé."},
@@ -486,7 +490,7 @@ function ejsForm(){
   footer:'<p class="links"><a href="#" data-act="ejs-test">Envoyer un email de test</a></p>',
   onSubmit:async v=>{
    if(!v.ejsTplAdmin&&!v.ejsAdminTo)throw new Error("Indiquez le modèle des alertes direction, ou les adresses de la direction.");
-   await saveCfg({ejsService:v.ejsService,ejsKey:v.ejsKey,ejsTplAdmin:v.ejsTplAdmin,ejsTplUser:v.ejsTplUser,ejsAdminTo:v.ejsAdminTo,ejsOn:v.ejsOn});
+   await saveCfg({ejsService:v.ejsService,ejsKey:v.ejsKey,ejsUserService:v.ejsUserService,ejsUserKey:v.ejsUserKey,ejsTplAdmin:v.ejsTplAdmin,ejsTplUser:v.ejsTplUser,ejsAdminTo:v.ejsAdminTo,ejsOn:v.ejsOn});
    logAct('Emails automatiques','configuration modifiée');closeModal();toast('Emails automatiques enregistrés');}});
 }
 function ejsTest(){
@@ -608,8 +612,8 @@ function openRegister(){
    await handleUser(auth.currentUser);
    location.hash='espace';
    toast(claimed?`Profil ${ROLES[claimed]} créé et activé.`:isClient?'Bienvenue ! Votre profil est créé.':'Profil créé. Un administrateur doit valider votre rôle.');
-   if(claimed)mailAdmin('Compte administrateur activé',`${v.nom} a créé son profil ${ROLES[claimed]}.`,`Email : ${cred.user.email}`);
-   else if(!isClient)mailAdmin('Nouvelle inscription à valider',`${v.nom} demande le rôle ${ROLES[v.role]}.`,`Email : ${cred.user.email} · Téléphone : ${v.tel}`);
+   if(claimed)mailAdmin('Alerte : nouveau compte administrateur',`Un nouveau compte administrateur a été créé : ${v.nom} (${ROLES[claimed]}).`,`Email : ${cred.user.email} · Téléphone : ${v.tel||'—'} · Date : ${new Date().toLocaleString('fr-FR')}`);
+   else if(!isClient)mailAdmin('Alerte : nouvelle inscription à valider',`Nouvelle demande d’inscription : ${v.nom} demande le rôle ${ROLES[v.role]}.`,`Email : ${cred.user.email} · Téléphone : ${v.tel||'—'} · Date : ${new Date().toLocaleString('fr-FR')} · Action : examiner et valider la demande dans l’espace administration.`);
    mailUser(cred.user.email,v.nom,(isClient||claimed)?'Bienvenue à La Justice de Dieu':'Votre demande est bien reçue',(isClient||claimed)?'Votre profil est créé. Vous pouvez dès maintenant vous connecter, passer des commandes et suivre vos achats.':`Votre demande de compte (${ROLES[v.role]}) a bien été reçue. Le PDG ou le superviseur doit la valider : vous recevrez un email dès que votre compte sera activé.`);
   }});
 }
@@ -1406,7 +1410,7 @@ function galForm(id){
 function newCmd(){
  const P=activePromos();
  openForm({title:'Passer une commande',intro:`Tarifs : <b>${money(prixOeuf())}</b> l’unité · <b>${money(prixLot3())}</b> les 3 œufs · <b>${money(prixDemi())}</b> le demi-plateau · <b>${money(prixPl())}</b> le plateau de 30 œufs.${P.map(p=>`<br>🏷️ ${esc(p.titre)} : ${money(p.prix)} le plateau${p.qteMin>1?` à partir de ${plX(p.qteMin)}`:''}`).join('')}<br>La ferme confirmera votre commande.`,submit:'Envoyer la commande',fields:[
-  {name:'formatVente',label:'Format commandé',type:'select',required:true,value:'plateau',options:[['unite',`Œuf à l’unité — ${money(prixOeuf())}`],['lot3',`Lot de 3 œufs — ${money(prixLot3())}`],['plateau',`Plateau de 30 œufs — ${money(prixPl())}`]]},
+  {name:'formatVente',label:'Format commandé',type:'select',required:true,value:'plateau',options:[['unite',`Œuf à l’unité — ${money(prixOeuf())}`],['lot3',`Lot de 3 œufs — ${money(prixLot3())}`],['demi',`Demi-plateau de 15 œufs — ${money(prixDemi())}`],['plateau',`Plateau de 30 œufs — ${money(prixPl())}`]]},
   {name:'nombreVendu',label:'Quantité',type:'number',required:true,value:1,help:'Indiquez le nombre d’unités, de lots de 3 ou de plateaux selon le format choisi.'},
   {name:'mode',label:'Mode de remise',type:'select',value:'Retrait à la ferme',options:[['Retrait à la ferme','Retrait à la ferme'],['Livraison','Livraison']]},
   {name:'date',label:'Date souhaitée',type:'date',required:true,value:today(),min:today()},
@@ -1417,7 +1421,7 @@ function newCmd(){
    const q=v.nombreVendu*oeufsParPaquet(v.formatVente),pp=prixPaquet(v.formatVente,v.nombreVendu),montant=v.nombreVendu*pp;
    await addDoc(collection(db,'commandes'),{uid:user.uid,nom:me.nom,telephone:me.telephone||'',formatVente:v.formatVente,nombreVendu:v.nombreVendu,libelleVente:libellePaquet(v.formatVente),plateaux:q/PLAT,quantite:q,mode:v.mode,dateSouhaitee:v.date,note:v.note,prixUnitaire:pp,montantCommande:montant,prixPlateau:montant/(q/PLAT),prix:(montant/(q/PLAT))/PLAT,status:'nouvelle',email:me.email||user.email||'',createdAt:serverTimestamp()});
    const lib=`${v.nombreVendu} × ${libellePaquet(v.formatVente)}`;
-   mailAdmin('Nouvelle commande',`${me.nom} a commandé ${lib} (${money(montant)}).`,`Téléphone : ${me.telephone||'—'} · ${v.mode} · pour le ${dateFr(v.date)}${v.note?' · '+v.note:''}`);
+   mailAdmin('Alerte : nouvelle commande client',`Nouvelle commande de ${me.nom} : ${lib}. Montant : ${money(montant)}.`,`Email client : ${me.email||user.email||'—'} · Téléphone : ${me.telephone||'—'} · Remise : ${v.mode} · Date souhaitée : ${dateFr(v.date)}${v.note?' · Précisions : '+v.note:''} · Action : contacter le client et traiter la commande.`);
    mailUser(me.email||user.email,me.nom,'Votre commande est bien reçue',`Nous avons bien reçu votre commande : ${lib} (${money(montant)}) pour le ${dateFr(v.date)}. La ferme vous contactera pour la confirmer.`);
    closeModal();toast('Commande envoyée. La ferme vous contactera.');}});
 }
