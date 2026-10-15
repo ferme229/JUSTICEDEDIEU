@@ -366,7 +366,9 @@ const SUPERVISEUR_EMAILS=['franckadre7@gmail.com'];
 const UNIQUE=['pdg','superviseur','secretaire_general','veterinaire','receptionniste','magasiniere'];
 const adminRoleFor=e=>{e=(e||'').toLowerCase();return PDG_EMAILS.includes(e)?'pdg':SUPERVISEUR_EMAILS.includes(e)?'superviseur':null;};
 const FIN=['pdg','superviseur','secretaire_general'];
-const CAN={prod:ADMINS,recep:[...ADMINS,'receptionniste'],vente:[...ADMINS,'magasiniere'],veto:[...ADMINS,'veterinaire']};
+const CAN={prod:['superviseur'],recep:['superviseur','receptionniste'],vente:ADMINS.concat(['magasiniere']),veto:[...ADMINS,'veterinaire']};
+const canManageRoles=()=>isSup();
+const canHandleStock=()=>!!me&&me.status==='active'&&me.role!=='pdg';
 const ORDER_STAFF=[...ADMINS,'magasiniere'];
 const STATUS={pending:['En attente','amber'],active:['Actif','green'],banned:['Suspendu','red']};
 const VIEWS=['accueil','historique','animaux','galerie','contact','espace'];
@@ -886,8 +888,10 @@ function tabsFor(){
  else t.push(['commandes','🛒 Mes commandes']);
  if(staff){const n=D.taches.filter(x=>x.statut!=='fait'&&(isAdmin()||!x.assigneUid||x.assigneUid===user.uid)).length;t.push(['taches','✅ Tâches'+(n?` (${n})`:'')]);}
  if(isAdmin()){
-  const n=D.users.filter(u=>u.status==='pending').length,a=D.avisAll.filter(x=>x.status==='pending').length;
-  t.push(['equipe','👷 Équipe et salaires'],['inscrits','👥 Inscrits'+(n?` (${n})`:'')],['avisadm','⭐ Avis'+(a?` (${a})`:'')],['journal','📜 Journal']);
+  const a=D.avisAll.filter(x=>x.status==='pending').length;
+  t.push(['equipe','👷 Équipe et salaires']);
+  if(isSup()){const n=D.users.filter(u=>u.status==='pending').length;t.push(['inscrits','👥 Inscrits'+(n?` (${n})`:'')]);}
+  t.push(['avisadm','⭐ Avis'+(a?` (${a})`:'')],['journal','📜 Journal']);
  }
  t.push(['profil','👤 Mon profil']);
  return t;
@@ -899,7 +903,7 @@ function renderEspace(){
  if(!user){box.innerHTML=`<div class="card center"><h2>Mon espace</h2><p>Connectez-vous pour accéder à votre espace.</p><div class="row" style="justify-content:center"><button class="btn primary" data-act="login">Connexion</button><button class="btn line" data-act="register">Créer mon profil</button></div></div>`;return;}
  if(prof==='missing'||!me){box.innerHTML=`<div class="card center"><h2>Profil introuvable</h2><p>Votre compte existe mais son profil n'a pas été trouvé (ou l'accès est refusé par les règles Firestore). Déconnectez-vous puis recréez votre profil, ou contactez la direction.</p><button class="btn primary" data-act="logout">Se déconnecter</button></div>`;return;}
  if(me.status==='pending'){box.innerHTML=`<div class="card center"><h2>Compte en attente de validation</h2><p>Bonjour ${esc(me.nom)}. Vous avez demandé le rôle <b>${esc(ROLES[me.roleDemande]||me.roleDemande)}</b>. Le PDG ou le superviseur doit le valider. Cette page se met à jour automatiquement.</p><div class="row" style="justify-content:center"><button class="btn line" data-act="chg-pwd">🔑 Changer mon mot de passe</button><button class="btn line" data-act="logout">Se déconnecter</button></div></div>`;return;}
- const tabs=tabsFor();if(!tabs.some(t=>t[0]===curTab))curTab='resume';
+ const tabs=tabsFor();if(!tabs.some(t=>t[0]===curTab))curTab='resume';if(me.role==='pdg'&&curTab==='inscrits')curTab='resume';
  const panel={resume:pResume,production:pProd,reception:pRecep,magasin:pMag,sante:pSante,depenses:pDep,inscrits:pUsers,commandes:pCmd,profil:pProfil,journal:pJournal,avisadm:pAvisAdm,elevage:pElevage,clients:pClients,taches:pTaches,equipe:pEquipe}[curTab]();
  box.innerHTML=`<div class="head"><div><h2>Bonjour ${esc(me.nom)}</h2><p>${badge(ROLES[me.role]||me.role,'green')}</p></div><button class="btn sm line" data-act="chg-pwd">🔑 Mot de passe</button></div><div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab ${k===curTab?'on':''}" role="tab" data-act="tab" data-id="${k}">${l}</button>`).join('')}</div>${panel}`;
 }
@@ -1025,13 +1029,13 @@ function dayRows(){
 }
 function pMag(){
  const wait=D.trans.filter(t=>t.status==='a_vendre');
- const lots=wait.map(t=>`<div class="lot"><span><b>${dateFr(t.date)}</b> · ${oeufs(t.bons)}</span>${btnIf(can(CAN.vente),'stock-in','Mettre en stock','primary',t.id)}</div>`).join('')||'<p class="empty">Aucun lot à mettre en stock.</p>';
+ const lots=wait.map(t=>`<div class="lot"><span><b>${dateFr(t.date)}</b> · ${oeufs(t.bons)}</span>${btnIf(canHandleStock()&&can(CAN.vente),'stock-in','Mettre en stock','primary',t.id)}</div>`).join('')||'<p class="empty">Aucun lot à mettre en stock.</p>';
  const days=dayRows();
  const rows=days.map(d=>`<tr><td>${dateFr(d.date)}</td><td>${oeufs(d.veille)}</td><td>${oeufs(d.entree)}</td><td>${oeufs(d.veille+d.entree)}</td><td>${oeufs(d.vendus)}</td><td>${oeufs(d.casses)}</td><td>${d.ajust?(d.ajust>0?'+':'')+oeufs(d.ajust):''}</td><td><b>${oeufs(d.reste)}</b></td><td>${d.prix.map(x=>fmt(x)).join(' / ')}</td><td>${money(d.montant)}</td><td>${esc(d.clients.join(', '))}</td><td>${esc(d.ops.join(', '))}</td></tr>`);
  const tot=`<div class="stats">${stat('Total entrées du mois',oeufs(sum(days,'entree')))}${stat('Total vendu',oeufs(sum(days,'vendus')),'j')}${stat('Total cassés au magasin',oeufs(sum(days,'casses')),'r')}${stat('Montant total vendu',money(sum(days,'montant')))}</div>`;
  const TL={vente:['Vente d’œufs','green'],vente_poulet:['Vente de poulets','green'],perte:['Cassés','red'],ajustement:['Ajustement','blue'],entree:['Entrée','amber']};
  const det=D.ventes.filter(v=>(v.date||'').startsWith(curMonth)).map(v=>{const [l,c]=TL[v.type]||['Mouvement',''];const q=v.type==='vente_poulet'?`${fmt(v.quantitePoulesPondeuses||0)} poulet(s)`:oeufs(v.quantite);return `<tr><td>${dateFr(v.date)}</td><td>${badge(l,c)}</td><td>${q}</td><td>${['vente','vente_poulet'].includes(v.type)?fmt(v.prixUnitaire??v.prixPlateau??v.prix*PLAT):''}</td><td>${['vente','vente_poulet'].includes(v.type)?money(v.montant):''}</td><td>${esc(v.clientNom||v.motif||'')}</td><td>${esc(v.clientTel||'')}</td><td>${esc(v.operateurNom||'')}</td><td>${v.type==='vente'?btnIf(true,'receipt','🧾 Reçu','line',v.id):''}</td></tr>`;});
- return `<div class="bloc"><div class="head"><div><h3>Stock disponible</h3><div class="bigstock" style="font-size:2rem">${oeufs(stock())}</div><p class="muted">Poules pondeuses disponibles : <b>${fmt(cfg.stockPoulesPondeuses)}</b></p><p class="muted">Tarifs : ${money(prixOeuf())} l’unité · ${money(prixLot3())} les 3 · ${money(prixPl())} le plateau de 30 œufs.</p></div><div class="row">${btnIf(can(CAN.vente),'sell','Vendre des œufs','primary')}${btnIf(can(CAN.vente),'sell-poulet','Vendre des poules pondeuses','primary')}${btnIf(isAdmin(),'price','Modifier les prix','line')}${btnIf(can(CAN.vente),'loss','Œufs cassés au magasin','line')}${btnIf(isAdmin(),'adjust','Ajuster le stock','line')}</div></div></div>
+ return `<div class="bloc"><div class="head"><div><h3>Stock disponible</h3><div class="bigstock" style="font-size:2rem">${oeufs(stock())}</div><p class="muted">Poules pondeuses disponibles : <b>${fmt(cfg.stockPoulesPondeuses)}</b></p><p class="muted">Tarifs : ${money(prixOeuf())} l’unité · ${money(prixLot3())} les 3 · ${money(prixPl())} le plateau de 30 œufs.</p></div><div class="row">${btnIf(can(CAN.vente),'sell','Vendre des œufs','primary')}${btnIf(can(CAN.vente),'sell-poulet','Vendre des poules pondeuses','primary')}${btnIf(isAdmin(),'price','Modifier les prix','line')}${btnIf(can(CAN.vente),'loss','Œufs cassés au magasin','line')}${btnIf(canHandleStock()&&isAdmin(),'adjust','Ajuster le stock','line')}</div></div></div>
  <div class="bloc"><h3>Lots à mettre en stock</h3>${lots}</div>
  <div class="bloc"><div class="head"><div><h3>Fiche de stock et vente journalière</h3><p class="muted">Stock total = veille + entrée du jour. Reste du jour = stock total − vendus − cassés. Le reste du jour devient le stock veille du lendemain.</p></div></div>${monthBar('mag')}${table(['Date','Stock veille','Entrée du jour','Stock total disponible','Vendus','Cassés au magasin','Ajust.','Reste du jour','Prix du plateau (FCFA)','Montant total vendu','Client / destination','Magasinière'],rows)||'<p class="empty">Aucun mouvement ce mois-ci.</p>'}<h3 style="margin-top:22px">Total du mois</h3>${tot}${visaRow('magasin')}</div>
  <div class="bloc"><h3>Détail des mouvements du mois</h3>${table(['Date','Type','Quantité','Prix du plateau','Montant','Client / motif','Téléphone','Par',''],det)||'<p class="empty">Aucun mouvement.</p>'}</div>
@@ -1047,6 +1051,7 @@ function pDep(){
  return `<div class="bloc"><div class="head"><div><h3>Dépenses</h3><p class="muted">Total du mois : <b>${money(sum(D.dep.filter(d=>(d.date||'').startsWith(m)),'montant'))}</b></p></div><div class="row">${btnIf(true,'export','📥 Excel','line','dep')}${btnIf(isAdmin(),'new-dep','＋ Ajouter une dépense')}</div></div>${table(['Date','Libellé','Catégorie','Montant',''],rows)||'<p class="empty">Aucune dépense enregistrée.</p>'}</div>`;
 }
 function pUsers(){
+ if(!isSup())return '<div class="bloc"><h3>Accès réservé</h3><p>Seul le superviseur peut consulter la liste des inscrits et gérer les comptes.</p></div>';
  const posts=`<div class="bloc"><h3>Postes du personnel</h3><p class="muted">Un seul titulaire par poste. Les clients et les stagiaires peuvent être plusieurs.</p><div class="stats">${UNIQUE.map(r=>{const h=D.users.find(u=>u.role===r&&u.status==='active');return stat(ROLES[r],h?esc(h.nom):'Libre',h?'':'j');}).join('')}</div></div>`;
  const f=[['all','Tous'],['pending','En attente'],['active','Actifs'],['banned','Suspendus']];
  const list=D.users.filter(u=>uFilter==='all'||u.status===uFilter).sort((a,b)=>(a.status==='pending'?0:1)-(b.status==='pending'?0:1)||String(a.nom).localeCompare(String(b.nom),'fr'));
@@ -1087,13 +1092,15 @@ function pTaches(){
  return `<div class="bloc"><div class="head"><div><h3>Tâches</h3><p class="muted">${isAdmin()?"Donnez des tâches à l'équipe. Chacun les coche quand elles sont faites.":'Vos tâches et celles de toute l\'équipe.'}</p></div>${btnIf(isAdmin(),'tache-add','＋ Nouvelle tâche')}</div>${rows.join('')||'<p class="empty">Aucune tâche.</p>'}</div>`;
 }
 function pEquipe(){
+ if(!isAdmin())return '<div class="bloc"><h3>Accès réservé</h3><p>Accès réservé à la direction.</p></div>';
+ const lectureSeule=me.role==='pdg';
  const staff=D.users.filter(u=>u.status==='active'&&STAFF.includes(u.role)&&(u.role!=='pdg'||salaireDe(u)>0));
  let masse=0;
  const rows=staff.map(u=>{
   const pres=D.presences.filter(p=>p.uid===u.id&&(p.date||'').startsWith(curMonth)),c=paieCalc(u,pres),paid=D.paies.find(x=>x.id===`${curMonth}_${u.id}`);
   masse+=c.net;
-  return `<tr><td><b>${esc(u.nom)}</b><small>${esc(ROLES[u.role]||u.role)}</small></td><td>${money(c.base)}</td><td>${c.presents}</td><td>${c.retards}</td><td>${c.absents}</td><td>${c.justifies}</td><td>${money(c.retenue)}</td><td><b>${money(c.net)}</b></td><td>${paid?badge('Payé le '+(paid.payeLe||'').split('-').reverse().join('/'),'green'):badge('À payer','amber')}</td><td><div class="row">${btnIf(true,'pres-detail','Détail','line',u.id)}${u.id!==user.uid?btnIf(true,'salaire','Salaire','line',u.id):''}${!paid&&c.base>0?btnIf(true,'payer','Payer','primary',u.id):''}</div></td></tr>`;});
- return `<div class="bloc"><div class="head"><div><h3>Présences et salaires</h3><p class="muted">Salaire par défaut : 36 000 FCFA pour le superviseur, 30 000 FCFA pour les autres employés. Retenue = salaire ÷ ${JOURS_OUVRES} jours × absences non justifiées.</p></div>${btnIf(true,'pointage','📝 Pointage du jour')}</div>${monthBar('equipe')}<div class="stats">${stat('Masse salariale du mois',money(masse))}${stat('Employés',fmt(staff.length),'j')}</div>${table(['Employé','Salaire de base','Présent','Retards','Absences','Justifiées / congés','Retenue','Net à payer','Paiement',''],rows)||'<p class="empty">Aucun employé actif.</p>'}</div>`;
+  return `<tr><td><b>${esc(u.nom)}</b><small>${esc(ROLES[u.role]||u.role)}</small></td><td>${money(c.base)}</td><td>${c.presents}</td><td>${c.retards}</td><td>${c.absents}</td><td>${c.justifies}</td><td>${money(c.retenue)}</td><td><b>${money(c.net)}</b></td><td>${paid?badge('Payé le '+(paid.payeLe||'').split('-').reverse().join('/'),'green'):badge('À payer','amber')}</td><td><div class="row">${btnIf(true,'pres-detail','Détail','line',u.id)}${!lectureSeule&&u.id!==user.uid?btnIf(true,'salaire','Salaire','line',u.id):''}${!lectureSeule&&!paid&&c.base>0?btnIf(true,'payer','Payer','primary',u.id):''}</div></td></tr>`;});
+ return `<div class="bloc"><div class="head"><div><h3>Présences et salaires</h3><p class="muted">Salaire par défaut : 36 000 FCFA pour le superviseur, 30 000 FCFA pour les autres employés. Retenue = salaire ÷ ${JOURS_OUVRES} jours × absences non justifiées.</p></div>${btnIf(!lectureSeule,'pointage','📝 Pointage du jour')}</div>${monthBar('equipe')}<div class="stats">${stat('Masse salariale du mois',money(masse))}${stat('Employés',fmt(staff.length),'j')}</div>${table(['Employé','Salaire de base','Présent','Retards','Absences','Justifiées / congés','Retenue','Net à payer','Paiement',''],rows)||'<p class="empty">Aucun employé actif.</p>'}</div>`;
 }
 function monSalaireBloc(){
  if(!STAFF.includes(me.role))return '';
@@ -1195,6 +1202,7 @@ async function seed(which){
 
 /* ============ Actions (activité de la ferme) ============ */
 function newProd(){
+ if(!can(CAN.prod))return toast('Vous ne pouvez pas enregistrer la production.','err');
  openForm({title:'Production du jour',intro:'Notez les œufs ramassés en plateaux et en unités (1 plateau = 30 unités). Ils seront envoyés à la réception.',fields:[
   {name:'date',label:'Date',type:'date',required:true,value:today()},
   {name:'effectif',label:'Nombre de poules',type:'number',required:true,value:D.lots.length?effectifTotal():(D.prod[0]?.effectif??stats.effectif)},
@@ -1210,6 +1218,7 @@ function newProd(){
    logAct('Production',`${v.date} : ${oeufs(ram)} ramassés, ${oeufs(cas)} cassés`);closeModal();toast('Production enregistrée');}});
 }
 function recep(id){
+ if(!can(CAN.recep))return toast('Vous ne pouvez pas réceptionner ce lot.','err');
  const lot=D.prod.find(p=>p.id===id);if(!lot)return;
  openForm({title:'Réceptionner le lot du '+(lot.date||'').split('-').reverse().join('/'),intro:`Le poulailler annonce <b>${oeufs(lot.bons)}</b>. Le nombre reçu doit être identique ; sinon expliquez l'écart.`,fields:[
   ...eggFields('rec','Œufs reçus du poulailler',lot.bons),
@@ -1228,6 +1237,7 @@ function recep(id){
    logAct('Réception',`Lot du ${lot.date} : ${oeufs(rec)} reçus, ${oeufs(cas)} cassés`);if(rec!==lot.bons)mailAdmin('Écart de réception',`Lot du ${lot.date} : ${oeufs(lot.bons)} annoncés, ${oeufs(rec)} reçus.`,`${v.observations||''} · réceptionné par ${me.nom}`);closeModal();toast('Lot réceptionné et transféré au magasin');}});
 }
 async function stockIn(id){
+ if(!canHandleStock())return toast('Vous ne pouvez pas mettre des produits en stock.','err');
  const t=D.trans.find(x=>x.id===id);if(!t)return;
  if(!await askConfirm(`Ajouter ${oeufs(t.bons)} au stock du magasin ?`,'Mettre en stock'))return;
  try{
@@ -1295,6 +1305,7 @@ function loss(){
    logAct('Casse au magasin',oeufs(q));closeModal();toast('Casse enregistrée');}});
 }
 function adjust(){
+ if(!canHandleStock())return toast('Vous ne pouvez pas modifier le stock.','err');
  openForm({title:'Ajuster le stock',intro:`Stock actuel : <b>${oeufs(stock())}</b>. À utiliser après un comptage physique.`,fields:[
   ...eggFields('n','Stock réel compté',stock()),
   {name:'motif',label:'Motif',required:true,placeholder:'Inventaire du …'}],
@@ -1379,6 +1390,7 @@ async function assignRole(u,role,status){
  });
 }
 function userRole(id){
+ if(!canManageRoles())return toast('Seul le superviseur autorisé peut gérer les rôles.','err');
  const u=D.users.find(x=>x.id===id);if(!u)return;
  const taken=r=>UNIQUE.includes(r)&&(D.users.some(x=>x.id!==u.id&&x.role===r&&x.status==='active')||(slots[r]&&slots[r]!==u.id));
  const def=u.status==='pending'&&u.roleDemande&&!taken(u.roleDemande)?u.roleDemande:(taken(u.role)?'client':u.role);
@@ -1387,6 +1399,7 @@ function userRole(id){
   onSubmit:async v=>{await assignRole(u,v.role,'active');logAct('Compte activé',`${u.nom} → ${ROLES[v.role]}`);mailUser(u.email,u.nom,'Votre compte est activé',`Votre compte est activé avec le rôle ${ROLES[v.role]}. Vous pouvez dès maintenant vous connecter.`);closeModal();toast('Compte activé');}});
 }
 async function userStatus(id,status){
+ if(!canManageRoles())return toast('Seul le superviseur autorisé peut gérer les comptes.','err');
  const u=D.users.find(x=>x.id===id);if(!u)return;
  const msg=status==='banned'?`Suspendre ${u.nom} ? Cette personne ne pourra plus accéder à son espace${UNIQUE.includes(u.role)?' et son poste sera libéré':''}.`:`Réactiver le compte de ${u.nom} ?`;
  if(!await askConfirm(msg,status==='banned'?'Suspendre':'Réactiver',status==='banned'))return;
@@ -1525,6 +1538,7 @@ function showCredentials(c){
  showModal();
 }
 function addPerson(){
+ if(!canManageRoles())return toast('Seul le superviseur autorisé peut ajouter des comptes.','err');
  const taken=r=>UNIQUE.includes(r)&&(D.users.some(x=>x.role===r&&x.status==='active')||!!slots[r]);
  openForm({title:'Ajouter une personne',intro:"Le compte est créé directement et activé. La personne se connecte sans s'inscrire, avec le mot de passe temporaire que vous lui transmettrez.",submit:'Créer le compte',fields:[
   {name:'nom',label:'Nom complet',required:true},
@@ -1696,6 +1710,7 @@ function sendSummary(){
  showModal();
 }
 function pointageForm(){
+ if(!isSup()){toast('Action réservée au superviseur.','err');return;}
  const staff=D.users.filter(u=>u.status==='active'&&STAFF.includes(u.role)&&u.role!=='pdg');
  if(!staff.length){toast('Aucun employé actif à pointer.','err');return;}
  const t=today(),opts=Object.entries(PRES).map(([k,v])=>[k,v[0]]);
@@ -1710,11 +1725,13 @@ function pointageForm(){
    closeModal();toast('Pointage enregistré');}});
 }
 function salaireForm(id){
+ if(!isSup()){toast('Action réservée au superviseur.','err');return;}
  const u=D.users.find(x=>x.id===id);if(!u)return;
  openForm({title:'Salaire de '+u.nom,intro:`Par défaut : ${money(SALAIRE_DEFAUT[u.role]||0)} pour ${esc(ROLES[u.role])}.`,fields:[{name:'salaire',label:'Salaire mensuel (FCFA)',type:'number',required:true,value:salaireDe(u)}],
   onSubmit:async v=>{await updateDoc(doc(db,'users',id),{salaire:v.salaire});logAct('Salaire modifié',`${u.nom} : ${v.salaire} FCFA`);closeModal();toast('Salaire enregistré');}});
 }
 async function payer(id){
+ if(!isSup()){toast('Action réservée au superviseur.','err');return;}
  const u=D.users.find(x=>x.id===id);if(!u)return;
  const c=paieCalc(u,D.presences.filter(p=>p.uid===id&&(p.date||'').startsWith(curMonth)));
  if(!await askConfirm(`Payer ${money(c.net)} à ${u.nom} pour ${curMonth.slice(5)}/${curMonth.slice(0,4)} ? (salaire ${money(c.base)}, retenue ${money(c.retenue)}). La dépense sera ajoutée automatiquement.`,'Payer'))return;
