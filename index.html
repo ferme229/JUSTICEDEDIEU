@@ -531,7 +531,7 @@ let user=null,me=null,prof='loading',authReady=false,registering=false;
 let cfg=(()=>{let c;try{c={...DEF_CFG,...JSON.parse(localStorage.getItem('ljd_public_config')||'{}')}}catch(_){c={...DEF_CFG}}c.prixOeuf=Number(c.prixOeuf)||100;c.prixLot3=Number(c.prixLot3)||250;c.prixDemiPlateau=Number(c.prixDemiPlateau)||1150;c.prixPlateau=Number(c.prixPlateau)||2300;c.prixPoulet=Number(c.prixPoulet)||0;c.stockPoulesPondeuses=Number.isInteger(Number(c.stockPoulesPondeuses))&&Number(c.stockPoulesPondeuses)>=0?Number(c.stockPoulesPondeuses):953;return c})(),animaux=[],histo=[];
 // Affiche immédiatement les dernières statistiques connues sur cet appareil, puis les actualise depuis Firebase.
 let stats=(()=>{try{return JSON.parse(localStorage.getItem('ljd_public_stats')||'{}')}catch(_){return {}}})();
-const D={prod:[],trans:[],ventes:[],sante:[],dep:[],users:[],visas:[],cmd:[],journal:[],avisAll:[],mesAvis:[],lots:[],aliment:[],vaccins:[],taches:[],annonces:[],objectifs:[],presences:[],paies:[],myPres:[],myPaies:[],ventesAll:[],paiements:[]};
+const D={prod:[],trans:[],ventes:[],sante:[],dep:[],users:[],employes:[],visas:[],cmd:[],journal:[],avisAll:[],mesAvis:[],lots:[],aliment:[],vaccins:[],taches:[],annonces:[],objectifs:[],presences:[],paies:[],myPres:[],myPaies:[],ventesAll:[],paiements:[]};
 let promos=[],galUnsub=null,galN=6,loadFrom='',eq=false,rq=false,clientsLoaded=false,clientsReady=false,notifCfg={};
 let galerie=[],avisPub=[],slideIdx=0,sliderPaused=false,lastReceipt=null;
 let curTab='resume',uFilter='all',unsubMe=null,privUnsubs=[],privKey='',privateStarted=false,warned=false,creatingProfile=false,fixingAdmin=false,slots={},slotsReady=false,claimTried='',curMonth=today().slice(0,7);
@@ -599,13 +599,15 @@ function openRegister(){
   footer:`<p class="links">Déjà un compte ? <a href="#" data-act="login">Connexion</a></p>`,
   onSubmit:async v=>{
    if(v.password.length<6)throw new Error('Mot de passe trop court (6 caractères minimum).');
-   const isClient=v.role==='client';let cred,adminRole=null,claimed=null;
+   const isClient=v.role==='client';let cred,adminRole=null,claimed=null,matchedEmployee=null;
+   try{const es=await getDocs(query(collection(db,'employes'),limit(1000)));const all=es.docs.map(d=>({id:d.id,...d.data()}));const em=String(v.email||'').trim().toLowerCase(),tel=String(v.tel||'').replace(/\D/g,'');matchedEmployee=all.find(e=>e.actif!==false&&!e.uid&&((em&&String(e.email||'').toLowerCase()===em)||(tel&&String(e.telephone||'').replace(/\D/g,'')===tel)))||null;}catch(e){console.warn('Recherche fiche employé',e);}
    if(UNIQUE.includes(v.role)&&slots[v.role]&&!adminRoleFor(v.email))throw new Error(`Le poste « ${ROLES[v.role]} » est déjà attribué. Choisissez un autre rôle.`);
    registering=true;
    try{
     cred=await createUserWithEmailAndPassword(auth,v.email,v.password);
     adminRole=adminRoleFor(cred.user.email);
-    await saveProfile(cred.user,c=>{claimed=c;return {uid:cred.user.uid,email:cred.user.email,nom:v.nom,telephone:v.tel,adresse:v.adresse,role:c||'client',roleDemande:c||v.role,status:(c||isClient)?'active':'pending',createdAt:serverTimestamp()};},adminRole,true);
+    await saveProfile(cred.user,c=>{claimed=c;return {uid:cred.user.uid,email:cred.user.email,nom:matchedEmployee?.nom||v.nom,telephone:matchedEmployee?.telephone||v.tel,adresse:v.adresse,role:c||(matchedEmployee?'stagiaire':'client'),roleDemande:c||(matchedEmployee?'stagiaire':v.role),status:(c||isClient||matchedEmployee)?'active':'pending',...(matchedEmployee?{poste:matchedEmployee.poste,salaire:Number(matchedEmployee.salaire)||0,employeId:matchedEmployee.id}:{}),createdAt:serverTimestamp()};},adminRole,true);
+    if(matchedEmployee)await updateDoc(doc(db,'employes',matchedEmployee.id),{uid:cred.user.uid,email:cred.user.email,linkedAt:serverTimestamp()});
    }catch(e){
     if(cred){try{await deleteUser(cred.user);}catch(_){}}
     registering=false;throw e;
@@ -613,7 +615,7 @@ function openRegister(){
    registering=false;closeModal();
    await handleUser(auth.currentUser);
    location.hash='espace';
-   toast(claimed?`Profil ${ROLES[claimed]} créé et activé.`:isClient?'Bienvenue ! Votre profil est créé.':'Profil créé. Un administrateur doit valider votre rôle.');
+   toast(matchedEmployee?'Votre compte est rattaché à votre fiche employé.':claimed?`Profil ${ROLES[claimed]} créé et activé.`:isClient?'Bienvenue ! Votre profil est créé.':'Profil créé. Un administrateur doit valider votre rôle.');
    if(claimed)mailAdmin('Alerte : nouveau compte administrateur',`Un nouveau compte administrateur a été créé : ${v.nom} (${ROLES[claimed]}).`,`Email : ${cred.user.email} · Téléphone : ${v.tel||'—'} · Date : ${new Date().toLocaleString('fr-FR')}`);
    else if(!isClient)mailAdmin('Alerte : nouvelle inscription à valider',`Nouvelle demande d’inscription : ${v.nom} demande le rôle ${ROLES[v.role]}.`,`Email : ${cred.user.email} · Téléphone : ${v.tel||'—'} · Date : ${new Date().toLocaleString('fr-FR')} · Action : examiner et valider la demande dans l’espace administration.`);
    mailUser(cred.user.email,v.nom,(isClient||claimed)?'Bienvenue à La Justice de Dieu':'Votre demande est bien reçue',(isClient||claimed)?'Votre profil est créé. Vous pouvez dès maintenant vous connecter, passer des commandes et suivre vos achats.':`Votre demande de compte (${ROLES[v.role]}) a bien été reçue. Le PDG ou le superviseur doit la valider : vous recevrez un email dès que votre compte sera activé.`);
@@ -736,6 +738,7 @@ function startPrivate(){
  if(FIN.includes(r))w(query(C('depenses'),from,orderBy('date','desc'),limit(1000)),'dep');
  if(ADMINS.includes(r)){
   w(query(C('users'),limit(300)),'users',u=>{if(u.status==='pending')notify('Nouvelle inscription',`${u.nom} demande le rôle ${ROLES[u.roleDemande]||u.roleDemande}`);});
+  w(query(C('employes'),limit(1000)),'employes');
   w(query(C('presences'),from,orderBy('date','desc'),limit(3000)),'presences');
   w(query(C('paies'),limit(600)),'paies');
   w(query(C('journal'),orderBy('createdAt','desc'),limit(200)),'journal');
@@ -1094,13 +1097,13 @@ function pTaches(){
 function pEquipe(){
  if(!isAdmin())return '<div class="bloc"><h3>Accès réservé</h3><p>Accès réservé à la direction.</p></div>';
  const lectureSeule=me.role==='pdg';
- const staff=D.users.filter(u=>u.status==='active'&&STAFF.includes(u.role));
+ const staff=[...D.users.filter(u=>u.status==='active'&&STAFF.includes(u.role)),...D.employes.filter(e=>e.actif!==false&&!e.uid).map(e=>({...e,id:e.id,role:'stagiaire',status:'active',poste:e.poste||'Employé',sansCompte:true}))];
  let masse=0;
  const rows=staff.map(u=>{
   const pres=D.presences.filter(p=>p.uid===u.id&&(p.date||'').startsWith(curMonth)),c=paieCalc(u,pres),paid=D.paies.find(x=>x.id===`${curMonth}_${u.id}`);
   masse+=c.net;
-  return `<tr><td><b>${esc(u.nom)}</b><small>${esc(ROLES[u.role]||u.role)}</small></td><td>${money(c.base)}</td><td>${c.presents}</td><td>${c.retards}</td><td>${c.absents}</td><td>${c.justifies}</td><td>${money(c.retenue)}</td><td><b>${money(c.net)}</b></td><td>${paid?badge('Payé le '+(paid.payeLe||'').split('-').reverse().join('/'),'green'):badge('À payer','amber')}</td><td><div class="row">${btnIf(true,'pres-detail','Détail','line',u.id)}${isAdmin()&&u.id!==user.uid?btnIf(true,'salaire','Salaire','line',u.id):''}${!lectureSeule&&!paid&&c.base>0?btnIf(true,'payer','Payer','primary',u.id):''}</div></td></tr>`;});
- return `<div class="bloc"><div class="head"><div><h3>Présences et salaires</h3><p class="muted">Le PDG et le superviseur peuvent fixer ou réviser le salaire de base de chaque employé. Retenue = salaire ÷ ${JOURS_OUVRES} jours × absences non justifiées.</p></div>${btnIf(!lectureSeule,'pointage','📝 Pointage du jour')}</div>${monthBar('equipe')}<div class="stats">${stat('Masse salariale du mois',money(masse))}${stat('Employés',fmt(staff.length),'j')}</div>${table(['Employé','Salaire de base','Présent','Retards','Absences','Justifiées / congés','Retenue','Net à payer','Paiement',''],rows)||'<p class="empty">Aucun employé actif.</p>'}</div>`;
+  return `<tr><td><b>${esc(u.nom)}</b><small>${esc(u.poste||ROLES[u.role]||u.role)}${u.sansCompte?' · Sans compte':''}</small></td><td>${money(c.base)}</td><td>${c.presents}</td><td>${c.retards}</td><td>${c.absents}</td><td>${c.justifies}</td><td>${money(c.retenue)}</td><td><b>${money(c.net)}</b></td><td>${paid?badge('Payé le '+(paid.payeLe||'').split('-').reverse().join('/'),'green'):badge('À payer','amber')}</td><td><div class="row">${btnIf(true,'pres-detail','Détail','line',u.id)}${isAdmin()&&u.id!==user.uid?btnIf(true,'salaire','Salaire','line',u.id):''}${!lectureSeule&&!u.sansCompte&&!paid&&c.base>0?btnIf(true,'payer','Payer','primary',u.id):''}</div></td></tr>`;});
+ return `<div class="bloc"><div class="head"><div><h3>Présences et salaires</h3><p class="muted">Le PDG et le superviseur peuvent fixer ou réviser le salaire de base de chaque employé. Retenue = salaire ÷ ${JOURS_OUVRES} jours × absences non justifiées.</p></div>${btnIf(!lectureSeule,'pointage','📝 Pointage du jour')}${btnIf(isAdmin(),'employe-add','＋ Ajouter un employé')}${btnIf(true,'print-equipe','🖨️ Imprimer / PDF','line')}</div>${monthBar('equipe')}<div class="stats">${stat('Masse salariale du mois',money(masse))}${stat('Employés',fmt(staff.length),'j')}</div>${table(['Employé','Salaire de base','Présent','Retards','Absences','Justifiées / congés','Retenue','Net à payer','Paiement',''],rows)||'<p class="empty">Aucun employé actif.</p>'}</div>`;
 }
 function monSalaireBloc(){
  if(!STAFF.includes(me.role))return '';
@@ -1537,6 +1540,25 @@ function showCredentials(c){
  $('#mbox').innerHTML=`<button class="x" data-close aria-label="Fermer">×</button><h3>Compte créé ✅</h3><p class="intro">${esc(c.nom)} peut se connecter (rôle : ${esc(ROLES[c.role])}) sans s'inscrire. Transmettez-lui ces identifiants : ils ne seront plus affichés après la fermeture de cette fenêtre.</p><b>Email</b><span class="mono">${esc(c.email)}</span><b>Mot de passe temporaire</b><span class="mono">${esc(c.pwd)}</span><p class="muted" style="font-size:13px;margin-bottom:14px">Un email l'invitant à choisir son propre mot de passe lui a aussi été envoyé.</p><div class="row"><button class="btn primary" data-act="copy" data-text="${esc(txt)}">📋 Copier le message</button><a class="btn line" target="_blank" rel="noopener" href="https://wa.me/${esc(waNumber(c.tel))}?text=${encodeURIComponent(txt)}">Envoyer par WhatsApp</a></div>`;
  showModal();
 }
+function addEmploye(){
+ if(!isAdmin())return toast('Action réservée au PDG et au superviseur.','err');
+ openForm({title:'Ajouter un employé',intro:'Créez une fiche même si la personne ne souhaite pas encore se connecter. Elle pourra rattacher son compte plus tard avec le même téléphone ou email.',submit:'Enregistrer l’employé',fields:[
+  {name:'nom',label:'Nom complet',required:true},{name:'tel',label:'Téléphone',type:'tel',required:true},
+  {name:'email',label:'Email (facultatif)',type:'email'}, {name:'poste',label:'Poste / fonction personnalisé',required:true,placeholder:'Ex. Responsable alimentation'},
+  {name:'dateEmbauche',label:'Date d’embauche',type:'date',value:today()},
+  {name:'salaire',label:'Salaire mensuel initial (FCFA)',type:'number',required:true,value:0}
+ ],onSubmit:async v=>{
+  const tel=String(v.tel||'').replace(/\D/g,'');
+  if(!tel)throw new Error('Indiquez un numéro de téléphone valide.');
+  if(Number(v.salaire)<0)throw new Error('Le salaire ne peut pas être négatif.');
+  const same=D.employes.some(e=>e.actif!==false&&String(e.telephone||'').replace(/\D/g,'')===tel)||D.users.some(e=>e.status==='active'&&String(e.telephone||'').replace(/\D/g,'')===tel);
+  if(same)throw new Error('Un employé utilise déjà ce numéro de téléphone.');
+  const ref=doc(collection(db,'employes'));
+  await setDoc(ref,{nom:v.nom.trim(),telephone:v.tel.trim(),email:(v.email||'').trim().toLowerCase(),poste:v.poste.trim(),role:'stagiaire',dateEmbauche:v.dateEmbauche||today(),salaire:Number(v.salaire),actif:true,uid:null,createdBy:user.uid,createdAt:serverTimestamp()});
+  logAct('Employé ajouté',`${v.nom} — ${v.poste}`);closeModal();toast('Fiche employé créée.');
+ }});
+}
+
 function addPerson(){
  if(!canManageRoles())return toast('Seul le superviseur autorisé peut ajouter des comptes.','err');
  const taken=r=>UNIQUE.includes(r)&&(D.users.some(x=>x.role===r&&x.status==='active')||!!slots[r]);
@@ -1572,7 +1594,7 @@ function addPerson(){
 
 /* ============ Élevage, clients, équipe, direction ============ */
 let lastRapport='';
-const equipeUsers=()=>D.users.filter(u=>u.status==='active'&&STAFF.includes(u.role)&&(u.role!=='pdg'||salaireDe(u)>0));
+const equipeUsers=()=>[...D.users.filter(u=>u.status==='active'&&STAFF.includes(u.role)),...D.employes.filter(e=>e.actif!==false&&!e.uid).map(e=>({...e,id:e.id,role:'stagiaire',status:'active',poste:e.poste||'Employé',sansCompte:true}))];
 function lotForm(id){
  const l=id?D.lots.find(x=>x.id===id):null;
  openForm({title:l?'Modifier le lot':'Nouveau lot de poules',fields:[
@@ -1711,28 +1733,28 @@ function sendSummary(){
 }
 function pointageForm(){
  if(!isSup()){toast('Action réservée au superviseur.','err');return;}
- const staff=D.users.filter(u=>u.status==='active'&&STAFF.includes(u.role)&&u.role!=='pdg');
+ const staff=[...D.users.filter(u=>u.status==='active'&&STAFF.includes(u.role)&&u.role!=='pdg'),...D.employes.filter(e=>e.actif!==false&&!e.uid).map(e=>({...e,id:e.id,role:'stagiaire',status:'active',poste:e.poste||'Employé',sansCompte:true}))];
  if(!staff.length){toast('Aucun employé actif à pointer.','err');return;}
  const t=today(),opts=Object.entries(PRES).map(([k,v])=>[k,v[0]]);
  openForm({title:'Pointage',intro:'Indiquez la présence de chaque employé pour la date choisie.',submit:'Enregistrer le pointage',fields:[
   {name:'date',label:'Date',type:'date',required:true,value:t},
-  ...staff.map(u=>({name:'p_'+u.id,label:`${u.nom} (${ROLES[u.role]})`,type:'select',value:(D.presences.find(p=>p.id===`${t}_${u.id}`)||{}).statut||'present',options:opts}))],
+  ...staff.map(u=>({name:'p_'+u.id,label:`${u.nom} (${u.poste||ROLES[u.role]||u.role})`,type:'select',value:(D.presences.find(p=>p.id===`${t}_${u.id}`)||{}).statut||'present',options:opts}))],
   onSubmit:async v=>{
    const b=writeBatch(db);
    staff.forEach(u=>b.set(doc(db,'presences',`${v.date}_${u.id}`),{date:v.date,uid:u.id,nom:u.nom,statut:v['p_'+u.id],par:user.uid,createdAt:serverTimestamp()}));
    await b.commit();logAct('Pointage',`${v.date} : ${staff.length} personnes`);
-   staff.filter(u=>u.role==='stagiaire'&&['absent','retard'].includes(v['p_'+u.id])).forEach(u=>mailUser(u.email,u.nom,v['p_'+u.id]==='absent'?'Absence enregistrée':'Retard enregistré',`Le ${dateFr(v.date)}, vous avez été noté « ${(PRES[v['p_'+u.id]]||[''])[0]} ». Si c'est une erreur, parlez-en au superviseur.`));
+   staff.filter(u=>!u.sansCompte&&u.role==='stagiaire'&&['absent','retard'].includes(v['p_'+u.id])).forEach(u=>mailUser(u.email,u.nom,v['p_'+u.id]==='absent'?'Absence enregistrée':'Retard enregistré',`Le ${dateFr(v.date)}, vous avez été noté « ${(PRES[v['p_'+u.id]]||[''])[0]} ». Si c'est une erreur, parlez-en au superviseur.`));
    closeModal();toast('Pointage enregistré');}});
 }
 function salaireForm(id){
  if(!isAdmin()){toast('Action réservée à la direction.','err');return;}
- const u=D.users.find(x=>x.id===id);if(!u)return;
+ const u=D.users.find(x=>x.id===id)||D.employes.find(x=>x.id===id);if(!u)return;
  openForm({title:'Salaire de '+u.nom,intro:`Par défaut : ${money(SALAIRE_DEFAUT[u.role]||0)} pour ${esc(ROLES[u.role])}.`,fields:[{name:'salaire',label:'Salaire mensuel (FCFA)',type:'number',required:true,value:salaireDe(u)}],
-  onSubmit:async v=>{await updateDoc(doc(db,'users',id),{salaire:v.salaire});logAct('Salaire modifié',`${u.nom} : ${v.salaire} FCFA`);closeModal();toast('Salaire enregistré');}});
+  onSubmit:async v=>{if(u.sansCompte)await updateDoc(doc(db,'employes',id),{salaire:Number(v.salaire),salaireMajLe:serverTimestamp(),salaireMajPar:user.uid});else await updateDoc(doc(db,'users',id),{salaire:Number(v.salaire),salaireMajLe:serverTimestamp(),salaireMajPar:user.uid});logAct('Salaire modifié',`${u.nom} : ${v.salaire} FCFA`);closeModal();toast('Salaire enregistré');}});
 }
 async function payer(id){
  if(!isSup()){toast('Action réservée au superviseur.','err');return;}
- const u=D.users.find(x=>x.id===id);if(!u)return;
+ const u=D.users.find(x=>x.id===id)||D.employes.find(x=>x.id===id);if(!u||u.sansCompte)return;
  const c=paieCalc(u,D.presences.filter(p=>p.uid===id&&(p.date||'').startsWith(curMonth)));
  if(!await askConfirm(`Payer ${money(c.net)} à ${u.nom} pour ${curMonth.slice(5)}/${curMonth.slice(0,4)} ? (salaire ${money(c.base)}, retenue ${money(c.retenue)}). La dépense sera ajoutée automatiquement.`,'Payer'))return;
  try{
@@ -1743,7 +1765,7 @@ async function payer(id){
  }catch(e){toast(errMsg(e),'err');}
 }
 function presDetail(id){
- const u=D.users.find(x=>x.id===id);if(!u)return;
+ const u=D.users.find(x=>x.id===id)||D.employes.find(x=>x.id===id);if(!u)return;
  if(modalDone){modalDone(false);modalDone=null;}
  const L=D.presences.filter(p=>p.uid===id&&(p.date||'').startsWith(curMonth)).sort(byDate).map(p=>`<tr><td>${dateFr(p.date)}</td><td>${badge(...(PRES[p.statut]||[p.statut,'']))}</td></tr>`);
  $('#mbox').className='mbox';
@@ -1879,7 +1901,7 @@ const ACT={
  'go-avis':()=>{if(!user){openLogin();return;}curTab='profil';if(location.hash==='#espace')renderEspace();else location.hash='espace';},
  'new-cmd':newCmd,'cmd-ok':id=>setCmd(id,'confirmee'),'cmd-no':id=>setCmd(id,'annulee'),'cmd-sell':cmdSell,
  'edit-profil':editProfil,'chg-pwd':chgPwd,'avis-form':avisForm,'avis-ok':id=>setAvis(id,'approved'),'avis-hide':id=>setAvis(id,'hidden'),'avis-del':id=>removeDoc('avis',id,'cet avis'),
- export:expo,backup,seuils,'add-person':addPerson,
+ export:expo,backup,seuils,'add-person':addPerson,'employe-add':addEmploye,'print-equipe':()=>{const el=$('#espace');$('#printArea').innerHTML=`<div class=\"rapport\"><h1>${esc(cfg.heroTitre)}</h1><h2>Présences et salaires — ${esc(curMonth)}</h2>${el.querySelector('.bloc')?.innerHTML||''}</div>`;document.body.classList.add('print-receipt');setTimeout(()=>window.print(),60);},
  receipt:id=>{const v=D.ventes.find(x=>x.id===id);if(v)showReceipt(v);},'print-receipt':printReceipt,reset:()=>resetForm(),'ejs-cfg':()=>ejsForm(),'cli-mail':cliMail,'pwd-reset':pwdReset,'ejs-test':()=>ejsTest(),'resume-mail':resumeMail,
  'lot-add':()=>lotForm(),'lot-edit':lotForm,'lot-stat':lotStatut,'lot-del':id=>removeDoc('lots',id,'ce lot'),
  'alim-add':()=>alimForm(),'alim-del':id=>removeDoc('aliment',id,'cette ligne'),
